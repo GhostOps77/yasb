@@ -27,7 +27,9 @@ class AiChatClient:
         self.credential = provider_config.get("credential")
         self.model = model_name
         self.max_tokens = max_tokens if max_tokens > 0 else None
-        self.response_content_path = provider_config.get("response_content_path", ["choices", 0, "message", "content"])
+        self.response_content_path = provider_config.get(
+            "response_content_path", ["choices", 0, "message", "content"]
+        )
         self.base_url = self.api_endpoint.rstrip("/")
         self.api_key = self.credential or "ollama"
         self.client = self.OpenAI(base_url=self.base_url, api_key=self.api_key)
@@ -96,7 +98,11 @@ class AiChatClient:
             self._response = None
 
             err_str = str(e)
-            if "401" in err_str or "invalid_api_key" in err_str or "Incorrect API key" in err_str:
+            if (
+                "401" in err_str
+                or "invalid_api_key" in err_str
+                or "Incorrect API key" in err_str
+            ):
                 friendly = "Authentication failed: Please check your API key."
             elif "429" in err_str or "rate limit" in err_str.lower():
                 friendly = "Rate limit exceeded: Please wait and try again."

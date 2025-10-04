@@ -5,7 +5,12 @@ from PyQt6.QtCore import QEasingCurve, QEvent, QPropertyAnimation, QRect, Qt, py
 from PyQt6.QtGui import QScreen
 from PyQt6.QtWidgets import QFrame, QGridLayout, QHBoxLayout, QWidget
 
-from core.bar_helper import AutoHideManager, BarContextMenu, FullscreenManager, OsThemeManager
+from core.bar_helper import (
+    AutoHideManager,
+    BarContextMenu,
+    FullscreenManager,
+    OsThemeManager,
+)
 from core.event_service import EventService
 from core.utils.utilities import is_valid_percentage_str, percent_to_float
 from core.utils.win32.bindings import user32
@@ -68,7 +73,9 @@ class Bar(QWidget):
 
         self.screen_name = self.screen().name()
         self.app_bar_edge = (
-            app_bar.AppBarEdge.Top if self._alignment["position"] == "top" else app_bar.AppBarEdge.Bottom
+            app_bar.AppBarEdge.Top
+            if self._alignment["position"] == "top"
+            else app_bar.AppBarEdge.Bottom
         )
 
         if self._window_flags["windows_app_bar"] and IMPORT_APP_BAR_MANAGER_SUCCESSFUL:
@@ -98,7 +105,10 @@ class Bar(QWidget):
             self._os_theme_manager = None
 
         # Initialize fullscreen manager
-        if self._window_flags["hide_on_fullscreen"] and self._window_flags["always_on_top"]:
+        if (
+            self._window_flags["hide_on_fullscreen"]
+            and self._window_flags["always_on_top"]
+        ):
             try:
                 self._fullscreen_manager = FullscreenManager(self, self)
             except Exception as e:
@@ -113,7 +123,9 @@ class Bar(QWidget):
             try:
                 hwnd = int(self.winId())
                 exStyle = user32.GetWindowLongPtrW(hwnd, win32con.GWL_EXSTYLE)
-                user32.SetWindowLongPtrW(hwnd, win32con.GWL_EXSTYLE, exStyle | win32con.WS_EX_NOACTIVATE)
+                user32.SetWindowLongPtrW(
+                    hwnd, win32con.GWL_EXSTYLE, exStyle | win32con.WS_EX_NOACTIVATE
+                )
             except Exception:
                 pass
 
@@ -127,7 +139,9 @@ class Bar(QWidget):
                 BorderColor=blur_effect["border_color"],
             )
 
-        self.screen().geometryChanged.connect(self.on_geometry_changed, Qt.ConnectionType.QueuedConnection)
+        self.screen().geometryChanged.connect(
+            self.on_geometry_changed, Qt.ConnectionType.QueuedConnection
+        )
 
         self.handle_bar_management.connect(self._handle_bar_management)
         self._event_service.register_event("handle_bar_cli", self.handle_bar_management)
@@ -144,7 +158,9 @@ class Bar(QWidget):
         return self._bar_id
 
     def on_geometry_changed(self, geo: QRect) -> None:
-        logging.info(f"Screen geometry changed. Updating position for bar ({self.bar_id})")
+        logging.info(
+            f"Screen geometry changed. Updating position for bar ({self.bar_id})"
+        )
         self.position_bar()
 
         if self._autohide_manager and self._autohide_manager.is_enabled():
@@ -155,7 +171,9 @@ class Bar(QWidget):
             self.app_bar_manager.create_appbar(
                 self.winId().__int__(),
                 self.app_bar_edge,
-                self._dimensions["height"] + self._padding["top"] + self._padding["bottom"],
+                self._dimensions["height"]
+                + self._padding["top"]
+                + self._padding["bottom"],
                 self.screen(),
                 scale_screen_height,
             )
@@ -164,7 +182,9 @@ class Bar(QWidget):
         if self.app_bar_manager:
             self.app_bar_manager.remove_appbar()
 
-    def bar_pos(self, bar_w: int, bar_h: int, screen_w: int, screen_h: int) -> tuple[int, int]:
+    def bar_pos(
+        self, bar_w: int, bar_h: int, screen_w: int, screen_h: int
+    ) -> tuple[int, int]:
         screen_x = self.screen().geometry().x()
         screen_y = self.screen().geometry().y()
 
@@ -284,7 +304,9 @@ class Bar(QWidget):
                 logging.error("Animation not initialized.")
 
         # Start fullscreen monitoring when bar is shown
-        if self._fullscreen_manager and not hasattr(self, "_fullscreen_monitoring_started"):
+        if self._fullscreen_manager and not hasattr(
+            self, "_fullscreen_monitoring_started"
+        ):
             self._fullscreen_manager.start_monitoring()
             self._fullscreen_monitoring_started = True
 

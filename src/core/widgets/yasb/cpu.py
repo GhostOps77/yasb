@@ -37,8 +37,12 @@ class CpuWidget(BaseWidget):
     ):
         super().__init__(class_name=f"cpu-widget {class_name}")
         self._histogram_icons = histogram_icons
-        self._cpu_freq_history = deque([0] * histogram_num_columns, maxlen=histogram_num_columns)
-        self._cpu_perc_history = deque([0] * histogram_num_columns, maxlen=histogram_num_columns)
+        self._cpu_freq_history = deque(
+            [0] * histogram_num_columns, maxlen=histogram_num_columns
+        )
+        self._cpu_perc_history = deque(
+            [0] * histogram_num_columns, maxlen=histogram_num_columns
+        )
         self._show_alt_label = False
         self._label_content = label
         self._label_alt_content = label_alt
@@ -56,7 +60,10 @@ class CpuWidget(BaseWidget):
         self._widget_container_layout = QHBoxLayout()
         self._widget_container_layout.setSpacing(0)
         self._widget_container_layout.setContentsMargins(
-            self._padding["left"], self._padding["top"], self._padding["right"], self._padding["bottom"]
+            self._padding["left"],
+            self._padding["top"],
+            self._padding["right"],
+            self._padding["bottom"],
         )
         # Initialize container
         self._widget_container = QFrame()
@@ -66,7 +73,9 @@ class CpuWidget(BaseWidget):
         # Add the container to the main widget layout
         self.widget_layout.addWidget(self._widget_container)
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(
+            self, self._label_content, self._label_alt_content, self._label_shadow
+        )
 
         self.register_callback("toggle_label", self._toggle_label)
 
@@ -122,12 +131,17 @@ class CpuWidget(BaseWidget):
             cpu_stats = psutil.cpu_stats()
             current_perc = psutil.cpu_percent()
             cores_perc = psutil.cpu_percent(percpu=True)
-            cpu_cores = {"physical": psutil.cpu_count(logical=False), "total": psutil.cpu_count(logical=True)}
+            cpu_cores = {
+                "physical": psutil.cpu_count(logical=False),
+                "total": psutil.cpu_count(logical=True),
+            }
 
             # Update each instance using the shared data
             for inst in cls._instances[:]:
                 try:
-                    inst._update_label(cpu_freq, cpu_stats, current_perc, cores_perc, cpu_cores)
+                    inst._update_label(
+                        cpu_freq, cpu_stats, current_perc, cores_perc, cpu_cores
+                    )
                 except RuntimeError:
                     cls._instances.remove(inst)
 
@@ -143,8 +157,15 @@ class CpuWidget(BaseWidget):
         _round = lambda value: round(value) if self._hide_decimal else value
         cpu_info = {
             "cores": cpu_cores,
-            "freq": {"min": _round(cpu_freq.min), "max": _round(cpu_freq.max), "current": _round(cpu_freq.current)},
-            "percent": {"core": [_round(core) for core in cores_perc], "total": _round(current_perc)},
+            "freq": {
+                "min": _round(cpu_freq.min),
+                "max": _round(cpu_freq.max),
+                "current": _round(cpu_freq.current),
+            },
+            "percent": {
+                "core": [_round(core) for core in cores_perc],
+                "total": _round(current_perc),
+            },
             "stats": {
                 "context_switches": cpu_stats.ctx_switches,
                 "interrupts": cpu_stats.interrupts,
@@ -153,49 +174,73 @@ class CpuWidget(BaseWidget):
             },
             "histograms": {
                 "cpu_freq": "".join(
-                    [self._get_histogram_bar(freq, cpu_freq.min, cpu_freq.max) for freq in self._cpu_freq_history]
+                    [
+                        self._get_histogram_bar(freq, cpu_freq.min, cpu_freq.max)
+                        for freq in self._cpu_freq_history
+                    ]
                 ),
                 "cpu_percent": "".join(
-                    [self._get_histogram_bar(percent, 0, 100) for percent in self._cpu_perc_history]
+                    [
+                        self._get_histogram_bar(percent, 0, 100)
+                        for percent in self._cpu_perc_history
+                    ]
                 ),
-                "cores": "".join([self._get_histogram_bar(percent, 0, 100) for percent in cores_perc]),
+                "cores": "".join(
+                    [self._get_histogram_bar(percent, 0, 100) for percent in cores_perc]
+                ),
             },
         }
 
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
-        label_parts = re.split("(<span.*?>.*?</span>)", active_label_content)
-        label_parts = [part for part in label_parts if part]
+        active_widgets_len = len(active_widgets)
+        active_label_content = (
+            self._label_alt_content if self._show_alt_label else self._label_content
+        )
+        active_label_content = active_label_content.format(info=cpu_info)
+        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
         widget_index = 0
 
         if self._progress_bar["enabled"] and self.progress_widget:
             if self._widget_container_layout.indexOf(self.progress_widget) == -1:
                 self._widget_container_layout.insertWidget(
-                    0 if self._progress_bar["position"] == "left" else self._widget_container_layout.count(),
+                    (
+                        0
+                        if self._progress_bar["position"] == "left"
+                        else self._widget_container_layout.count()
+                    ),
                     self.progress_widget,
                 )
             self.progress_widget.set_value(current_perc)
 
         for part in label_parts:
             part = part.strip()
-            if part and widget_index < len(active_widgets) and isinstance(active_widgets[widget_index], QLabel):
-                if "<span" in part and "</span>" in part:
-                    icon = re.sub(r"<span.*?>|</span>", "", part).strip()
-                    active_widgets[widget_index].setText(icon)
-                else:
-                    label_class = "label alt" if self._show_alt_label else "label"
-                    formatted_text = part.format(info=cpu_info)
-                    active_widgets[widget_index].setText(formatted_text)
-                    active_widgets[widget_index].setProperty("class", label_class)
-                    active_widgets[widget_index].setProperty(
-                        "class", f"{label_class} status-{self._get_cpu_threshold(current_perc)}"
-                    )
-                    active_widgets[widget_index].setStyleSheet("")
-                widget_index += 1
+            if not part:
+                continue
+
+            if widget_index >= active_widgets_len or not isinstance(
+                active_widgets[widget_index], QLabel
+            ):
+                continue
+
+            if part.startswith("<span") and part.endswith("</span>"):
+                part = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
+                active_widgets[widget_index].setText(part)
+            else:
+                label_class = "label alt" if self._show_alt_label else "label"
+                active_widgets[widget_index].setText(part)
+                active_widgets[widget_index].setProperty("class", label_class)
+                active_widgets[widget_index].setProperty(
+                    "class",
+                    f"{label_class} status-{self._get_cpu_threshold(current_perc)}",
+                )
+                active_widgets[widget_index].setStyleSheet("")
+            widget_index += 1
 
     def _toggle_label(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+            AnimationManager.animate(
+                self, self._animation["type"], self._animation["duration"]
+            )
         self._show_alt_label = not self._show_alt_label
         for widget in self._widgets:
             widget.setVisible(not self._show_alt_label)
@@ -206,16 +251,22 @@ class CpuWidget(BaseWidget):
     def _get_histogram_bar(self, num, num_min, num_max):
         if num_max == num_min:
             return self._histogram_icons[0]
-        bar_index = int((num - num_min) / (num_max - num_min) * (len(self._histogram_icons) - 1))
+        bar_index = int(
+            (num - num_min) / (num_max - num_min) * (len(self._histogram_icons) - 1)
+        )
         bar_index = min(max(bar_index, 0), len(self._histogram_icons) - 1)
         return self._histogram_icons[bar_index]
 
     def _get_cpu_threshold(self, cpu_percent) -> str:
         if cpu_percent <= self._cpu_thresholds["low"]:
             return "low"
-        elif self._cpu_thresholds["low"] < cpu_percent <= self._cpu_thresholds["medium"]:
+        elif (
+            self._cpu_thresholds["low"] < cpu_percent <= self._cpu_thresholds["medium"]
+        ):
             return "medium"
-        elif self._cpu_thresholds["medium"] < cpu_percent <= self._cpu_thresholds["high"]:
+        elif (
+            self._cpu_thresholds["medium"] < cpu_percent <= self._cpu_thresholds["high"]
+        ):
             return "high"
         elif self._cpu_thresholds["high"] < cpu_percent:
             return "critical"

@@ -37,12 +37,17 @@ def maybe_answer_yasb_question(messages):
     if (
         ("yasb" in user_text)
         and re.search(r"(version|release)", user_text)
-        and re.search(r"(what|which|current|check|give|tell|about|info|information|how|find|see)", user_text)
+        and re.search(
+            r"(what|which|current|check|give|tell|about|info|information|how|find|see)",
+            user_text,
+        )
     ):
         version = BUILD_VERSION
         release_url = f"https://github.com/amnweb/yasb/releases/tag/v{version}"
         latest_tag, latest_url = get_latest_github_release()
-        answer = f'YASB version: {version}<br><a href="{release_url}">View release info</a>'
+        answer = (
+            f'YASB version: {version}<br><a href="{release_url}">View release info</a>'
+        )
         # Add CLI helper if user asks how to check/find/see version
         if (
             ("how" in user_text)
@@ -85,7 +90,9 @@ def format_chat_text(text):
     # Convert **bold** to <b>
     text = re.sub(r"\*\*(.*?)\*\*", r"<b>\1</b>", text)
     # Convert *italic* to <i>, but not bullet points
-    text = re.sub(r"(?<!^)\s\*((?!\*)[^*\n]+?)\*(?!\*)", r" <i>\1</i>", text, flags=re.MULTILINE)
+    text = re.sub(
+        r"(?<!^)\s\*((?!\*)[^*\n]+?)\*(?!\*)", r" <i>\1</i>", text, flags=re.MULTILINE
+    )
 
     # Replace inline code with <code>...</code>
     def inline_code_repl(match):
@@ -113,7 +120,11 @@ def format_chat_text(text):
 
     # Only apply URL replacement to non-<pre> parts (even indices)
     for i in range(0, len(parts), 2):
-        parts[i] = re.sub(r'((?:https?://|ftp://|www\.)[^\s<>"&]+)(?=\s|$|&(?:amp|lt|gt);)', replace_url, parts[i])
+        parts[i] = re.sub(
+            r'((?:https?://|ftp://|www\.)[^\s<>"&]+)(?=\s|$|&(?:amp|lt|gt);)',
+            replace_url,
+            parts[i],
+        )
 
     text = "".join(parts)
     text = text.replace("\n", "<br>")

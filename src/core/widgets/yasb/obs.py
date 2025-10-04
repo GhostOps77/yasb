@@ -32,7 +32,10 @@ class ObsWorker(QThread):
         while self.running:
             try:
                 self.ws = obsws(
-                    self._connection["host"], self._connection["port"], self._connection["password"], authreconnect=2
+                    self._connection["host"],
+                    self._connection["port"],
+                    self._connection["password"],
+                    authreconnect=2,
                 )
                 self.ws.connect()
                 self.connection_signal.emit(True)
@@ -83,7 +86,10 @@ class ObsWidget(BaseWidget):
         self._widget_container_layout = QHBoxLayout()
         self._widget_container_layout.setSpacing(0)
         self._widget_container_layout.setContentsMargins(
-            self._padding["left"], self._padding["top"], self._padding["right"], self._padding["bottom"]
+            self._padding["left"],
+            self._padding["top"],
+            self._padding["right"],
+            self._padding["bottom"],
         )
 
         # Initialize container

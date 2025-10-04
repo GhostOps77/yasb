@@ -22,7 +22,17 @@ from settings import APP_BAR_TITLE
 # Get the current process ID to exclude our own windows
 CURRENT_PROCESS_ID = os.getpid()
 # Define ignored titles, classes, and processes
-IGNORED_TITLES = ["", " ", "FolderView", "Program Manager", "python3", "pythonw3", "YasbBar", "Search", "Start"]
+IGNORED_TITLES = [
+    "",
+    " ",
+    "FolderView",
+    "Program Manager",
+    "python3",
+    "pythonw3",
+    "YasbBar",
+    "Search",
+    "Start",
+]
 IGNORED_CLASSES = [
     "WorkerW",
     "TopLevelWindowForOverflowXamlIsland",
@@ -92,7 +102,10 @@ class ActiveWindowWidget(BaseWidget):
         self._widget_container_layout = QHBoxLayout()
         self._widget_container_layout.setSpacing(0)
         self._widget_container_layout.setContentsMargins(
-            self._padding["left"], self._padding["top"], self._padding["right"], self._padding["bottom"]
+            self._padding["left"],
+            self._padding["top"],
+            self._padding["right"],
+            self._padding["bottom"],
         )
         # Initialize container
         self._widget_container = QFrame()
@@ -123,25 +136,41 @@ class ActiveWindowWidget(BaseWidget):
         self._widget_container_layout.addWidget(self._window_title_text)
         self.register_callback("toggle_label", self._toggle_title_text)
         if not callbacks:
-            callbacks = {"on_left": "toggle_label", "on_middle": "do_nothing", "on_right": "toggle_label"}
+            callbacks = {
+                "on_left": "toggle_label",
+                "on_middle": "do_nothing",
+                "on_right": "toggle_label",
+            }
 
         self.callback_left = callbacks["on_left"]
         self.callback_right = callbacks["on_right"]
         self.callback_middle = callbacks["on_middle"]
 
         self.foreground_change.connect(self._on_focus_change_event)
-        self._event_service.register_event(WinEvent.EventSystemForeground, self.foreground_change)
-        self._event_service.register_event(WinEvent.EventSystemMoveSizeEnd, self.foreground_change)
+        self._event_service.register_event(
+            WinEvent.EventSystemForeground, self.foreground_change
+        )
+        self._event_service.register_event(
+            WinEvent.EventSystemMoveSizeEnd, self.foreground_change
+        )
 
         self.window_name_change.connect(self._on_window_name_change_event)
-        self._event_service.register_event(WinEvent.EventObjectNameChange, self.window_name_change)
-        self._event_service.register_event(WinEvent.EventObjectStateChange, self.window_name_change)
+        self._event_service.register_event(
+            WinEvent.EventObjectNameChange, self.window_name_change
+        )
+        self._event_service.register_event(
+            WinEvent.EventObjectStateChange, self.window_name_change
+        )
 
         self.window_destroy.connect(self._on_window_destroy_event)
-        self._event_service.register_event(WinEvent.EventObjectDestroy, self.window_destroy)
+        self._event_service.register_event(
+            WinEvent.EventObjectDestroy, self.window_destroy
+        )
 
         self.focus_change_workspaces.connect(self._on_focus_change_workspaces)
-        self._event_service.register_event("workspace_update", self.focus_change_workspaces)
+        self._event_service.register_event(
+            "workspace_update", self.focus_change_workspaces
+        )
 
         # Parent timer to widget so it auto-stops/cleans up on deletion
         self._window_update_timer = QTimer(self)
@@ -151,7 +180,9 @@ class ActiveWindowWidget(BaseWidget):
         self._last_update_time = QElapsedTimer()
         self._last_update_time.start()
 
-        self._update_throttle_ms = 250  # Minimum ms between updates for high-frequency classes
+        self._update_throttle_ms = (
+            250  # Minimum ms between updates for high-frequency classes
+        )
 
         atexit.register(self._stop_events)
         try:
@@ -162,11 +193,21 @@ class ActiveWindowWidget(BaseWidget):
     def _on_destroyed(self, *args):
         try:
             # Unregister all events we registered
-            self._event_service.unregister_event(WinEvent.EventSystemForeground, self.foreground_change)
-            self._event_service.unregister_event(WinEvent.EventSystemMoveSizeEnd, self.foreground_change)
-            self._event_service.unregister_event(WinEvent.EventObjectNameChange, self.window_name_change)
-            self._event_service.unregister_event(WinEvent.EventObjectStateChange, self.window_name_change)
-            self._event_service.unregister_event("workspace_update", self.focus_change_workspaces)
+            self._event_service.unregister_event(
+                WinEvent.EventSystemForeground, self.foreground_change
+            )
+            self._event_service.unregister_event(
+                WinEvent.EventSystemMoveSizeEnd, self.foreground_change
+            )
+            self._event_service.unregister_event(
+                WinEvent.EventObjectNameChange, self.window_name_change
+            )
+            self._event_service.unregister_event(
+                WinEvent.EventObjectStateChange, self.window_name_change
+            )
+            self._event_service.unregister_event(
+                "workspace_update", self.focus_change_workspaces
+            )
         except Exception:
             pass
 
@@ -177,7 +218,9 @@ class ActiveWindowWidget(BaseWidget):
 
         result = text
         for rule in self._rewrite_rules:
-            pattern, replacement, case = (rule.get(k, "") for k in ("pattern", "replacement", "case"))
+            pattern, replacement, case = (
+                rule.get(k, "") for k in ("pattern", "replacement", "case")
+            )
 
             if not pattern or not replacement:
                 continue
@@ -212,16 +255,22 @@ class ActiveWindowWidget(BaseWidget):
             self.hide()
             return
         hwnd = win32gui.GetForegroundWindow()
-        if hwnd != 0:
-            self._on_focus_change_event(hwnd, WinEvent.WinEventOutOfContext)
-            if self._update_retry_count < 3 and event in ["MoveWindow"]:
-                self._update_retry_count += 1
-                QTimer.singleShot(200, lambda: self._on_focus_change_event(hwnd, WinEvent.WinEventOutOfContext))
-                return
-            else:
-                self._update_retry_count = 0
-        else:
+        if hwnd == 0:
             self._set_no_window_or_hide()
+            return
+
+        self._on_focus_change_event(hwnd, WinEvent.WinEventOutOfContext)
+        if self._update_retry_count < 3 and event in ["MoveWindow"]:
+            self._update_retry_count += 1
+            QTimer.singleShot(
+                200,
+                lambda: self._on_focus_change_event(
+                    hwnd, WinEvent.WinEventOutOfContext
+                ),
+            )
+            return
+        else:
+            self._update_retry_count = 0
 
     def _on_window_destroy_event(self, hwnd: int, event: WinEvent) -> None:
         """Handle top-level window destruction. Only react when the destroyed HWND matches the tracked window."""
@@ -243,7 +292,9 @@ class ActiveWindowWidget(BaseWidget):
                     fg_info = get_hwnd_info(fg)
                     if fg_info and fg_info.get("title") and fg_info.get("process"):
                         if fg_info["process"].get("pid") != CURRENT_PROCESS_ID:
-                            self._on_focus_change_event(fg, WinEvent.WinEventOutOfContext)
+                            self._on_focus_change_event(
+                                fg, WinEvent.WinEventOutOfContext
+                            )
                             return
                 except Exception:
                     pass
@@ -254,7 +305,9 @@ class ActiveWindowWidget(BaseWidget):
 
     def _toggle_title_text(self) -> None:
         if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+            AnimationManager.animate(
+                self, self._animation["type"], self._animation["duration"]
+            )
         self._show_alt = not self._show_alt
         self._active_label = self._label_alt if self._show_alt else self._label
         self._update_text()
@@ -295,7 +348,9 @@ class ActiveWindowWidget(BaseWidget):
                 self._pending_window_update = (hwnd, event)
                 # If timer isn't already running, start it
                 if not self._window_update_timer.isActive():
-                    remaining_time = self._update_throttle_ms - self._last_update_time.elapsed()
+                    remaining_time = (
+                        self._update_throttle_ms - self._last_update_time.elapsed()
+                    )
                     self._window_update_timer.start(max(50, remaining_time))
                 return
 
@@ -332,14 +387,22 @@ class ActiveWindowWidget(BaseWidget):
                     icon_img = get_window_icon(hwnd)
                     if icon_img:
                         icon_img = icon_img.resize(
-                            (int(self._label_icon_size * self.dpi), int(self._label_icon_size * self.dpi)),
+                            (
+                                int(self._label_icon_size * self.dpi),
+                                int(self._label_icon_size * self.dpi),
+                            ),
                             Image.LANCZOS,
                         ).convert("RGBA")
                     if not process["name"] == "explorer.exe":
                         # Do not cache icons for explorer.exe windows
                         self._icon_cache[cache_key] = icon_img
                 if icon_img:
-                    qimage = QImage(icon_img.tobytes(), icon_img.width, icon_img.height, QImage.Format.Format_RGBA8888)
+                    qimage = QImage(
+                        icon_img.tobytes(),
+                        icon_img.width,
+                        icon_img.height,
+                        QImage.Format.Format_RGBA8888,
+                    )
                     self.pixmap = QPixmap.fromImage(qimage)
                     self.pixmap.setDevicePixelRatio(self.dpi)
                 else:
@@ -356,7 +419,9 @@ class ActiveWindowWidget(BaseWidget):
                 if "title" in win_info and len(win_info["title"]) > 0:
                     win_info["title"] = self._rewrite_filter(win_info["title"])
                 if "process" in win_info and "name" in win_info["process"]:
-                    win_info["process"]["name"] = self._rewrite_filter(win_info["process"]["name"])
+                    win_info["process"]["name"] = self._rewrite_filter(
+                        win_info["process"]["name"]
+                    )
 
                 if self._max_length and len(win_info["title"]) > self._max_length:
                     truncated_title = f"{win_info['title'][: self._max_length]}{self._max_length_ellipsis}"
@@ -383,7 +448,9 @@ class ActiveWindowWidget(BaseWidget):
 
     def _update_text(self):
         try:
-            self._window_title_text.setText(self._active_label.format(win=self._win_info))
+            self._window_title_text.setText(
+                self._active_label.format(win=self._win_info)
+            )
             if self._label_icon:
                 if self.pixmap:
                     self._window_icon_label.show()

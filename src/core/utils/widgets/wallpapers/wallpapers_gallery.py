@@ -14,7 +14,14 @@ from PyQt6.QtCore import (
     pyqtProperty,
     pyqtSignal,
 )
-from PyQt6.QtGui import QImageReader, QKeySequence, QPainter, QPainterPath, QPixmap, QShortcut
+from PyQt6.QtGui import (
+    QImageReader,
+    QKeySequence,
+    QPainter,
+    QPainterPath,
+    QPixmap,
+    QShortcut,
+)
 from PyQt6.QtWidgets import (
     QApplication,
     QGraphicsOpacityEffect,
@@ -52,7 +59,10 @@ class BaseStyledWidget(QWidget):
 
     def extract_class_styles(self, stylesheet, classes):
         pattern = re.compile(
-            r"(\.({})\s*\{{[^}}]*\}})".format("|".join(re.escape(cls) for cls in classes)), re.MULTILINE
+            r"(\.({})\s*\{{[^}}]*\}})".format(
+                "|".join(re.escape(cls) for cls in classes)
+            ),
+            re.MULTILINE,
         )
         matches = pattern.findall(stylesheet)
         return "\n".join(match[0] for match in matches)
@@ -115,7 +125,9 @@ class ImageSignals(QObject):
 
 
 class ImageLoader(QRunnable):
-    def __init__(self, image_path, width, height, corner_radius, index, dpr: float = 1.0):
+    def __init__(
+        self, image_path, width, height, corner_radius, index, dpr: float = 1.0
+    ):
         super().__init__()
         self.image_path = image_path
         self.target_width = width
@@ -149,7 +161,9 @@ class ImageLoader(QRunnable):
             else:
                 # Image is taller than target - scale to match width and crop height
                 scaled_width = target_w
-                scaled_height = int(scaled_width / orig_aspect) if orig_aspect != 0 else target_h
+                scaled_height = (
+                    int(scaled_width / orig_aspect) if orig_aspect != 0 else target_h
+                )
 
             reader.setScaledSize(QSize(scaled_width, scaled_height))
             image = reader.read()
@@ -249,7 +263,11 @@ class ImageGallery(QMainWindow, BaseStyledWidget):
             screen_width - 60,
             self.window_height,
         )
-        self.setWindowFlags(Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
+        self.setWindowFlags(
+            Qt.WindowType.Tool
+            | Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.WindowStaysOnTopHint
+        )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
@@ -281,8 +299,12 @@ class ImageGallery(QMainWindow, BaseStyledWidget):
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFixedHeight(self.window_height)
         self.scroll_area.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.scroll_area.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        self.scroll_area.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
         layout.addWidget(self.scroll_area)
 
         # Set up the image container
@@ -292,7 +314,10 @@ class ImageGallery(QMainWindow, BaseStyledWidget):
         self.image_container.setLayout(self.image_layout)
         self.image_container.setContentsMargins(0, 0, 0, 0)
         self.image_container.setFixedWidth(
-            int(self.image_width * self.images_per_page + self.image_spacing * (self.images_per_page - 1))
+            int(
+                self.image_width * self.images_per_page
+                + self.image_spacing * (self.images_per_page - 1)
+            )
         )
 
         # Add navigation buttons if needed
@@ -330,11 +355,17 @@ class ImageGallery(QMainWindow, BaseStyledWidget):
             self.image_layout.itemAt(i).widget().setParent(None)
 
         # Create placeholder labels first
-        for i in range(min(self.images_per_page, len(self.image_files) - self.current_index)):
+        for i in range(
+            min(self.images_per_page, len(self.image_files) - self.current_index)
+        ):
             index = self.current_index + i
             label = HoverLabel(self)
-            label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-            label.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
+            label.setSizePolicy(
+                QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+            )
+            label.setAlignment(
+                Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter
+            )
             label.mousePressEvent = self.create_mouse_press_event(index)
             self.image_layout.addWidget(label)
 
@@ -370,7 +401,10 @@ class ImageGallery(QMainWindow, BaseStyledWidget):
                 label.opacity = 1.0
 
         # Check if all images are loaded
-        if index == self.images_per_page - 1 or index == len(self.image_files) - self.current_index - 1:
+        if (
+            index == self.images_per_page - 1
+            or index == len(self.image_files) - self.current_index - 1
+        ):
             self.is_loading = False
 
     def create_mouse_press_event(self, index):
@@ -475,7 +509,9 @@ class ImageGallery(QMainWindow, BaseStyledWidget):
         if event.key() == Qt.Key.Key_Escape:
             self.fade_out_and_close_gallery()
         elif event.key() == Qt.Key.Key_Return and self.focused_index is not None:
-            label = self.image_layout.itemAt(self.focused_index - self.current_index).widget()
+            label = self.image_layout.itemAt(
+                self.focused_index - self.current_index
+            ).widget()
             label.blink()
             self.set_wallpaper()
         elif event.key() == Qt.Key.Key_Left:
@@ -490,7 +526,9 @@ class ImageGallery(QMainWindow, BaseStyledWidget):
     def set_wallpaper(self):
         """Set the focused image as wallpaper."""
         if self.focused_index is not None:
-            image_path = os.path.join(self.image_folder, self.image_files[self.focused_index])
+            image_path = os.path.join(
+                self.image_folder, self.image_files[self.focused_index]
+            )
             self._event_service.emit_event("set_wallpaper_signal", image_path)
 
     # Window events
@@ -509,7 +547,9 @@ class ImageGallery(QMainWindow, BaseStyledWidget):
         """Show the gallery with a fade-in animation."""
         # Close any existing galleries
         existing_galleries = [
-            widget for widget in QApplication.topLevelWidgets() if isinstance(widget, type(self)) and widget.isVisible()
+            widget
+            for widget in QApplication.topLevelWidgets()
+            if isinstance(widget, type(self)) and widget.isVisible()
         ]
         for gallery in existing_galleries:
             gallery.fade_out_and_close_gallery()

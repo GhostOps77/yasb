@@ -22,7 +22,18 @@ from PyQt6.QtCore import (
     QTimer,
     pyqtSignal,
 )
-from PyQt6.QtGui import QAction, QColor, QCursor, QDrag, QIcon, QKeySequence, QPainter, QPixmap, QShortcut, QWheelEvent
+from PyQt6.QtGui import (
+    QAction,
+    QColor,
+    QCursor,
+    QDrag,
+    QIcon,
+    QKeySequence,
+    QPainter,
+    QPixmap,
+    QShortcut,
+    QWheelEvent,
+)
 from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.QtWidgets import (
     QApplication,
@@ -46,8 +57,15 @@ from core.event_service import EventService
 from core.utils.utilities import add_shadow, build_widget_label
 from core.utils.widgets.animation_manager import AnimationManager
 from core.utils.widgets.launchpad.app_loader import AppListLoader, ShortcutResolver
-from core.utils.widgets.launchpad.icon_extractor import IconExtractorUtil, UrlExtractorUtil
-from core.utils.win32.utilities import get_foreground_hwnd, qmenu_rounded_corners, set_foreground_hwnd
+from core.utils.widgets.launchpad.icon_extractor import (
+    IconExtractorUtil,
+    UrlExtractorUtil,
+)
+from core.utils.win32.utilities import (
+    get_foreground_hwnd,
+    qmenu_rounded_corners,
+    set_foreground_hwnd,
+)
 from core.utils.win32.win32_accent import Blur
 from core.validation.widgets.yasb.launchpad import VALIDATION_SCHEMA
 from core.widgets.base import BaseWidget
@@ -240,7 +258,8 @@ class AppDialog(QDialog):
         self.title_edit.setCompleter(self._completer)
         popup = self._completer.popup()
         popup.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        popup.setStyleSheet("""
+        popup.setStyleSheet(
+            """
             QListView::item {
                 padding: 8px;
             }
@@ -253,14 +272,17 @@ class AppDialog(QDialog):
                 outline: none;
                 border: none;
             }
-        """)
+        """
+        )
 
         def on_title_selected(text):
             for name, path, _ in self._installed_apps:
                 if name.lower() == text.lower():
                     if path.startswith("UWP::"):
                         appid = path.replace("UWP::", "")
-                        self.path_edit.setText(f"explorer.exe shell:AppsFolder\\{appid}")
+                        self.path_edit.setText(
+                            f"explorer.exe shell:AppsFolder\\{appid}"
+                        )
                         install_location = None
                         try:
                             ps_get_location = (
@@ -290,17 +312,23 @@ class AppDialog(QDialog):
 
                         uwp_icon = None
                         if install_location:
-                            uwp_icon = IconExtractorUtil.extract_uwp_icon(appid, install_location=install_location)
+                            uwp_icon = IconExtractorUtil.extract_uwp_icon(
+                                appid, install_location=install_location
+                            )
                         if uwp_icon and os.path.isfile(uwp_icon):
                             ext = os.path.splitext(uwp_icon)[1].lower()
                             if ext == ".png":
                                 self.icon_edit.setText(uwp_icon)
                             else:
-                                self._show_warning("Failed to extract icon from UWP package.")
+                                self._show_warning(
+                                    "Failed to extract icon from UWP package."
+                                )
                                 self.icon_edit.setText("")
                         else:
                             self.icon_edit.setText("")
-                            self._show_warning("Could not locate icon for this UWP app.")
+                            self._show_warning(
+                                "Could not locate icon for this UWP app."
+                            )
 
                     else:
                         self.path_edit.setText(path)
@@ -309,15 +337,27 @@ class AppDialog(QDialog):
                         ext = os.path.splitext(path)[1].lower()
                         icon_source = path
                         if ext == ".lnk":
-                            _, icon_source, _ = ShortcutResolver.resolve_lnk_target(path, self._show_warning)
-                        if icon_source and isinstance(icon_source, str) and os.path.isfile(icon_source):
-                            icon_path = IconExtractorUtil.extract_icon_from_path(icon_source, temp_dir)
+                            _, icon_source, _ = ShortcutResolver.resolve_lnk_target(
+                                path, self._show_warning
+                            )
+                        if (
+                            icon_source
+                            and isinstance(icon_source, str)
+                            and os.path.isfile(icon_source)
+                        ):
+                            icon_path = IconExtractorUtil.extract_icon_from_path(
+                                icon_source, temp_dir
+                            )
                             if icon_path:
                                 self.icon_edit.setText(icon_path)
                             else:
-                                self._show_warning("Failed to extract icon for the selected application.")
+                                self._show_warning(
+                                    "Failed to extract icon for the selected application."
+                                )
                         else:
-                            self._show_warning("No valid icon source found for the selected application.")
+                            self._show_warning(
+                                "No valid icon source found for the selected application."
+                            )
                     break
 
         self._completer.activated.connect(on_title_selected)
@@ -384,14 +424,20 @@ class AppDialog(QDialog):
 
     def browse_path(self):
         file_path, _ = QFileDialog.getOpenFileName(
-            self, "Select Application", "", "Executable or Shortcut (*.exe *.lnk);;All Files (*)"
+            self,
+            "Select Application",
+            "",
+            "Executable or Shortcut (*.exe *.lnk);;All Files (*)",
         )
         if file_path:
             self.path_edit.setText(file_path)
 
     def browse_icon(self):
         icon_path, _ = QFileDialog.getOpenFileName(
-            self, "Select Icon", "", "Image Files (*.png *.jpg *.jpeg *.gif *.bmp *.ico *.svg);;All Files (*)"
+            self,
+            "Select Icon",
+            "",
+            "Image Files (*.png *.jpg *.jpeg *.gif *.bmp *.ico *.svg);;All Files (*)",
         )
         if icon_path:
             self.icon_edit.setText(icon_path)
@@ -404,7 +450,11 @@ class AppDialog(QDialog):
         if icon_changed and icon_path and self.icons_dir and os.path.isfile(icon_path):
             try:
                 title = self.title_edit.text().strip().lower()
-                safe_title = "".join(c for c in title if c.isalnum() or c in (" ", "-", "_")).rstrip().replace(" ", "_")
+                safe_title = (
+                    "".join(c for c in title if c.isalnum() or c in (" ", "-", "_"))
+                    .rstrip()
+                    .replace(" ", "_")
+                )
                 _, ext = os.path.splitext(icon_path)
                 if not ext:
                     ext = ".png"
@@ -461,7 +511,12 @@ class SmoothScrollArea(QScrollArea):
         self.animation_duration = 400
 
     def keyPressEvent(self, event):
-        if event.key() in [Qt.Key.Key_Left, Qt.Key.Key_Right, Qt.Key.Key_Up, Qt.Key.Key_Down]:
+        if event.key() in [
+            Qt.Key.Key_Left,
+            Qt.Key.Key_Right,
+            Qt.Key.Key_Up,
+            Qt.Key.Key_Down,
+        ]:
             event.ignore()
         else:
             super().keyPressEvent(event)
@@ -473,7 +528,10 @@ class SmoothScrollArea(QScrollArea):
         current_value = scrollbar.value()
         target_value = current_value + scroll_amount
         target_value = max(scrollbar.minimum(), min(scrollbar.maximum(), target_value))
-        if self.scroll_animation and self.scroll_animation.state() == QAbstractAnimation.State.Running:
+        if (
+            self.scroll_animation
+            and self.scroll_animation.state() == QAbstractAnimation.State.Running
+        ):
             self.scroll_animation.stop()
         self.scroll_animation = QPropertyAnimation(scrollbar, b"value")
         self.scroll_animation.setDuration(self.animation_duration)
@@ -578,7 +636,10 @@ class LaunchpadWidget(BaseWidget):
         self._widget_container_layout = QHBoxLayout()
         self._widget_container_layout.setSpacing(0)
         self._widget_container_layout.setContentsMargins(
-            self._padding["left"], self._padding["top"], self._padding["right"], self._padding["bottom"]
+            self._padding["left"],
+            self._padding["top"],
+            self._padding["right"],
+            self._padding["bottom"],
         )
         self._widget_container = QFrame()
         self._widget_container.setLayout(self._widget_container_layout)
@@ -604,13 +665,17 @@ class LaunchpadWidget(BaseWidget):
         if widget == "launchpad":
             current_screen = self.window().screen() if self.window() else None
             current_screen_name = current_screen.name() if current_screen else None
-            if not screen or (current_screen_name and screen.lower() == current_screen_name.lower()):
+            if not screen or (
+                current_screen_name and screen.lower() == current_screen_name.lower()
+            ):
                 self._popup_from_cli = True
                 self._toggle_launchpad()
 
     def _toggle_launchpad(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+            AnimationManager.animate(
+                self, self._animation["type"], self._animation["duration"]
+            )
         if self._launchpad_popup and self._launchpad_popup.isVisible():
             self._hide_launchpad()
         else:
@@ -620,7 +685,11 @@ class LaunchpadWidget(BaseWidget):
         self._dpr = self.screen().devicePixelRatio()
         if not self._launchpad_popup:
             self._launchpad_popup = self._create_launchpad_popup()
-        if not self._overlay and not self._window["fullscreen"] and self._window["overlay_block"]:
+        if (
+            not self._overlay
+            and not self._window["fullscreen"]
+            and self._window["overlay_block"]
+        ):
             self._overlay = self._create_overlay()
 
         if getattr(self, "_popup_from_cli", False):
@@ -658,7 +727,9 @@ class LaunchpadWidget(BaseWidget):
         container_layout = QVBoxLayout(app_icon)
         container_layout.setContentsMargins(0, 0, 0, 0)
         container_layout.setSpacing(0)
-        container_layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
+        container_layout.setAlignment(
+            Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter
+        )
 
         icon_label = QLabel()
         icon_label.setFixedSize(self._app_icon_size, self._app_icon_size)
@@ -668,13 +739,19 @@ class LaunchpadWidget(BaseWidget):
         title_label = QLabel(app_data.get("title", "Unknown"))
         title_label.setProperty("class", "title")
         title_label.setWordWrap(True)
-        title_label.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
+        title_label.setAlignment(
+            Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter
+        )
         add_shadow(title_label, self._app_title_shadow)
 
         container_layout.addWidget(
-            icon_label, stretch=1, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter
+            icon_label,
+            stretch=1,
+            alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter,
         )
-        container_layout.addWidget(title_label, stretch=2, alignment=Qt.AlignmentFlag.AlignHCenter)
+        container_layout.addWidget(
+            title_label, stretch=2, alignment=Qt.AlignmentFlag.AlignHCenter
+        )
 
         app_icon.icon_label = icon_label
         app_icon.title_label = title_label
@@ -704,13 +781,20 @@ class LaunchpadWidget(BaseWidget):
             if event.button() == Qt.MouseButton.LeftButton:
                 app_icon._drag_start_position = event.pos()
             elif event.button() == Qt.MouseButton.RightButton:
-                self._show_context_menu(event.pos(), app_data=app_icon.app_data, parent_widget=app_icon, event=event)
+                self._show_context_menu(
+                    event.pos(),
+                    app_data=app_icon.app_data,
+                    parent_widget=app_icon,
+                    event=event,
+                )
 
         app_icon.mousePressEvent = mousePressEvent
 
         def mouseMoveEvent(event):
             if event.buttons() & Qt.MouseButton.LeftButton:
-                if (event.pos() - app_icon._drag_start_position).manhattanLength() >= QApplication.startDragDistance():
+                if (
+                    event.pos() - app_icon._drag_start_position
+                ).manhattanLength() >= QApplication.startDragDistance():
                     drag = QDrag(app_icon)
                     mime_data = QMimeData()
                     app_id = str(app_icon.app_data.get("id", ""))
@@ -725,7 +809,9 @@ class LaunchpadWidget(BaseWidget):
 
         def mouseReleaseEvent(event):
             if event.button() == Qt.MouseButton.LeftButton:
-                if (event.pos() - app_icon._drag_start_position).manhattanLength() < QApplication.startDragDistance():
+                if (
+                    event.pos() - app_icon._drag_start_position
+                ).manhattanLength() < QApplication.startDragDistance():
                     self._launch_app(app_icon.app_data)
 
         app_icon.mouseReleaseEvent = mouseReleaseEvent
@@ -739,12 +825,14 @@ class LaunchpadWidget(BaseWidget):
                 event.acceptProposedAction()
                 app_icon._drop_highlight = True
                 app_icon.setProperty("isDropTarget", True)
-                app_icon.setStyleSheet("""
+                app_icon.setStyleSheet(
+                    """
                     QFrame[isDropTarget="true"] {
                         background: transparent;
                         border-color: transparent;
                     }
-                """)
+                """
+                )
                 app_icon.update()
             else:
                 event.ignore()
@@ -815,7 +903,11 @@ class LaunchpadWidget(BaseWidget):
                     source_index = i
                 elif str(app.get("id", "")) == target_app_id:
                     target_index = i
-            if source_index != -1 and target_index != -1 and source_index != target_index:
+            if (
+                source_index != -1
+                and target_index != -1
+                and source_index != target_index
+            ):
                 source_app = apps.pop(source_index)
                 apps.insert(target_index, source_app)
                 self._save_apps(apps)
@@ -833,12 +925,18 @@ class LaunchpadWidget(BaseWidget):
                 if path.startswith("http://") or path.startswith("https://"):
                     webbrowser.open(path)
                 elif os.path.isfile(path):
-                    subprocess.Popen([path], shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
+                    subprocess.Popen(
+                        [path], shell=True, creationflags=subprocess.CREATE_NO_WINDOW
+                    )
                 else:
-                    subprocess.Popen(path, shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
+                    subprocess.Popen(
+                        path, shell=True, creationflags=subprocess.CREATE_NO_WINDOW
+                    )
                 self._hide_launchpad()
             except Exception as e:
-                logging.error(f"Failed to launch app {app_data.get('title', 'Unknown')}: {e}")
+                logging.error(
+                    f"Failed to launch app {app_data.get('title', 'Unknown')}: {e}"
+                )
 
     def _show_context_menu(self, pos, app_data=None, parent_widget=None, event=None):
         """
@@ -925,7 +1023,9 @@ class LaunchpadWidget(BaseWidget):
         self.popup.setProperty("class", "launchpad")
         self.popup.setContentsMargins(0, 0, 0, 0)
         self.popup.setWindowFlags(
-            Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool | Qt.WindowType.WindowStaysOnTopHint
+            Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.Tool
+            | Qt.WindowType.WindowStaysOnTopHint
         )
         self.popup.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
@@ -946,18 +1046,24 @@ class LaunchpadWidget(BaseWidget):
         self.popup._screen_geometry = screen_geometry
 
         self.popup.fade_in_animation = QPropertyAnimation(self.popup, b"windowOpacity")
-        self.popup.fade_in_animation.setDuration(self._window_animation["fade_in_duration"])
+        self.popup.fade_in_animation.setDuration(
+            self._window_animation["fade_in_duration"]
+        )
         self.popup.fade_in_animation.setStartValue(0.0)
         self.popup.fade_in_animation.setEndValue(1.0)
 
         self.popup.fade_out_animation = QPropertyAnimation(self.popup, b"windowOpacity")
-        self.popup.fade_out_animation.setDuration(self._window_animation["fade_out_duration"])
+        self.popup.fade_out_animation.setDuration(
+            self._window_animation["fade_out_duration"]
+        )
         self.popup.fade_out_animation.setStartValue(1.0)
         self.popup.fade_out_animation.setEndValue(0.0)
 
         self.popup.fade_out_animation.finished.connect(self._on_fade_out_finished)
         self.popup.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.popup.customContextMenuRequested.connect(lambda pos: self._show_context_menu(pos))
+        self.popup.customContextMenuRequested.connect(
+            lambda pos: self._show_context_menu(pos)
+        )
 
         window_layout = QVBoxLayout(self.popup)
         window_layout.setContentsMargins(0, 0, 0, 0)
@@ -1000,14 +1106,16 @@ class LaunchpadWidget(BaseWidget):
         scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll_area.setFrameShape(QFrame.Shape.NoFrame)
         scroll_area.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        scroll_area.setStyleSheet("""
+        scroll_area.setStyleSheet(
+            """
             QScrollBar:vertical { border: none; background:transparent; width: 4px; }
             QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: transparent; }
             QScrollBar::handle:vertical { background: rgba(255, 255, 255, 0.2); min-height: 10px; border-radius: 2px; }
             QScrollBar::handle:vertical:hover { background: rgba(255, 255, 255, 0.35); }
             QScrollBar::sub-line:vertical, QScrollBar::add-line:vertical { height: 0px; }
             QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: transparent; }
-        """)
+        """
+        )
 
         grid_container = QFrame()
         grid_container.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
@@ -1016,7 +1124,9 @@ class LaunchpadWidget(BaseWidget):
         grid_layout = QGridLayout(grid_container)
         grid_layout.setContentsMargins(0, 0, 0, 0)
         grid_layout.setSpacing(0)
-        grid_layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignCenter)
+        grid_layout.setAlignment(
+            Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignCenter
+        )
         scroll_area.setWidget(grid_container)
         main_layout.addWidget(scroll_area)
 
@@ -1029,7 +1139,9 @@ class LaunchpadWidget(BaseWidget):
         self.popup.grid_layout = grid_layout
 
         self.popup.setAcceptDrops(True)
-        self.popup.mousePressEvent = lambda event: self._handle_popup_mouse_press(self.popup, event)
+        self.popup.mousePressEvent = lambda event: self._handle_popup_mouse_press(
+            self.popup, event
+        )
         self.popup.keyPressEvent = lambda event: self._handle_popup_key_press(event)
         self.popup.showEvent = self._popup_show_event
         self.popup.closeEvent = self._popup_close_event
@@ -1045,10 +1157,16 @@ class LaunchpadWidget(BaseWidget):
         shortcut_edit = QShortcut(QKeySequence(self._shortcuts["edit_app"]), self.popup)
         shortcut_edit.activated.connect(self._edit_selected_app)
 
-        shortcut_menu = QShortcut(QKeySequence(self._shortcuts["show_context_menu"]), self.popup)
-        shortcut_menu.activated.connect(lambda: self._show_context_menu(self.popup.rect().center()))
+        shortcut_menu = QShortcut(
+            QKeySequence(self._shortcuts["show_context_menu"]), self.popup
+        )
+        shortcut_menu.activated.connect(
+            lambda: self._show_context_menu(self.popup.rect().center())
+        )
 
-        shortcut_delete = QShortcut(QKeySequence(self._shortcuts["delete_app"]), self.popup)
+        shortcut_delete = QShortcut(
+            QKeySequence(self._shortcuts["delete_app"]), self.popup
+        )
         shortcut_delete.activated.connect(self._delete_selected_app)
 
         return self.popup
@@ -1070,8 +1188,12 @@ class LaunchpadWidget(BaseWidget):
         screen_geometry = target_screen.geometry()
         if not self._window["fullscreen"]:
             window_geometry = self._launchpad_popup.geometry()
-            x = (screen_geometry.width() - window_geometry.width()) // 2 + screen_geometry.x()
-            y = (screen_geometry.height() - window_geometry.height()) // 2 + screen_geometry.y()
+            x = (
+                screen_geometry.width() - window_geometry.width()
+            ) // 2 + screen_geometry.x()
+            y = (
+                screen_geometry.height() - window_geometry.height()
+            ) // 2 + screen_geometry.y()
             self._launchpad_popup.move(x, y)
         if self._overlay:
             self._overlay.update_geometry(screen_geometry)
@@ -1088,8 +1210,14 @@ class LaunchpadWidget(BaseWidget):
         import win32api
 
         try:
-            language, codepage = win32api.GetFileVersionInfo(path, "\\VarFileInfo\\Translation")[0]
-            stringFileInfo = "\\StringFileInfo\\%04X%04X\\%s" % (language, codepage, "FileDescription")
+            language, codepage = win32api.GetFileVersionInfo(
+                path, "\\VarFileInfo\\Translation"
+            )[0]
+            stringFileInfo = "\\StringFileInfo\\%04X%04X\\%s" % (
+                language,
+                codepage,
+                "FileDescription",
+            )
             description = win32api.GetFileVersionInfo(path, stringFileInfo)
         except:
             description = "unknown"
@@ -1101,13 +1229,17 @@ class LaunchpadWidget(BaseWidget):
         app_data = None
 
         if ext == ".lnk":
-            target_path, icon_path, app_name = ShortcutResolver.resolve_lnk_target(file_path, self._warning_dialog)
+            target_path, icon_path, app_name = ShortcutResolver.resolve_lnk_target(
+                file_path, self._warning_dialog
+            )
             if not app_name or not target_path:
                 self._warning_dialog(f"Failed to resolve shortcut: {file_path}")
                 return
             if not icon_path:
                 icon_path = target_path
-            icon_png = IconExtractorUtil.extract_icon_from_path(icon_path, self._icons_dir)
+            icon_png = IconExtractorUtil.extract_icon_from_path(
+                icon_path, self._icons_dir
+            )
             if not icon_png:
                 self._warning_dialog(
                     f"Failed to extract icon for application<br><b>{file_path}</b><br>Please select an icon manually."
@@ -1118,9 +1250,13 @@ class LaunchpadWidget(BaseWidget):
         elif ext == ".exe":
             title = self._get_file_description(file_path)
             if not title:
-                self._warning_dialog(f"Failed to get description for executable: {file_path}")
+                self._warning_dialog(
+                    f"Failed to get description for executable: {file_path}"
+                )
                 return
-            icon_png = IconExtractorUtil.extract_icon_from_path(file_path, self._icons_dir)
+            icon_png = IconExtractorUtil.extract_icon_from_path(
+                file_path, self._icons_dir
+            )
 
             if not icon_png:
                 self._warning_dialog(
@@ -1180,7 +1316,9 @@ class LaunchpadWidget(BaseWidget):
             event.accept()
 
         elif event.key() in [Qt.Key.Key_Return, Qt.Key.Key_Enter]:
-            focused_icon = next((icon for icon in self._app_icons if icon.hasFocus()), None)
+            focused_icon = next(
+                (icon for icon in self._app_icons if icon.hasFocus()), None
+            )
             if focused_icon:
                 self._launch_app(focused_icon.app_data)
             event.accept()
@@ -1193,7 +1331,12 @@ class LaunchpadWidget(BaseWidget):
                 self._launchpad_popup.search_input.setFocus()
             event.accept()
 
-        elif event.key() in [Qt.Key.Key_Left, Qt.Key.Key_Right, Qt.Key.Key_Up, Qt.Key.Key_Down]:
+        elif event.key() in [
+            Qt.Key.Key_Left,
+            Qt.Key.Key_Right,
+            Qt.Key.Key_Up,
+            Qt.Key.Key_Down,
+        ]:
             self._handle_arrow_navigation(event.key())
             event.accept()
         else:
@@ -1202,7 +1345,9 @@ class LaunchpadWidget(BaseWidget):
     def _handle_arrow_navigation(self, key):
         if not self._app_icons:
             return
-        current_index = next((i for i, icon in enumerate(self._app_icons) if icon.hasFocus()), -1)
+        current_index = next(
+            (i for i, icon in enumerate(self._app_icons) if icon.hasFocus()), -1
+        )
         if current_index == -1:
             self._focus_icon(0)
             return
@@ -1214,7 +1359,9 @@ class LaunchpadWidget(BaseWidget):
         elif key == Qt.Key.Key_Up:
             new_index = max(0, current_index - self._grid_columns)
         elif key == Qt.Key.Key_Down:
-            new_index = min(len(self._app_icons) - 1, current_index + self._grid_columns)
+            new_index = min(
+                len(self._app_icons) - 1, current_index + self._grid_columns
+            )
         self._focus_icon(new_index)
 
     def _popup_enter_event(self, event):
@@ -1287,7 +1434,9 @@ class LaunchpadWidget(BaseWidget):
             )
             no_apps_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             no_apps_label.setTextFormat(Qt.TextFormat.RichText)
-            no_apps_label.setStyleSheet("font-size: 24pt;font-family: 'Segoe UI';padding: 40px")
+            no_apps_label.setStyleSheet(
+                "font-size: 24pt;font-family: 'Segoe UI';padding: 40px"
+            )
             grid_layout.addWidget(no_apps_label, 0, 0, 1, 1)
             return
         for app_data in filtered_apps:
@@ -1357,9 +1506,17 @@ class LaunchpadWidget(BaseWidget):
                     self._launchpad_popup.winId(),
                     Acrylic=False,
                     DarkMode=True if not self._window["fullscreen"] else False,
-                    RoundCorners=self._window_style["round_corners"] if not self._window["fullscreen"] else False,
+                    RoundCorners=(
+                        self._window_style["round_corners"]
+                        if not self._window["fullscreen"]
+                        else False
+                    ),
                     RoundCornersType=self._window_style["round_corners_type"],
-                    BorderColor=self._window_style["border_color"] if not self._window["fullscreen"] else None,
+                    BorderColor=(
+                        self._window_style["border_color"]
+                        if not self._window["fullscreen"]
+                        else None
+                    ),
                 )
             except Exception as e:
                 logging.warning(f"Failed to apply blur effect: {e}")
@@ -1418,7 +1575,10 @@ class LaunchpadWidget(BaseWidget):
         cache_key = f"{icon_path}_{self._app_icon_size}_{self._dpr}"
         _ICON_CACHE[cache_key] = pixmap
         for app_icon in self._app_icons:
-            if hasattr(app_icon, "app_data") and app_icon.app_data.get("icon", "") == icon_path:
+            if (
+                hasattr(app_icon, "app_data")
+                and app_icon.app_data.get("icon", "") == icon_path
+            ):
                 if hasattr(app_icon, "_icon_loaded") and not app_icon._icon_loaded:
                     app_icon.icon_label.setPixmap(pixmap)
                     app_icon.icon_label.setStyleSheet("")
@@ -1440,7 +1600,9 @@ class LaunchpadWidget(BaseWidget):
         first_icon.adjustSize()
         actual_cell_width = first_icon.width()
 
-        max_columns = grid_container_width // actual_cell_width if actual_cell_width > 0 else 1
+        max_columns = (
+            grid_container_width // actual_cell_width if actual_cell_width > 0 else 1
+        )
 
         calculated_columns = max(1, int(max_columns))
         self._grid_columns = calculated_columns
@@ -1452,7 +1614,11 @@ class LaunchpadWidget(BaseWidget):
         return screen
 
     def _add_new_app(self):
-        dialog = AppDialog(self._launchpad_popup if self._launchpad_popup else None, None, self._icons_dir)
+        dialog = AppDialog(
+            self._launchpad_popup if self._launchpad_popup else None,
+            None,
+            self._icons_dir,
+        )
         if dialog.exec() == QDialog.DialogCode.Accepted:
             app_data = dialog.get_app_data()
             app_data["id"] = int(time.time() * 1000)
@@ -1463,7 +1629,11 @@ class LaunchpadWidget(BaseWidget):
                 self._populate_grid()
 
     def _edit_app(self, app_data: Dict[str, Any]):
-        dialog = AppDialog(self._launchpad_popup if self._launchpad_popup else None, app_data, self._icons_dir)
+        dialog = AppDialog(
+            self._launchpad_popup if self._launchpad_popup else None,
+            app_data,
+            self._icons_dir,
+        )
         if dialog.exec() == QDialog.DialogCode.Accepted:
             updated_data = dialog.get_app_data()
             updated_data["id"] = app_data.get("id", int(time.time() * 1000))
@@ -1549,7 +1719,9 @@ class LaunchpadWidget(BaseWidget):
         content_layout.setContentsMargins(20, 20, 20, 0)
         content_layout.setSpacing(0)
 
-        message_label = QLabel(f"Are you sure you want to delete '{app_data.get('title', 'Unknown')}'?")
+        message_label = QLabel(
+            f"Are you sure you want to delete '{app_data.get('title', 'Unknown')}'?"
+        )
         message_label.setWordWrap(True)
         message_label.setProperty("class", "message")
         content_layout.addWidget(message_label)
@@ -1593,7 +1765,9 @@ class LaunchpadWidget(BaseWidget):
             if self._launchpad_popup:
                 self._populate_grid()
                 if self._app_icons:
-                    if prev_focus_index is not None and 0 <= prev_focus_index < len(self._app_icons):
+                    if prev_focus_index is not None and 0 <= prev_focus_index < len(
+                        self._app_icons
+                    ):
                         self._app_icons[prev_focus_index].setFocus()
                     else:
                         self._app_icons[0].setFocus()

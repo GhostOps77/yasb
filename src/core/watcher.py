@@ -34,12 +34,18 @@ class FileModifiedEventHandler(PatternMatchingEventHandler):
     def on_modified(self, event: FileModifiedEvent):
         modified_file = basename(event.src_path)
 
-        if modified_file == self.styles_file and self.bar_manager.config["watch_stylesheet"]:
+        if (
+            modified_file == self.styles_file
+            and self.bar_manager.config["watch_stylesheet"]
+        ):
             new_hash = self._file_hash(event.src_path)
             if new_hash and new_hash != self._last_styles_hash:
                 self._last_styles_hash = new_hash
                 self.bar_manager.styles_modified.emit()
-        elif modified_file == self.config_file and self.bar_manager.config["watch_config"]:
+        elif (
+            modified_file == self.config_file
+            and self.bar_manager.config["watch_config"]
+        ):
             new_hash = self._file_hash(event.src_path)
             if new_hash and new_hash != self._last_config_hash:
                 self._last_config_hash = new_hash

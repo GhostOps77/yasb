@@ -19,7 +19,12 @@ class ApplicationWindow:
     """
 
     def __init__(
-        self, hwnd, excluded_classes=None, ignored_processes=None, ignored_titles=None, strict_filtering=False
+        self,
+        hwnd,
+        excluded_classes=None,
+        ignored_processes=None,
+        ignored_titles=None,
+        strict_filtering=False,
     ):
         self.hwnd = hwnd
         self.title = self._get_title()
@@ -98,7 +103,12 @@ class ApplicationWindow:
         try:
             DWMWA_CLOAKED = 14
             cloaked = ctypes.c_uint(0)
-            res = DwmGetWindowAttribute(int(self.hwnd), DWMWA_CLOAKED, ctypes.byref(cloaked), ctypes.sizeof(cloaked))
+            res = DwmGetWindowAttribute(
+                int(self.hwnd),
+                DWMWA_CLOAKED,
+                ctypes.byref(cloaked),
+                ctypes.sizeof(cloaked),
+            )
             return res == 0 and cloaked.value > 0
         except Exception:
             return False

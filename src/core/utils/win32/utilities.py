@@ -120,7 +120,12 @@ def get_window_extended_frame_bounds(hwnd: int) -> dict:
         ctypes.sizeof(rect),
     )
 
-    return {"x": rect.left, "y": rect.top, "width": rect.right - rect.left, "height": rect.bottom - rect.top}
+    return {
+        "x": rect.left,
+        "y": rect.top,
+        "width": rect.right - rect.left,
+        "height": rect.bottom - rect.top,
+    }
 
 
 def get_window_rect(hwnd: int) -> dict:
@@ -170,7 +175,14 @@ def qmenu_rounded_corners(qwidget):
         qwidget.setStyle(QStyleFactory.create("Fusion"))
         hwnd = int(qwidget.winId())
 
-        Blur(hwnd, Acrylic=False, DarkMode=False, RoundCorners=True, RoundCornersType="normal", BorderColor="system")
+        Blur(
+            hwnd,
+            Acrylic=False,
+            DarkMode=False,
+            RoundCorners=True,
+            RoundCornersType="normal",
+            BorderColor="system",
+        )
     except Exception:
         # If anything goes wrong, just skip it.
         pass
@@ -202,9 +214,9 @@ def find_focused_screen(follow_mouse, follow_window, screens=None):
 
     # Map device names to Qt screen names for window focus
     device_to_screen = {
-        win32api.GetMonitorInfo(win32api.MonitorFromRect((geo.left(), geo.top(), geo.right(), geo.bottom()))).get(
-            "Device"
-        ): screen.name()
+        win32api.GetMonitorInfo(
+            win32api.MonitorFromRect((geo.left(), geo.top(), geo.right(), geo.bottom()))
+        ).get("Device"): screen.name()
         for screen in qt_screens
         for geo in [screen.geometry()]
     }

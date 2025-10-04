@@ -128,13 +128,17 @@ class LogPipeServer:
 
             # Check the handle
             if handle == INVALID_HANDLE_VALUE:
-                logger.error(f"Log pipe server failed to create handle. Err: {GetLastError()}")
+                logger.error(
+                    f"Log pipe server failed to create handle. Err: {GetLastError()}"
+                )
                 time.sleep(1)
                 continue
 
             # Wait for a client to connect
             if not ConnectNamedPipe(handle):
-                logger.error(f"Log pipe server failed to connect. Err: {GetLastError()}")
+                logger.error(
+                    f"Log pipe server failed to connect. Err: {GetLastError()}"
+                )
                 DisconnectNamedPipe(handle)
                 CloseHandle(handle)
                 time.sleep(0.1)
@@ -151,7 +155,9 @@ class LogPipeServer:
             while True:
                 msg = read_message(handle)
                 if msg is None:
-                    logger.error(f"Client disconnected or read error. Err: {GetLastError()}")
+                    logger.error(
+                        f"Client disconnected or read error. Err: {GetLastError()}"
+                    )
                     time.sleep(0.1)
                     break
 
@@ -223,7 +229,9 @@ class CliPipeHandler:
                 None,
             )
             if handle == INVALID_HANDLE_VALUE:
-                logger.error(f"CLI pipe server failed to create handle. Err: {GetLastError()}")
+                logger.error(
+                    f"CLI pipe server failed to create handle. Err: {GetLastError()}"
+                )
                 time.sleep(1)
                 continue
 
@@ -243,7 +251,9 @@ class CliPipeHandler:
         """Handle a client connection and process commands"""
         success, data = ReadFile(pipe, 64 * 1024)
         if not success or len(data) == 0:
-            logger.error(f"CLI client disconnected or read error. Err: {GetLastError()}")
+            logger.error(
+                f"CLI client disconnected or read error. Err: {GetLastError()}"
+            )
             return None
 
         full_command = data.decode("utf-8").strip()
@@ -252,7 +262,14 @@ class CliPipeHandler:
 
         logger.info(f"CLI server received command: {full_command}")
 
-        if command in ["stop", "reload", "show-bar", "hide-bar", "toggle-bar", "toggle-widget"]:
+        if command in [
+            "stop",
+            "reload",
+            "show-bar",
+            "hide-bar",
+            "toggle-bar",
+            "toggle-widget",
+        ]:
             success = WriteFile(pipe, b"ACK")
             if not success:
                 logger.error(f"Write ACK failed. Err: {GetLastError()}")

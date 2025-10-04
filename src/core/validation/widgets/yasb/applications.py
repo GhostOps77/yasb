@@ -24,7 +24,10 @@ VALIDATION_SCHEMA = {
         "schema": {
             "enabled": {"type": "boolean", "default": DEFAULTS["animation"]["enabled"]},
             "type": {"type": "string", "default": DEFAULTS["animation"]["type"]},
-            "duration": {"type": "integer", "default": DEFAULTS["animation"]["duration"]},
+            "duration": {
+                "type": "integer",
+                "default": DEFAULTS["animation"]["duration"],
+            },
         },
         "default": DEFAULTS["animation"],
     },
@@ -51,5 +54,9 @@ VALIDATION_SCHEMA = {
         },
         "default": {"enabled": False, "color": "black", "offset": [1, 1], "radius": 3},
     },
-    "container_padding": {"type": "dict", "default": DEFAULTS["container_padding"], "required": False},
+    "container_padding": {
+        "type": "dict",
+        "default": DEFAULTS["container_padding"],
+        "required": False,
+    },
 }

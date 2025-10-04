@@ -9,7 +9,17 @@ from typing import Any, TypeGuard, cast, override
 
 import psutil
 from PyQt6 import sip
-from PyQt6.QtCore import QEvent, QObject, QPoint, QPropertyAnimation, QRect, QSize, Qt, QTimer, pyqtSlot
+from PyQt6.QtCore import (
+    QEvent,
+    QObject,
+    QPoint,
+    QPropertyAnimation,
+    QRect,
+    QSize,
+    Qt,
+    QTimer,
+    pyqtSlot,
+)
 from PyQt6.QtGui import (
     QColor,
     QFontMetrics,
@@ -20,7 +30,14 @@ from PyQt6.QtGui import (
     QStaticText,
     QTransform,
 )
-from PyQt6.QtWidgets import QApplication, QFrame, QGraphicsDropShadowEffect, QLabel, QMenu, QWidget
+from PyQt6.QtWidgets import (
+    QApplication,
+    QFrame,
+    QGraphicsDropShadowEffect,
+    QLabel,
+    QMenu,
+    QWidget,
+)
 from winrt.windows.data.xml.dom import XmlDocument
 from winrt.windows.ui.notifications import ToastNotification, ToastNotificationManager
 
@@ -65,7 +82,9 @@ def is_valid_percentage_str(s: str) -> bool:
 
 
 def get_screen_by_name(screen_name: str) -> QScreen:
-    return next(filter(lambda scr: screen_name in scr.name(), QApplication.screens()), None)
+    return next(
+        filter(lambda scr: screen_name in scr.name(), QApplication.screens()), None
+    )
 
 
 def add_shadow(el: QWidget, options: dict[str, Any]) -> None:
@@ -97,19 +116,20 @@ def add_shadow(el: QWidget, options: dict[str, Any]) -> None:
     el.setGraphicsEffect(shadow_effect)
 
 
-def build_widget_label(self, content: str, content_alt: str = None, content_shadow: dict = None):
+def build_widget_label(
+    self, content: str, content_alt: str = None, content_shadow: dict = None
+):
     def process_content(content, is_alt=False):
-        label_parts = re.split("(<span.*?>.*?</span>)", content)
-        label_parts = [part for part in label_parts if part]
+        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", content)
         widgets = []
         for part in label_parts:
             part = part.strip()
             if not part:
                 continue
-            if "<span" in part and "</span>" in part:
+            if part.startswith("<span") and part.endswith("</span>"):
                 class_name = re.search(r'class=(["\'])([^"\']+?)\1', part)
                 class_result = class_name.group(2) if class_name else "icon"
-                icon = re.sub(r"<span.*?>|</span>", "", part).strip()
+                icon = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
                 label = QLabel(icon)
                 label.setProperty("class", class_result)
             else:
@@ -137,7 +157,10 @@ def build_progress_widget(self, options: dict[str, Any]) -> None:
     if not options["enabled"]:
         return
 
-    from core.utils.widgets.circular_progress_bar import CircularProgressBar, CircularProgressWidget
+    from core.utils.widgets.circular_progress_bar import (
+        CircularProgressBar,
+        CircularProgressWidget,
+    )
 
     self.progress_data = CircularProgressBar(
         parent=self,
@@ -162,7 +185,9 @@ def get_app_identifier():
     from settings import APP_ID
 
     try:
-        key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, f"SOFTWARE\\Classes\\AppUserModelId\\{APP_ID}")
+        key = winreg.OpenKey(
+            winreg.HKEY_LOCAL_MACHINE, f"SOFTWARE\\Classes\\AppUserModelId\\{APP_ID}"
+        )
         winreg.CloseKey(key)
         return APP_ID
     except:
@@ -242,7 +267,9 @@ class PopupWidget(QWidget):
         if name == "class":
             self._popup_content.setProperty(name, value)
 
-    def setPosition(self, alignment="left", direction="down", offset_left=0, offset_top=0):
+    def setPosition(
+        self, alignment="left", direction="down", offset_left=0, offset_top=0
+    ):
         """
         Position the popup relative to its parent widget.
         Args:
@@ -259,19 +286,27 @@ class PopupWidget(QWidget):
         if not parent:
             return
 
-        widget_global_pos = parent.mapToGlobal(QPoint(offset_left, parent.height() + offset_top))
+        widget_global_pos = parent.mapToGlobal(
+            QPoint(offset_left, parent.height() + offset_top)
+        )
 
         if direction == "up":
             global_y = parent.mapToGlobal(QPoint(0, 0)).y() - self.height() - offset_top
-            widget_global_pos = QPoint(parent.mapToGlobal(QPoint(0, 0)).x() + offset_left, global_y)
+            widget_global_pos = QPoint(
+                parent.mapToGlobal(QPoint(0, 0)).x() + offset_left, global_y
+            )
 
         if alignment == "left":
             global_position = widget_global_pos
         elif alignment == "right":
-            global_position = QPoint(widget_global_pos.x() + parent.width() - self.width(), widget_global_pos.y())
+            global_position = QPoint(
+                widget_global_pos.x() + parent.width() - self.width(),
+                widget_global_pos.y(),
+            )
         elif alignment == "center":
             global_position = QPoint(
-                widget_global_pos.x() + (parent.width() - self.width()) // 2, widget_global_pos.y()
+                widget_global_pos.x() + (parent.width() - self.width()) // 2,
+                widget_global_pos.y(),
             )
         else:
             global_position = widget_global_pos
@@ -281,9 +316,15 @@ class PopupWidget(QWidget):
         if screen:
             screen_geometry = screen.geometry()
             # Ensure the popup fits horizontally
-            x = max(screen_geometry.left(), min(global_position.x(), screen_geometry.right() - self.width()))
+            x = max(
+                screen_geometry.left(),
+                min(global_position.x(), screen_geometry.right() - self.width()),
+            )
             # Ensure the popup fits vertically
-            y = max(screen_geometry.top(), min(global_position.y(), screen_geometry.bottom() - self.height()))
+            y = max(
+                screen_geometry.top(),
+                min(global_position.y(), screen_geometry.bottom() - self.height()),
+            )
             global_position = QPoint(x, y)
         self.move(global_position)
 
@@ -466,7 +507,8 @@ class ToastNotifier:
             else ""
         )
         xml = XmlDocument()
-        xml.load_xml(f"""
+        xml.load_xml(
+            f"""
         <toast activationType="protocol" duration="{duration}"{scenario}>
             <visual>
                 <binding template="ToastGeneric">
@@ -477,7 +519,8 @@ class ToastNotifier:
             </visual>
             {actions}
         </toast>
-        """)
+        """
+        )
         notification = ToastNotification(xml)
         self.toaster.show(notification)
 
@@ -517,7 +560,9 @@ class ScrollingLabel(QLabel):
         super().__init__(parent)
         if options is None:
             options = {}
-        self._update_interval: int = max(min(options.get("update_interval_ms", 33), 1000), 4)
+        self._update_interval: int = max(
+            min(options.get("update_interval_ms", 33), 1000), 4
+        )
         self._ease_slope: int = options.get("ease_slope", 20)
         self._ease_pos: float = options.get("ease_pos", 0.8)
         self._ease_min: float = max(min(options.get("ease_min_value", 0.5), 1), 0.2)
@@ -540,7 +585,9 @@ class ScrollingLabel(QLabel):
         self.setText(self._text)
 
         self._scroll_timer = QTimer(self)
-        self._scroll_timer.timeout.connect(self._scroll_text)  # pyright: ignore[reportUnknownMemberType]
+        self._scroll_timer.timeout.connect(
+            self._scroll_text
+        )  # pyright: ignore[reportUnknownMemberType]
         self._update_text_metrics()
         self._scroll_timer.start(self._update_interval)
 
@@ -566,7 +613,12 @@ class ScrollingLabel(QLabel):
         self._offset = 0
         self._text = ""
         if a0 is not None:
-            self._text = self._label_padding_chars + a0 + self._separator + self._label_padding_chars
+            self._text = (
+                self._label_padding_chars
+                + a0
+                + self._separator
+                + self._label_padding_chars
+            )
             self._static_text = QStaticText(self._text)
             self._static_text.prepare(QTransform(), self.font())
         self._update_text_metrics()
@@ -578,7 +630,10 @@ class ScrollingLabel(QLabel):
             self._offset += 1
         elif self._style == ScrollingLabel.Style.SCROLL_RIGHT:
             self._offset -= 1
-        elif self._style in {ScrollingLabel.Style.BOUNCE, ScrollingLabel.Style.BOUNCE_EASE}:
+        elif self._style in {
+            ScrollingLabel.Style.BOUNCE,
+            ScrollingLabel.Style.BOUNCE_EASE,
+        }:
             label_width = self.width() - self._margin.left() - self._margin.right()
             if self._text_bb_width <= label_width:
                 self._offset = (self._text_width - label_width) // 2  # center the text
@@ -611,9 +666,16 @@ class ScrollingLabel(QLabel):
         self._font_metrics = QFontMetrics(self.font())
         self._text_width = max(self._font_metrics.horizontalAdvance(self._text), 1)
         self._text_bb_width = self._font_metrics.boundingRect(self._text).width()
-        self._text_y = (self.height() + self._font_metrics.ascent() - self._font_metrics.descent() + 1) // 2
+        self._text_y = (
+            self.height()
+            + self._font_metrics.ascent()
+            - self._font_metrics.descent()
+            + 1
+        ) // 2
         if self._max_width:
-            self.setMaximumWidth(self._font_metrics.averageCharWidth() * self._max_width)
+            self.setMaximumWidth(
+                self._font_metrics.averageCharWidth() * self._max_width
+            )
 
     @override
     def paintEvent(self, a0: QPaintEvent | None):
@@ -642,7 +704,10 @@ class ScrollingLabel(QLabel):
             while x > self._margin.left() - self._text_width:
                 painter.drawStaticText(x, text_y, self._static_text)
                 x -= self._text_width
-        elif self._style in {ScrollingLabel.Style.BOUNCE, ScrollingLabel.Style.BOUNCE_EASE}:
+        elif self._style in {
+            ScrollingLabel.Style.BOUNCE,
+            ScrollingLabel.Style.BOUNCE_EASE,
+        }:
             x = self._margin.left() - self._offset
             painter.drawStaticText(x, text_y, self._static_text)
 

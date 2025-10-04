@@ -156,7 +156,10 @@ class CustomToolTip(QFrame):
 
     def extract_class_styles(self, stylesheet, classes):
         pattern = re.compile(
-            r"(\.({})\s*\{{[^}}]*\}})".format("|".join(re.escape(cls) for cls in classes)), re.MULTILINE
+            r"(\.({})\s*\{{[^}}]*\}})".format(
+                "|".join(re.escape(cls) for cls in classes)
+            ),
+            re.MULTILINE,
         )
         matches = pattern.findall(stylesheet)
         return "\n".join(match[0] for match in matches)
@@ -186,11 +189,16 @@ class CustomToolTip(QFrame):
             self.label.setText(text)
             self.adjustSize()
             if self.isVisible() and self._base_pos:
-                self.move(self._base_pos.x(), self._base_pos.y() + int(self._slide_offset))
+                self.move(
+                    self._base_pos.x(), self._base_pos.y() + int(self._slide_offset)
+                )
 
     def _calculate_position(self, widget_geometry):
         """Calculate tooltip position based on widget geometry and screen bounds."""
-        screen = QGuiApplication.screenAt(widget_geometry.center()) or QGuiApplication.primaryScreen()
+        screen = (
+            QGuiApplication.screenAt(widget_geometry.center())
+            or QGuiApplication.primaryScreen()
+        )
         screen_geometry = screen.geometry()
 
         # Center horizontally on widget
@@ -334,7 +342,11 @@ class TooltipEventFilter(QObject):
 
             geometry = (
                 global_geometry
-                if (self.widget.isVisible() and widget_rect.width() > 0 and widget_rect.height() > 0)
+                if (
+                    self.widget.isVisible()
+                    and widget_rect.width() > 0
+                    and widget_rect.height() > 0
+                )
                 else None
             )
             self.tooltip.show_tooltip(self.tooltip_text, geometry)
@@ -389,12 +401,20 @@ class TooltipEventFilter(QObject):
                 if not self.hide_timer.isActive():
                     self.hide_timer.start(10)  # Always use 10ms for quick hide
                 self._mouse_inside = False
-            elif event.type() in (QEvent.Type.MouseButtonPress, QEvent.Type.MouseButtonDblClick, QEvent.Type.FocusIn):
+            elif event.type() in (
+                QEvent.Type.MouseButtonPress,
+                QEvent.Type.MouseButtonDblClick,
+                QEvent.Type.FocusIn,
+            ):
                 self.hover_timer.stop()
                 self.hide_timer.stop()
                 self._hide_tooltip()
         # Application-wide mouse move
-        if event.type() == QEvent.Type.MouseMove and self.tooltip and self.tooltip.isVisible():
+        if (
+            event.type() == QEvent.Type.MouseMove
+            and self.tooltip
+            and self.tooltip.isVisible()
+        ):
             self._poll_mouse()
         return super().eventFilter(obj, event)
 

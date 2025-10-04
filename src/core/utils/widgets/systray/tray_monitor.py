@@ -126,7 +126,15 @@ class TrayMonitor(QObject):
         self.hwnd = self.tray_monitor_window.hwnd
 
         # Set the window as the foreground window
-        SetWindowPos(self.hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE)
+        SetWindowPos(
+            self.hwnd,
+            HWND_TOPMOST,
+            0,
+            0,
+            0,
+            0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE,
+        )
 
         # Set a timer to keep the window as a foreground window to keep receiving messages
         SetTimer(self.hwnd, 1, 100, None)
@@ -167,7 +175,9 @@ class TrayMonitor(QObject):
             return 0
         elif uMsg == WM_TIMER:
             # We need to set our window topmost to have the priority over the native system tray
-            SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE)
+            SetWindowPos(
+                hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE
+            )
             return 0
         elif uMsg == WM_COPYDATA:
             return self.handle_copy_data(hwnd, uMsg, wParam, lParam)
@@ -200,14 +210,20 @@ class TrayMonitor(QObject):
                             IconData(
                                 hWnd=icon_data.hWnd,
                                 uID=icon_data.uID,
-                                guid=icon_data.guidItem.to_uuid() if icon_data.uFlags & NIF_GUID else None,
+                                guid=(
+                                    icon_data.guidItem.to_uuid()
+                                    if icon_data.uFlags & NIF_GUID
+                                    else None
+                                ),
                             )
                         )
                     except RuntimeError:
                         return 0
             return self.forward_message(hwnd, uMsg, wParam, lParam)
         elif copy_data.dwData == 3 and copy_data.lpData:
-            icon_identifier = cast(copy_data.lpData, POINTER(WINNOTIFYICONIDENTIFIER)).contents
+            icon_identifier = cast(
+                copy_data.lpData, POINTER(WINNOTIFYICONIDENTIFIER)
+            ).contents
             cursor_pos = utils.cursor_position()
             left = cursor_pos[0]
             top = cursor_pos[1] + 1
@@ -270,7 +286,11 @@ class TrayMonitor(QObject):
             icon_image = hicon_to_image(icon_data.hIcon)
             if icon_image is not None:
                 if icon_image.size != (32, 32):  # Ensure we have consistent icon sizes
-                    icon_image = icon_image.resize((32, 32), Image.Resampling.LANCZOS).filter(SHARPEN)  # pyright: ignore [reportUnknownMemberType]
+                    icon_image = icon_image.resize(
+                        (32, 32), Image.Resampling.LANCZOS
+                    ).filter(
+                        SHARPEN
+                    )  # pyright: ignore [reportUnknownMemberType]
                 icon_image = QPixmap.fromImage(ImageQt(icon_image))
             icon_data.icon_image = icon_image
 

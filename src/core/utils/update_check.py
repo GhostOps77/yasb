@@ -51,7 +51,9 @@ class UpdateCheckService:
                 )
             self.update_last_check()
         except urllib.error.URLError:
-            logging.warning("UpdateCheckService Failed to check for updates: Network error.")
+            logging.warning(
+                "UpdateCheckService Failed to check for updates: Network error."
+            )
         except Exception as e:
             logging.warning(f"UpdateCheckService Failed to check for updates: {e}")
 

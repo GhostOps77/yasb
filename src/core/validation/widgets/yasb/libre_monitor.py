@@ -27,7 +27,11 @@ DEFAULTS = {
     "server_port": 8085,
     "server_username": "",
     "server_password": "",
-    "callbacks": {"on_left": "toggle_label", "on_middle": "do_nothing", "on_right": "do_nothing"},
+    "callbacks": {
+        "on_left": "toggle_label",
+        "on_middle": "do_nothing",
+        "on_right": "do_nothing",
+    },
     "libre_menu": {
         "blur": True,
         "round_corners": True,
@@ -54,7 +58,12 @@ VALIDATION_SCHEMA = {
     },
     "label": {"type": "string", "default": DEFAULTS["label"]},
     "label_alt": {"type": "string", "default": DEFAULTS["label_alt"]},
-    "update_interval": {"type": "integer", "default": DEFAULTS["update_interval"], "min": 0, "max": 60000},
+    "update_interval": {
+        "type": "integer",
+        "default": DEFAULTS["update_interval"],
+        "min": 0,
+        "max": 60000,
+    },
     "sensor_id": {
         "type": "string",
         "default": DEFAULTS["sensor_id"],
@@ -66,7 +75,12 @@ VALIDATION_SCHEMA = {
         "maxlength": 9,
         "schema": {"type": "string"},
     },
-    "histogram_num_columns": {"type": "integer", "default": DEFAULTS["histogram_num_columns"], "min": 0, "max": 128},
+    "histogram_num_columns": {
+        "type": "integer",
+        "default": DEFAULTS["histogram_num_columns"],
+        "min": 0,
+        "max": 128,
+    },
     "precision": {
         "type": "integer",
         "default": DEFAULTS["precision"],
@@ -157,14 +171,38 @@ VALIDATION_SCHEMA = {
         "required": False,
         "schema": {
             "blur": {"type": "boolean", "default": DEFAULTS["libre_menu"]["blur"]},
-            "round_corners": {"type": "boolean", "default": DEFAULTS["libre_menu"]["round_corners"]},
-            "round_corners_type": {"type": "string", "default": DEFAULTS["libre_menu"]["round_corners_type"]},
-            "border_color": {"type": "string", "default": DEFAULTS["libre_menu"]["border_color"]},
-            "alignment": {"type": "string", "default": DEFAULTS["libre_menu"]["alignment"]},
-            "direction": {"type": "string", "default": DEFAULTS["libre_menu"]["direction"]},
-            "offset_top": {"type": "integer", "default": DEFAULTS["libre_menu"]["offset_top"]},
-            "offset_left": {"type": "integer", "default": DEFAULTS["libre_menu"]["offset_left"]},
-            "header_label": {"type": "string", "default": DEFAULTS["libre_menu"]["header_label"]},
+            "round_corners": {
+                "type": "boolean",
+                "default": DEFAULTS["libre_menu"]["round_corners"],
+            },
+            "round_corners_type": {
+                "type": "string",
+                "default": DEFAULTS["libre_menu"]["round_corners_type"],
+            },
+            "border_color": {
+                "type": "string",
+                "default": DEFAULTS["libre_menu"]["border_color"],
+            },
+            "alignment": {
+                "type": "string",
+                "default": DEFAULTS["libre_menu"]["alignment"],
+            },
+            "direction": {
+                "type": "string",
+                "default": DEFAULTS["libre_menu"]["direction"],
+            },
+            "offset_top": {
+                "type": "integer",
+                "default": DEFAULTS["libre_menu"]["offset_top"],
+            },
+            "offset_left": {
+                "type": "integer",
+                "default": DEFAULTS["libre_menu"]["offset_left"],
+            },
+            "header_label": {
+                "type": "string",
+                "default": DEFAULTS["libre_menu"]["header_label"],
+            },
             "precision": {
                 "type": "integer",
                 "default": DEFAULTS["libre_menu"]["precision"],
@@ -220,9 +258,18 @@ VALIDATION_SCHEMA = {
         "required": False,
         "schema": {
             "top": {"type": "integer", "default": DEFAULTS["container_padding"]["top"]},
-            "left": {"type": "integer", "default": DEFAULTS["container_padding"]["left"]},
-            "bottom": {"type": "integer", "default": DEFAULTS["container_padding"]["bottom"]},
-            "right": {"type": "integer", "default": DEFAULTS["container_padding"]["right"]},
+            "left": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["left"],
+            },
+            "bottom": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["bottom"],
+            },
+            "right": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["right"],
+            },
         },
         "default": DEFAULTS["container_padding"],
     },
@@ -232,7 +279,10 @@ VALIDATION_SCHEMA = {
         "schema": {
             "enabled": {"type": "boolean", "default": DEFAULTS["animation"]["enabled"]},
             "type": {"type": "string", "default": DEFAULTS["animation"]["type"]},
-            "duration": {"type": "integer", "default": DEFAULTS["animation"]["duration"]},
+            "duration": {
+                "type": "integer",
+                "default": DEFAULTS["animation"]["duration"],
+            },
         },
         "default": DEFAULTS["animation"],
     },

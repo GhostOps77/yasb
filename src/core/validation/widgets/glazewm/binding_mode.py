@@ -23,7 +23,11 @@ DEFAULTS = {
     },
     "animation": {"enabled": True, "type": "fadeInOut", "duration": 200},
     "container_padding": {"top": 0, "left": 0, "bottom": 0, "right": 0},
-    "callbacks": {"on_left": "next_binding_mode", "on_middle": "toggle_label", "on_right": "disable_binding_mode"},
+    "callbacks": {
+        "on_left": "next_binding_mode",
+        "on_middle": "toggle_label",
+        "on_right": "disable_binding_mode",
+    },
 }
 
 VALIDATION_SCHEMA = {
@@ -98,7 +102,10 @@ VALIDATION_SCHEMA = {
         "schema": {
             "enabled": {"type": "boolean", "default": DEFAULTS["animation"]["enabled"]},
             "type": {"type": "string", "default": DEFAULTS["animation"]["type"]},
-            "duration": {"type": "integer", "default": DEFAULTS["animation"]["duration"]},
+            "duration": {
+                "type": "integer",
+                "default": DEFAULTS["animation"]["duration"],
+            },
         },
         "default": DEFAULTS["animation"],
     },

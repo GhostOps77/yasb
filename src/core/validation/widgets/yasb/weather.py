@@ -51,18 +51,35 @@ DEFAULTS: dict[str, Any] = {
     },
     "animation": {"enabled": True, "type": "fadeInOut", "duration": 200},
     "container_padding": {"top": 0, "left": 0, "bottom": 0, "right": 0},
-    "callbacks": {"on_left": "do_nothing", "on_middle": "do_nothing", "on_right": "do_nothing"},
+    "callbacks": {
+        "on_left": "do_nothing",
+        "on_middle": "do_nothing",
+        "on_right": "do_nothing",
+    },
 }
 
 VALIDATION_SCHEMA: dict[str, Any] = {
     "label": {"type": "string", "default": DEFAULTS["label"]},
     "label_alt": {"type": "string", "default": DEFAULTS["label_alt"]},
-    "class_name": {"type": "string", "required": False, "default": DEFAULTS["class_name"]},
-    "update_interval": {"type": "integer", "default": DEFAULTS["update_interval"], "min": 60, "max": 36000000},
+    "class_name": {
+        "type": "string",
+        "required": False,
+        "default": DEFAULTS["class_name"],
+    },
+    "update_interval": {
+        "type": "integer",
+        "default": DEFAULTS["update_interval"],
+        "min": 60,
+        "max": 36000000,
+    },
     "hide_decimal": {"type": "boolean", "default": DEFAULTS["hide_decimal"]},
     "location": {"type": "string", "default": DEFAULTS["location"]},
     "api_key": {"type": "string", "default": DEFAULTS["api_key"]},
-    "units": {"type": "string", "default": DEFAULTS["units"], "allowed": ["metric", "imperial"]},
+    "units": {
+        "type": "string",
+        "default": DEFAULTS["units"],
+        "allowed": ["metric", "imperial"],
+    },
     "show_alerts": {"type": "boolean", "default": DEFAULTS["show_alerts"]},
     "tooltip": {"type": "boolean", "default": DEFAULTS["tooltip"]},
     "icons": {
@@ -137,20 +154,47 @@ VALIDATION_SCHEMA: dict[str, Any] = {
         "type": "dict",
         "schema": {
             "blur": {"type": "boolean", "default": DEFAULTS["weather_card"]["blur"]},
-            "round_corners": {"type": "boolean", "default": DEFAULTS["weather_card"]["round_corners"]},
+            "round_corners": {
+                "type": "boolean",
+                "default": DEFAULTS["weather_card"]["round_corners"],
+            },
             "round_corners_type": {
                 "type": "string",
                 "default": DEFAULTS["weather_card"]["round_corners_type"],
                 "allowed": ["normal", "small"],
             },
-            "border_color": {"type": "string", "default": DEFAULTS["weather_card"]["border_color"]},
-            "alignment": {"type": "string", "default": DEFAULTS["weather_card"]["alignment"]},
-            "direction": {"type": "string", "default": DEFAULTS["weather_card"]["direction"]},
-            "distance": {"type": "integer", "default": DEFAULTS["weather_card"]["distance"]},
-            "offset_top": {"type": "integer", "default": DEFAULTS["weather_card"]["offset_top"]},
-            "offset_left": {"type": "integer", "default": DEFAULTS["weather_card"]["offset_left"]},
-            "icon_size": {"type": "integer", "default": DEFAULTS["weather_card"]["icon_size"]},
-            "icon_smoothing": {"type": "boolean", "default": DEFAULTS["weather_card"]["icon_smoothing"]},
+            "border_color": {
+                "type": "string",
+                "default": DEFAULTS["weather_card"]["border_color"],
+            },
+            "alignment": {
+                "type": "string",
+                "default": DEFAULTS["weather_card"]["alignment"],
+            },
+            "direction": {
+                "type": "string",
+                "default": DEFAULTS["weather_card"]["direction"],
+            },
+            "distance": {
+                "type": "integer",
+                "default": DEFAULTS["weather_card"]["distance"],
+            },
+            "offset_top": {
+                "type": "integer",
+                "default": DEFAULTS["weather_card"]["offset_top"],
+            },
+            "offset_left": {
+                "type": "integer",
+                "default": DEFAULTS["weather_card"]["offset_left"],
+            },
+            "icon_size": {
+                "type": "integer",
+                "default": DEFAULTS["weather_card"]["icon_size"],
+            },
+            "icon_smoothing": {
+                "type": "boolean",
+                "default": DEFAULTS["weather_card"]["icon_smoothing"],
+            },
             "show_hourly_forecast": {
                 "type": "boolean",
                 "default": DEFAULTS["weather_card"]["show_hourly_forecast"],
@@ -160,7 +204,10 @@ VALIDATION_SCHEMA: dict[str, Any] = {
                 "allowed": ["12h", "24h"],
                 "default": DEFAULTS["weather_card"]["time_format"],
             },
-            "hourly_point_spacing": {"type": "integer", "default": DEFAULTS["weather_card"]["hourly_point_spacing"]},
+            "hourly_point_spacing": {
+                "type": "integer",
+                "default": DEFAULTS["weather_card"]["hourly_point_spacing"],
+            },
             "hourly_icon_size": {
                 "type": "integer",
                 "min": 8,
@@ -173,7 +220,10 @@ VALIDATION_SCHEMA: dict[str, Any] = {
                 "max": 10,
                 "default": DEFAULTS["weather_card"]["temp_line_width"],
             },
-            "current_line_color": {"type": "string", "default": DEFAULTS["weather_card"]["current_line_color"]},
+            "current_line_color": {
+                "type": "string",
+                "default": DEFAULTS["weather_card"]["current_line_color"],
+            },
             "current_line_width": {
                 "type": "integer",
                 "min": 0,
@@ -193,7 +243,10 @@ VALIDATION_SCHEMA: dict[str, Any] = {
         "schema": {
             "enabled": {"type": "boolean", "default": DEFAULTS["animation"]["enabled"]},
             "type": {"type": "string", "default": DEFAULTS["animation"]["type"]},
-            "duration": {"type": "integer", "default": DEFAULTS["animation"]["duration"]},
+            "duration": {
+                "type": "integer",
+                "default": DEFAULTS["animation"]["duration"],
+            },
         },
         "default": DEFAULTS["animation"],
     },
@@ -202,9 +255,18 @@ VALIDATION_SCHEMA: dict[str, Any] = {
         "required": False,
         "schema": {
             "top": {"type": "integer", "default": DEFAULTS["container_padding"]["top"]},
-            "left": {"type": "integer", "default": DEFAULTS["container_padding"]["left"]},
-            "bottom": {"type": "integer", "default": DEFAULTS["container_padding"]["bottom"]},
-            "right": {"type": "integer", "default": DEFAULTS["container_padding"]["right"]},
+            "left": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["left"],
+            },
+            "bottom": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["bottom"],
+            },
+            "right": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["right"],
+            },
         },
         "default": DEFAULTS["container_padding"],
     },
@@ -243,7 +305,11 @@ VALIDATION_SCHEMA: dict[str, Any] = {
                 "nullable": True,
                 "default": DEFAULTS["callbacks"]["on_middle"],
             },
-            "on_right": {"type": "string", "nullable": True, "default": DEFAULTS["callbacks"]["on_right"]},
+            "on_right": {
+                "type": "string",
+                "nullable": True,
+                "default": DEFAULTS["callbacks"]["on_right"],
+            },
         },
         "default": DEFAULTS["callbacks"],
     },

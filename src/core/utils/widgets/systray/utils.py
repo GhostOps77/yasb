@@ -121,7 +121,9 @@ def get_exe_path_from_hwnd(hwnd: int) -> str | None:
     PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
     h_process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, process_id.value)
     if not h_process:
-        logger.debug(f"Could not open process ID {process_id.value}. Err: {GetLastError()}")
+        logger.debug(
+            f"Could not open process ID {process_id.value}. Err: {GetLastError()}"
+        )
         return None
 
     try:

@@ -46,7 +46,9 @@ class LanguageWidget(BaseWidget):
         label_shadow: dict = None,
         container_shadow: dict = None,
     ):
-        super().__init__(int(update_interval * 1000), class_name=f"language-widget {class_name}")
+        super().__init__(
+            int(update_interval * 1000), class_name=f"language-widget {class_name}"
+        )
 
         self._show_alt_label = False
         self._label_content = label
@@ -61,7 +63,10 @@ class LanguageWidget(BaseWidget):
         self._widget_container_layout = QHBoxLayout()
         self._widget_container_layout.setSpacing(0)
         self._widget_container_layout.setContentsMargins(
-            self._padding["left"], self._padding["top"], self._padding["right"], self._padding["bottom"]
+            self._padding["left"],
+            self._padding["top"],
+            self._padding["right"],
+            self._padding["bottom"],
         )
         # Initialize container
         self._widget_container = QFrame()
@@ -71,7 +76,9 @@ class LanguageWidget(BaseWidget):
         # Add the container to the main widget layout
         self.widget_layout.addWidget(self._widget_container)
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(
+            self, self._label_content, self._label_alt_content, self._label_shadow
+        )
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("update_label", self._update_label)
@@ -92,7 +99,9 @@ class LanguageWidget(BaseWidget):
 
     def _toggle_label(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+            AnimationManager.animate(
+                self, self._animation["type"], self._animation["duration"]
+            )
         self._show_alt_label = not self._show_alt_label
         for widget in self._widgets:
             widget.setVisible(not self._show_alt_label)
@@ -102,32 +111,45 @@ class LanguageWidget(BaseWidget):
 
     def _toggle_menu(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+            AnimationManager.animate(
+                self, self._animation["type"], self._animation["duration"]
+            )
         self._show_language_menu()
 
     def _update_label(self):
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
-        label_parts = re.split("(<span.*?>.*?</span>)", active_label_content)
-        label_parts = [part for part in label_parts if part]
-        widget_index = 0
+        active_widgets_len = len(active_widgets)
+        active_label_content = (
+            self._label_alt_content if self._show_alt_label else self._label_content
+        )
+
         try:
-            lang = self._get_current_keyboard_language()
+            active_label_content = active_label_content.format(
+                lang=self._get_current_keyboard_language()
+            )
         except:
-            lang = None
+            pass
+
+        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
+        widget_index = 0
 
         for part in label_parts:
             part = part.strip()
-            if part and widget_index < len(active_widgets) and isinstance(active_widgets[widget_index], QLabel):
-                if "<span" in part and "</span>" in part:
-                    # Ensure the icon is correctly set
-                    icon = re.sub(r"<span.*?>|</span>", "", part).strip()
-                    active_widgets[widget_index].setText(icon)
-                else:
-                    # Update label with formatted content
-                    formatted_text = part.format(lang=lang) if lang else part
-                    active_widgets[widget_index].setText(formatted_text)
-                widget_index += 1
+            if not part:
+                continue
+
+            if widget_index >= active_widgets_len or not isinstance(
+                active_widgets[widget_index], QLabel
+            ):
+                continue
+
+            if part.startswith("<span") and part.endswith("</span>"):
+                # Ensure the icon is correctly set
+                part = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
+
+            # Update label with formatted content
+            active_widgets[widget_index].setText(part)
+            widget_index += 1
 
     def _on_settings_click(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
@@ -140,7 +162,10 @@ class LanguageWidget(BaseWidget):
             os.startfile("ms-settings:regionlanguage")
         except Exception:
             # Fallback to the old Control Panel if Settings app fails
-            os.startfile(os.path.join(os.environ["SystemRoot"], "System32", "control.exe"), "intl.cpl")
+            os.startfile(
+                os.path.join(os.environ["SystemRoot"], "System32", "control.exe"),
+                "intl.cpl",
+            )
 
     def _show_language_menu(self):
         """Show popup menu with available languages"""
@@ -168,7 +193,9 @@ class LanguageWidget(BaseWidget):
 
         # Create language items
         for lang_info in available_languages:
-            self._create_language_item(main_layout, lang_info, lang_info["id"] == current_lang_id)
+            self._create_language_item(
+                main_layout, lang_info, lang_info["id"] == current_lang_id
+            )
 
         footer_label = QLabel("More keyboard settings")
         footer_label.setProperty("class", "footer")
@@ -193,7 +220,9 @@ class LanguageWidget(BaseWidget):
     def _create_language_item(self, layout, lang_info, is_current=False):
         """Create a language menu item"""
         container = QFrame()
-        container.setProperty("class", f"language-item{' active' if is_current else ''}")
+        container.setProperty(
+            "class", f"language-item{' active' if is_current else ''}"
+        )
         container.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         container.setContentsMargins(0, 0, 0, 0)
 
@@ -204,8 +233,12 @@ class LanguageWidget(BaseWidget):
 
         # Left: language code or icon
         lang_code_label = QLabel(lang_info["code"])
-        lang_code_label.setProperty("class", "icon" if self._menu_config["show_layout_icon"] else "code")
-        lang_code_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        lang_code_label.setProperty(
+            "class", "icon" if self._menu_config["show_layout_icon"] else "code"
+        )
+        lang_code_label.setAlignment(
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        )
         container_layout.addWidget(lang_code_label)
 
         # Right: stack name above layout name
@@ -264,20 +297,35 @@ class LanguageWidget(BaseWidget):
             # Skip duplicates
             if layout_handle in seen_handles:
                 continue
+
             seen_handles.add(layout_handle)
 
             try:
                 lang_name_buf = ctypes.create_unicode_buffer(LOCALE_NAME_MAX_LENGTH)
                 lang_code_buf = ctypes.create_unicode_buffer(LOCALE_NAME_MAX_LENGTH)
 
-                kernel32.GetLocaleInfoW(lang_id, LOCALE_SLANGUAGE, lang_name_buf, LOCALE_NAME_MAX_LENGTH)
+                kernel32.GetLocaleInfoW(
+                    lang_id, LOCALE_SLANGUAGE, lang_name_buf, LOCALE_NAME_MAX_LENGTH
+                )
                 # get the ISO-639-2 three-letter code (e.g. "ENG")
-                if not kernel32.GetLocaleInfoW(lang_id, LOCALE_SISO639LANGNAME2, lang_code_buf, LOCALE_NAME_MAX_LENGTH):
-                    kernel32.GetLocaleInfoW(lang_id, LOCALE_SISO639LANGNAME, lang_code_buf, LOCALE_NAME_MAX_LENGTH)
+                if not kernel32.GetLocaleInfoW(
+                    lang_id,
+                    LOCALE_SISO639LANGNAME2,
+                    lang_code_buf,
+                    LOCALE_NAME_MAX_LENGTH,
+                ):
+                    kernel32.GetLocaleInfoW(
+                        lang_id,
+                        LOCALE_SISO639LANGNAME,
+                        lang_code_buf,
+                        LOCALE_NAME_MAX_LENGTH,
+                    )
 
                 lang_name = lang_name_buf.value
                 lang_code = (
-                    self._menu_config["layout_icon"] if self._menu_config["show_layout_icon"] else lang_code_buf.value
+                    self._menu_config["layout_icon"]
+                    if self._menu_config["show_layout_icon"]
+                    else lang_code_buf.value
                 )
                 k_layouts = None
 
@@ -291,16 +339,24 @@ class LanguageWidget(BaseWidget):
                         klid = klid_buf.value.upper()
 
                         # Look up in registry
-                        reg_path = rf"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\{klid}"
+                        reg_path = (
+                            rf"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\{klid}"
+                        )
                         try:
-                            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, reg_path) as key:
+                            with winreg.OpenKey(
+                                winreg.HKEY_LOCAL_MACHINE, reg_path
+                            ) as key:
                                 # Try Layout Text first
                                 try:
-                                    k_layouts, _ = winreg.QueryValueEx(key, "Layout Text")
+                                    k_layouts, _ = winreg.QueryValueEx(
+                                        key, "Layout Text"
+                                    )
                                 except FileNotFoundError:
                                     # Try Layout Display Name
                                     try:
-                                        k_layouts, _ = winreg.QueryValueEx(key, "Layout Display Name")
+                                        k_layouts, _ = winreg.QueryValueEx(
+                                            key, "Layout Display Name"
+                                        )
                                     except FileNotFoundError:
                                         pass
                         except WindowsError:
@@ -359,7 +415,9 @@ class LanguageWidget(BaseWidget):
             user32.SetForegroundWindow(focus_window)
             result = user32.ActivateKeyboardLayout(ctypes.c_void_p(target_layout), 0)
             # Post the message to the focus window to activate the layout
-            user32.PostMessageW(focus_window, WM_INPUTLANGCHANGEREQUEST, 0, target_layout)
+            user32.PostMessageW(
+                focus_window, WM_INPUTLANGCHANGEREQUEST, 0, target_layout
+            )
         else:
             # No focus window, just activate the layout
             result = user32.ActivateKeyboardLayout(ctypes.c_void_p(target_layout), 0)
@@ -400,6 +458,7 @@ class LanguageWidget(BaseWidget):
             self._update_label()
 
             return True
+
         except Exception as e:
             logging.error(f"Error switching language: {e}")
             return False
@@ -429,28 +488,50 @@ class LanguageWidget(BaseWidget):
         ico_code_name = ctypes.create_unicode_buffer(LOCALE_NAME_MAX_LENGTH)
 
         # Get the ISO language name
-        kernel32.GetLocaleInfoW(lang_id, LOCALE_SISO639LANGNAME, lang_name, LOCALE_NAME_MAX_LENGTH)
+        kernel32.GetLocaleInfoW(
+            lang_id, LOCALE_SISO639LANGNAME, lang_name, LOCALE_NAME_MAX_LENGTH
+        )
         # Get the ISO country name
-        kernel32.GetLocaleInfoW(lang_id, LOCALE_SISO3166CTRYNAME, country_name, LOCALE_NAME_MAX_LENGTH)
+        kernel32.GetLocaleInfoW(
+            lang_id, LOCALE_SISO3166CTRYNAME, country_name, LOCALE_NAME_MAX_LENGTH
+        )
         # Get the full language name
-        kernel32.GetLocaleInfoW(lang_id, LOCALE_SLANGUAGE, full_lang_name, LOCALE_NAME_MAX_LENGTH)
+        kernel32.GetLocaleInfoW(
+            lang_id, LOCALE_SLANGUAGE, full_lang_name, LOCALE_NAME_MAX_LENGTH
+        )
         # Get the full country name
-        kernel32.GetLocaleInfoW(lang_id, LOCALE_SCOUNTRY, full_country_name, LOCALE_NAME_MAX_LENGTH)
+        kernel32.GetLocaleInfoW(
+            lang_id, LOCALE_SCOUNTRY, full_country_name, LOCALE_NAME_MAX_LENGTH
+        )
         # Get the native country name
-        kernel32.GetLocaleInfoW(lang_id, LOCALE_SNATIVECTRYNAME, native_country_name, LOCALE_NAME_MAX_LENGTH)
+        kernel32.GetLocaleInfoW(
+            lang_id, LOCALE_SNATIVECTRYNAME, native_country_name, LOCALE_NAME_MAX_LENGTH
+        )
         # Get the native language name
-        kernel32.GetLocaleInfoW(lang_id, LOCALE_SNATIVELANGNAME, native_lang_name, LOCALE_NAME_MAX_LENGTH)
+        kernel32.GetLocaleInfoW(
+            lang_id, LOCALE_SNATIVELANGNAME, native_lang_name, LOCALE_NAME_MAX_LENGTH
+        )
         # Get the full name of the keyboard layout
-        kernel32.GetLocaleInfoW(layout_id, LOCALE_SNAME, layout_locale_name, LOCALE_NAME_MAX_LENGTH)
+        kernel32.GetLocaleInfoW(
+            layout_id, LOCALE_SNAME, layout_locale_name, LOCALE_NAME_MAX_LENGTH
+        )
         # Get the full language name of the keyboard layout
-        kernel32.GetLocaleInfoW(layout_id, LOCALE_SLANGUAGE, full_layout_locale_name, LOCALE_NAME_MAX_LENGTH)
+        kernel32.GetLocaleInfoW(
+            layout_id, LOCALE_SLANGUAGE, full_layout_locale_name, LOCALE_NAME_MAX_LENGTH
+        )
         # Get the full country name of the keyboard layout
-        kernel32.GetLocaleInfoW(layout_id, LOCALE_SCOUNTRY, layout_country_name, LOCALE_NAME_MAX_LENGTH)
+        kernel32.GetLocaleInfoW(
+            layout_id, LOCALE_SCOUNTRY, layout_country_name, LOCALE_NAME_MAX_LENGTH
+        )
         # Get the ISO 639-2 three-letter language code (e.g. "ENG")
-        kernel32.GetLocaleInfoW(lang_id, LOCALE_SISO639LANGNAME2, ico_code_name, LOCALE_NAME_MAX_LENGTH)
+        kernel32.GetLocaleInfoW(
+            lang_id, LOCALE_SISO639LANGNAME2, ico_code_name, LOCALE_NAME_MAX_LENGTH
+        )
 
         language_code = lang_name.value
-        iso_language_code = ico_code_name.value if ico_code_name.value else language_code
+        iso_language_code = (
+            ico_code_name.value if ico_code_name.value else language_code
+        )
         country_code = country_name.value
         full_name = f"{full_lang_name.value}"
         return {

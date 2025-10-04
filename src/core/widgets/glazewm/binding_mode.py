@@ -57,7 +57,10 @@ class GlazewmBindingModeWidget(BaseWidget):
         self._widget_container_layout = QHBoxLayout()
         self._widget_container_layout.setSpacing(0)
         self._widget_container_layout.setContentsMargins(
-            self._padding["left"], self._padding["top"], self._padding["right"], self._padding["bottom"]
+            self._padding["left"],
+            self._padding["top"],
+            self._padding["right"],
+            self._padding["bottom"],
         )
 
         self._widget_container = QFrame()
@@ -67,7 +70,9 @@ class GlazewmBindingModeWidget(BaseWidget):
 
         self.widget_layout.addWidget(self._widget_container)
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(
+            self, self._label_content, self._label_alt_content, self._label_shadow
+        )
 
         self.glazewm_client = GlazewmClient(
             glazewm_server_uri,
@@ -76,14 +81,20 @@ class GlazewmBindingModeWidget(BaseWidget):
                 "query binding-modes",
             ],
         )
-        self.glazewm_client.glazewm_connection_status.connect(self._update_connection_status)
+        self.glazewm_client.glazewm_connection_status.connect(
+            self._update_connection_status
+        )
         self.glazewm_client.binding_mode_changed.connect(self._update_binding_mode)
         self.glazewm_client.connect()
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("disable_binding_mode", self._disable_binding_mode)
-        self.register_callback("next_binding_mode", lambda: self._cycle_through_binding_modes(1))
-        self.register_callback("prev_binding_mode", lambda: self._cycle_through_binding_modes(-1))
+        self.register_callback(
+            "next_binding_mode", lambda: self._cycle_through_binding_modes(1)
+        )
+        self.register_callback(
+            "prev_binding_mode", lambda: self._cycle_through_binding_modes(-1)
+        )
         self.callback_left = callbacks["on_left"]
         self.callback_right = callbacks["on_right"]
         self.callback_middle = callbacks["on_middle"]
@@ -92,7 +103,9 @@ class GlazewmBindingModeWidget(BaseWidget):
 
     def _toggle_label(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+            AnimationManager.animate(
+                self, self._animation["type"], self._animation["duration"]
+            )
         self._show_alt_label = not self._show_alt_label
         for widget in self._widgets:
             widget.setVisible(not self._show_alt_label)
@@ -108,8 +121,11 @@ class GlazewmBindingModeWidget(BaseWidget):
 
     def _update_label(self):
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
-        label_parts = re.split("(<span.*?>.*?</span>)", active_label_content)
+        active_widgets_len = len(active_widgets)
+        active_label_content = (
+            self._label_alt_content if self._show_alt_label else self._label_content
+        )
+        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
         label_parts = [part for part in label_parts if part]
         widget_index = 0
 
@@ -117,32 +133,51 @@ class GlazewmBindingModeWidget(BaseWidget):
             "{binding_mode}": self._active_binding_mode.display_name
             or self._active_binding_mode.name
             or self._label_if_no_active,
-            "{icon}": self._icons.get(self._active_binding_mode.name or "none", self._default_icon),
+            "{icon}": self._icons.get(
+                self._active_binding_mode.name or "none", self._default_icon
+            ),
         }
+
         for part in label_parts:
             part = part.strip()
-            if part and widget_index < len(active_widgets) and isinstance(active_widgets[widget_index], QLabel):
-                formatted_text = part
-                for option, value in label_options.items():
-                    formatted_text = formatted_text.replace(option, str(value))
-                if "<span" in part and "</span>" in part:
-                    icon = re.sub(r"<span.*?>|</span>", "", part).strip()
-                    if icon in label_options:
-                        active_widgets[widget_index].setProperty(
-                            "class", f"icon {self._active_binding_mode.name or 'none'}"
-                        )
-                        active_widgets[widget_index].setText(formatted_text)
-                    else:
-                        active_widgets[widget_index].setText(icon)
+            if not part:
+                continue
+
+            if widget_index >= active_widgets_len or not isinstance(
+                active_widgets[widget_index], QLabel
+            ):
+                continue
+
+            formatted_text = part
+            for option, value in label_options.items():
+                formatted_text = formatted_text.replace(option, str(value))
+
+            if part.startswith("<span") and part.endswith("</span>"):
+                icon = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
+                if icon in label_options:
+                    active_widgets[widget_index].setProperty(
+                        "class", f"icon {self._active_binding_mode.name or 'none'}"
+                    )
+                    active_widgets[widget_index].setText(formatted_text)
                 else:
-                    if widget_index < len(active_widgets) and isinstance(active_widgets[widget_index], QLabel):
-                        active_widgets[widget_index].setText(formatted_text)
-                        if active_widgets[widget_index].property("class") == "label-offline":
-                            active_widgets[widget_index].setProperty("class", "label")
-                        if not self._active_binding_mode.name:
-                            active_widgets[widget_index].setProperty("class", "label-offline")
-                self._reload_css(active_widgets[widget_index])
-                widget_index += 1
+                    active_widgets[widget_index].setText(icon)
+            else:
+                if widget_index >= active_widgets_len and isinstance(
+                    active_widgets[widget_index], QLabel
+                ):
+                    active_widgets[widget_index].setText(formatted_text)
+                    if (
+                        active_widgets[widget_index].property("class")
+                        == "label-offline"
+                    ):
+                        active_widgets[widget_index].setProperty("class", "label")
+                    if not self._active_binding_mode.name:
+                        active_widgets[widget_index].setProperty(
+                            "class", "label-offline"
+                        )
+
+            self._reload_css(active_widgets[widget_index])
+            widget_index += 1
 
     @pyqtSlot()
     def _disable_binding_mode(self):
@@ -156,14 +191,23 @@ class GlazewmBindingModeWidget(BaseWidget):
 
         self._current_binding_mode_index += direction
         if self._current_binding_mode_index < 0:
-            self._current_binding_mode_index = len(self._binding_modes_to_cycle_through) - 1
-        if self._current_binding_mode_index >= len(self._binding_modes_to_cycle_through):
+            self._current_binding_mode_index = (
+                len(self._binding_modes_to_cycle_through) - 1
+            )
+        if self._current_binding_mode_index >= len(
+            self._binding_modes_to_cycle_through
+        ):
             self._current_binding_mode_index = 0
-        if self._binding_modes_to_cycle_through[self._current_binding_mode_index] == "none":
+        if (
+            self._binding_modes_to_cycle_through[self._current_binding_mode_index]
+            == "none"
+        ):
             self._disable_binding_mode()
             return
 
-        self.glazewm_client.enable_binding_mode(self._binding_modes_to_cycle_through[self._current_binding_mode_index])
+        self.glazewm_client.enable_binding_mode(
+            self._binding_modes_to_cycle_through[self._current_binding_mode_index]
+        )
 
     @pyqtSlot(bool)
     def _update_connection_status(self, status: bool):
@@ -173,14 +217,18 @@ class GlazewmBindingModeWidget(BaseWidget):
     @pyqtSlot(BindingMode)
     def _update_binding_mode(self, binding_mode: BindingMode):
         if not binding_mode.name and "none" in self._binding_modes_to_cycle_through:
-            self._current_binding_mode_index = self._binding_modes_to_cycle_through.index("none")
+            self._current_binding_mode_index = (
+                self._binding_modes_to_cycle_through.index("none")
+            )
 
         if self._hide_if_no_active and not binding_mode.name:
             self.hide()
             return
 
         if binding_mode.name in self._binding_modes_to_cycle_through:
-            self._current_binding_mode_index = self._binding_modes_to_cycle_through.index(binding_mode.name)
+            self._current_binding_mode_index = (
+                self._binding_modes_to_cycle_through.index(binding_mode.name)
+            )
 
         self.show()
         self._active_binding_mode = binding_mode

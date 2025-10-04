@@ -124,7 +124,9 @@ class SystrayWidget(BaseWidget):
         super().__init__(class_name=class_name)  # type: ignore
         self.label_collapsed = label_collapsed
         self.label_expanded = label_expanded
-        self.label_position = label_position if label_position in {"left", "right"} else "left"
+        self.label_position = (
+            label_position if label_position in {"left", "right"} else "left"
+        )
         self.icon_size = icon_size
         self.show_unpinned = show_unpinned
         self.show_unpinned_button = show_unpinned_button
@@ -184,7 +186,9 @@ class SystrayWidget(BaseWidget):
         self.unpinned_vis_btn = QPushButton(self)
         self.unpinned_vis_btn.setCheckable(True)
         self.unpinned_vis_btn.clicked.connect(self.toggle_unpinned_widget_visibility)  # type: ignore
-        self.unpinned_vis_btn.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.unpinned_vis_btn.setContextMenuPolicy(
+            Qt.ContextMenuPolicy.CustomContextMenu
+        )
         self.unpinned_vis_btn.customContextMenuRequested.connect(self.show_context_menu)  # type: ignore
 
         self.unpinned_widget = DropWidget(self)
@@ -221,8 +225,12 @@ class SystrayWidget(BaseWidget):
 
         self.unpinned_vis_btn.setVisible(self.show_unpinned_button)
 
-        QTimer.singleShot(0, self.setup_client)  # pyright: ignore [reportUnknownMemberType]
-        QTimer.singleShot(0, self.set_containers_visibility)  # pyright: ignore [reportUnknownMemberType]
+        QTimer.singleShot(
+            0, self.setup_client
+        )  # pyright: ignore [reportUnknownMemberType]
+        QTimer.singleShot(
+            0, self.set_containers_visibility
+        )  # pyright: ignore [reportUnknownMemberType]
 
     def show_context_menu(self, pos: QPoint):
         """Show the context menu for the unpinned visibility button"""
@@ -231,10 +239,14 @@ class SystrayWidget(BaseWidget):
         qmenu_rounded_corners(menu)
         menu.setContentsMargins(0, 0, 0, 0)
         menu.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
-        refresh_action = menu.addAction("Refresh Systray")  # pyright: ignore [reportUnknownMemberType]
+        refresh_action = menu.addAction(
+            "Refresh Systray"
+        )  # pyright: ignore [reportUnknownMemberType]
         if not refresh_action:
             return
-        refresh_action.triggered.connect(self.refresh_systray)  # pyright: ignore [reportUnknownMemberType]
+        refresh_action.triggered.connect(
+            self.refresh_systray
+        )  # pyright: ignore [reportUnknownMemberType]
 
         def _on_menu_about_to_hide():
             from core.global_state import get_autohide_owner_for_widget
@@ -261,7 +273,9 @@ class SystrayWidget(BaseWidget):
     def setup_client(self):
         """Setup the tray monitor client and connect signals"""
         self.load_state()
-        systray_client, systray_thread, tasks_service, tasks_thread = SystrayWidget.get_client_instance()
+        systray_client, systray_thread, tasks_service, tasks_thread = (
+            SystrayWidget.get_client_instance()
+        )
         systray_client.icon_modified.connect(self.on_icon_modified)  # type: ignore
         systray_client.icon_deleted.connect(self.on_icon_deleted)  # type: ignore
 
@@ -278,12 +292,18 @@ class SystrayWidget(BaseWidget):
     def set_containers_visibility(self):
         """Update the containers visibility based on the show_unpinned_button setting"""
         self.unpinned_vis_btn.setChecked(self.show_unpinned)
-        self.unpinned_vis_btn.setText(self.label_expanded if self.show_unpinned else self.label_collapsed)
-        self.unpinned_widget.setVisible(self.show_unpinned or not self.show_unpinned_button)
+        self.unpinned_vis_btn.setText(
+            self.label_expanded if self.show_unpinned else self.label_collapsed
+        )
+        self.unpinned_widget.setVisible(
+            self.show_unpinned or not self.show_unpinned_button
+        )
 
     def on_thread_started(self):
         logger.debug("Systray thread started")
-        QTimer.singleShot(200, TrayMonitor.send_taskbar_created)  # pyright: ignore [reportUnknownMemberType]
+        QTimer.singleShot(
+            200, TrayMonitor.send_taskbar_created
+        )  # pyright: ignore [reportUnknownMemberType]
 
     @pyqtSlot()
     def on_drag_started(self):
@@ -302,6 +322,7 @@ class SystrayWidget(BaseWidget):
         """Handle icon modified signal sent by the tray monitor"""
         if data.guid in self.filtered_guids:
             return
+
         icon = self.find_icon(data.guid, data.hWnd, data.uID)
         if icon is None:
             icon = IconWidget()
@@ -311,12 +332,11 @@ class SystrayWidget(BaseWidget):
             self.icons.append(icon)
 
             # Check if the saved data exists for the icon by uuid and exe path
-            id = str(data.guid) if data.guid is not None else data.exe_path
+            uuid = str(data.guid) if data.guid is not None else data.exe_path
             saved_data = self.current_state.get(
-                id,
+                uuid,
                 self.current_state.get(
-                    data.exe_path,
-                    IconState(index=-1, is_pinned=False),
+                    data.exe_path, IconState(index=-1, is_pinned=False)
                 ),
             )
             add_shadow(icon, self.btn_shadow)
@@ -330,6 +350,7 @@ class SystrayWidget(BaseWidget):
 
             # After a short delay (if no new icons are added) - re-sort the icons once
             self.sort_timer.start(1000)
+
         self.update_icon_data(icon.data, data)
         icon.update_icon()
         icon.setHidden(data.uFlags & NIF_STATE != 0 and data.dwState == 1)
@@ -353,6 +374,7 @@ class SystrayWidget(BaseWidget):
         else:
             self.unpinned_layout.addWidget(icon)
             icon.is_pinned = False
+
         # NOTE: This is needed to force-update the layout for that widget
         # otherwise, the widget will not show up in the layout immediately
         # and update_current_state will fail
@@ -369,6 +391,7 @@ class SystrayWidget(BaseWidget):
             icon.is_pinned = False
         else:
             icon.is_pinned = True
+
         self.unpinned_widget.refresh_styles()
         self.pinned_widget.refresh_styles()
         self.save_state()
@@ -381,6 +404,7 @@ class SystrayWidget(BaseWidget):
                     continue
                 if icon.data.guid == uuid:
                     return icon
+
         for icon in self.icons:
             if icon.data is None:
                 continue
@@ -413,10 +437,12 @@ class SystrayWidget(BaseWidget):
             "exe",
             "exe_path",
         ]
+
         for attr in direct_attributes:
             if attr in ("hWnd", "uID"):
                 continue
             setattr(old_data, attr, getattr(new_data, attr))
+
         old_data.hWnd = new_data.hWnd or old_data.hWnd
         old_data.uID = new_data.uID or old_data.uID
         if 0 < new_data.uVersion <= 4:
@@ -431,10 +457,17 @@ class SystrayWidget(BaseWidget):
             NIF_INFO: ["dwInfoFlags", "szInfoTitle", "szInfo", "uTimeout"],
         }
 
-        for flag, attrs in flag_dependent_attrs.items():
+        flag = 1
+        while flag <= new_data.uFlags:
             if new_data.uFlags & flag:
-                for attr in attrs:
+                for attr in flag_dependent_attrs[flag]:
                     setattr(old_data, attr, getattr(new_data, attr))
+            flag <<= 1
+
+        # for flag, attrs in flag_dependent_attrs.items():
+        #     if new_data.uFlags & flag:
+        #         for attr in attrs:
+        #             setattr(old_data, attr, getattr(new_data, attr))
 
     def is_layout_empty(self, layout: QHBoxLayout):
         """Check if a layout has any visible widgets."""
@@ -449,14 +482,21 @@ class SystrayWidget(BaseWidget):
         Update the visibility of the pinned widget based on its content.
         If force_show is True, the widget will be shown regardless of content.
         """
+
         is_empty = self.is_layout_empty(self.pinned_layout)
         self.pinned_widget.setVisible(not is_empty or force_show)
+
         if force_show and is_empty and (w := self.pinned_widget.style()):
             logger.debug(f"Is empty: {is_empty}, force show: {force_show}")
             self.pinned_widget.setProperty("forceshow", True)
             w.unpolish(self.pinned_widget)
             w.polish(self.pinned_widget)
-        elif self.pinned_widget.property("forceshow") and not is_empty and (w := self.pinned_widget.style()):
+
+        elif (
+            self.pinned_widget.property("forceshow")
+            and not is_empty
+            and (w := self.pinned_widget.style())
+        ):
             logger.debug(f"Is empty: {is_empty}, force show: {force_show}")
             self.pinned_widget.setProperty("forceshow", False)
             w.unpolish(self.pinned_widget)
@@ -551,7 +591,9 @@ class SystrayWidget(BaseWidget):
         """Get the screen id for the current systray widget instance"""
         screen = self.screen()
         if screen is not None:
-            raw_id = f"{screen.manufacturer()}{screen.name()}{screen.serialNumber()}".upper()
+            raw_id = (
+                f"{screen.manufacturer()}{screen.name()}{screen.serialNumber()}".upper()
+            )
             self.screen_id = re.sub(r"\W+", "", raw_id)
             return self.screen_id
 

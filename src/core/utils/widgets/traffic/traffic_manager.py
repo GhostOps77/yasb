@@ -14,9 +14,9 @@ class TrafficDataManager:
     """Manages traffic data storage, loading, and calculations for all interfaces"""
 
     # Class-level storage for interface data
-    _interface_data: dict[
-        str, dict
-    ] = {}  # {interface: {total_bytes_sent, total_bytes_recv, today_sent, today_recv, etc}}
+    _interface_data: dict[str, dict] = (
+        {}
+    )  # {interface: {total_bytes_sent, total_bytes_recv, today_sent, today_recv, etc}}
     _global_data_folder = None
     _interface_last_save_times: dict[str, float] = {}  # Track save time per interface
     _quit_handler_registered = False  # Track if global quit handler is registered
@@ -80,10 +80,13 @@ class TrafficDataManager:
     @classmethod
     def initialize_interface(cls, interface: str):
         """Initialize interface data if not already loaded"""
-        if interface in cls._interface_data and cls._interface_data[interface].get("_loaded", False):
-            return cls._interface_data[interface]["session_start_sent"], cls._interface_data[interface][
-                "session_start_recv"
-            ]
+        if interface in cls._interface_data and cls._interface_data[interface].get(
+            "_loaded", False
+        ):
+            return (
+                cls._interface_data[interface]["session_start_sent"],
+                cls._interface_data[interface]["session_start_recv"],
+            )
 
         # Initialize defaults
         cls._interface_data[interface] = {
@@ -111,9 +114,10 @@ class TrafficDataManager:
         # Mark as loaded
         cls._interface_data[interface]["_loaded"] = True
 
-        return cls._interface_data[interface]["session_start_sent"], cls._interface_data[interface][
-            "session_start_recv"
-        ]
+        return (
+            cls._interface_data[interface]["session_start_sent"],
+            cls._interface_data[interface]["session_start_recv"],
+        )
 
     @classmethod
     def get_session_duration(cls, interface: str):
@@ -121,7 +125,9 @@ class TrafficDataManager:
         if interface not in cls._interface_data:
             return "just now"
 
-        start_time = cls._interface_data[interface].get("session_start_time", time.time())
+        start_time = cls._interface_data[interface].get(
+            "session_start_time", time.time()
+        )
         seconds_ago = time.time() - start_time
 
         if seconds_ago < 60:
@@ -153,14 +159,22 @@ class TrafficDataManager:
                 with open(data_file, "r") as f:
                     data = json.load(f)
 
-                cls._interface_data[interface]["total_bytes_sent"] = data.get("total_sent", 0)
-                cls._interface_data[interface]["total_bytes_recv"] = data.get("total_recv", 0)
+                cls._interface_data[interface]["total_bytes_sent"] = data.get(
+                    "total_sent", 0
+                )
+                cls._interface_data[interface]["total_bytes_recv"] = data.get(
+                    "total_recv", 0
+                )
                 cls._interface_data[interface]["today_sent"] = data.get("today_sent", 0)
                 cls._interface_data[interface]["today_recv"] = data.get("today_recv", 0)
-                cls._interface_data[interface]["today_date"] = data.get("today_date", None)
+                cls._interface_data[interface]["today_date"] = data.get(
+                    "today_date", None
+                )
 
             except Exception as e:
-                logging.error(f"Error loading traffic data for interface {interface}: {e}")
+                logging.error(
+                    f"Error loading traffic data for interface {interface}: {e}"
+                )
 
     @classmethod
     def _apply_alignment(cls, text: str, max_length: int, alignment: str) -> str:
@@ -218,19 +232,35 @@ class TrafficDataManager:
                 cls.save_interface_data(interface)
 
             # Calculate speeds per second
-            upload_speed_per_sec = upload_diff / interval_seconds if interval_seconds > 0 else 0
-            download_speed_per_sec = download_diff / interval_seconds if interval_seconds > 0 else 0
+            upload_speed_per_sec = (
+                upload_diff / interval_seconds if interval_seconds > 0 else 0
+            )
+            download_speed_per_sec = (
+                download_diff / interval_seconds if interval_seconds > 0 else 0
+            )
 
             # Get thresholds
-            upload_threshold = speed_threshold.get("min_upload", 0) if speed_threshold else 0
-            download_threshold = speed_threshold.get("min_download", 0) if speed_threshold else 0
+            upload_threshold = (
+                speed_threshold.get("min_upload", 0) if speed_threshold else 0
+            )
+            download_threshold = (
+                speed_threshold.get("min_download", 0) if speed_threshold else 0
+            )
 
             # Format data
-            upload_speed = cls.format_speed(upload_speed_per_sec, speed_unit, hide_decimal, upload_threshold)
-            download_speed = cls.format_speed(download_speed_per_sec, speed_unit, hide_decimal, download_threshold)
+            upload_speed = cls.format_speed(
+                upload_speed_per_sec, speed_unit, hide_decimal, upload_threshold
+            )
+            download_speed = cls.format_speed(
+                download_speed_per_sec, speed_unit, hide_decimal, download_threshold
+            )
 
-            raw_upload_speed = cls.format_speed(upload_speed_per_sec, speed_unit, False, upload_threshold)
-            raw_download_speed = cls.format_speed(download_speed_per_sec, speed_unit, False, download_threshold)
+            raw_upload_speed = cls.format_speed(
+                upload_speed_per_sec, speed_unit, False, upload_threshold
+            )
+            raw_download_speed = cls.format_speed(
+                download_speed_per_sec, speed_unit, False, download_threshold
+            )
 
             # Get today totals
             today_sent, today_recv = cls.get_today_totals(interface)
@@ -242,8 +272,12 @@ class TrafficDataManager:
                 session_uploaded = cls.format_data_size(0)
                 session_downloaded = cls.format_data_size(0)
             else:
-                session_uploaded = cls.format_data_size(current_io.bytes_sent - session_sent)
-                session_downloaded = cls.format_data_size(current_io.bytes_recv - session_recv)
+                session_uploaded = cls.format_data_size(
+                    current_io.bytes_sent - session_sent
+                )
+                session_downloaded = cls.format_data_size(
+                    current_io.bytes_recv - session_recv
+                )
 
             # Get all-time totals
             total_sent, total_recv = cls.get_total_data(interface)
@@ -252,18 +286,30 @@ class TrafficDataManager:
             session_duration = cls.get_session_duration(interface)
 
             return {
-                "upload_speed": cls._apply_alignment(upload_speed, max_label_length, max_label_length_align),
-                "download_speed": cls._apply_alignment(download_speed, max_label_length, max_label_length_align),
+                "upload_speed": cls._apply_alignment(
+                    upload_speed, max_label_length, max_label_length_align
+                ),
+                "download_speed": cls._apply_alignment(
+                    download_speed, max_label_length, max_label_length_align
+                ),
                 "raw_upload_speed": raw_upload_speed,
                 "raw_download_speed": raw_download_speed,
-                "today_uploaded": cls._apply_alignment(today_uploaded, max_label_length, max_label_length_align),
-                "today_downloaded": cls._apply_alignment(today_downloaded, max_label_length, max_label_length_align),
-                "session_uploaded": cls._apply_alignment(session_uploaded, max_label_length, max_label_length_align),
+                "today_uploaded": cls._apply_alignment(
+                    today_uploaded, max_label_length, max_label_length_align
+                ),
+                "today_downloaded": cls._apply_alignment(
+                    today_downloaded, max_label_length, max_label_length_align
+                ),
+                "session_uploaded": cls._apply_alignment(
+                    session_uploaded, max_label_length, max_label_length_align
+                ),
                 "session_downloaded": cls._apply_alignment(
                     session_downloaded, max_label_length, max_label_length_align
                 ),
                 "session_duration": session_duration,
-                "alltime_uploaded": cls._apply_alignment(alltime_uploaded, max_label_length, max_label_length_align),
+                "alltime_uploaded": cls._apply_alignment(
+                    alltime_uploaded, max_label_length, max_label_length_align
+                ),
                 "alltime_downloaded": cls._apply_alignment(
                     alltime_downloaded, max_label_length, max_label_length_align
                 ),
@@ -321,8 +367,12 @@ class TrafficDataManager:
                 cls._interface_data[interface]["session_start_sent"] is None
                 or cls._interface_data[interface]["session_start_recv"] is None
             ):
-                cls._interface_data[interface]["session_start_sent"] = current_io.bytes_sent
-                cls._interface_data[interface]["session_start_recv"] = current_io.bytes_recv
+                cls._interface_data[interface][
+                    "session_start_sent"
+                ] = current_io.bytes_sent
+                cls._interface_data[interface][
+                    "session_start_recv"
+                ] = current_io.bytes_recv
 
             # Check if it's a new day
             if cls._interface_data[interface]["today_date"] != today:
@@ -330,8 +380,12 @@ class TrafficDataManager:
                 cls._interface_data[interface]["today_date"] = today
                 cls._interface_data[interface]["today_sent"] = 0
                 cls._interface_data[interface]["today_recv"] = 0
-                cls._interface_data[interface]["today_start_sent"] = current_io.bytes_sent
-                cls._interface_data[interface]["today_start_recv"] = current_io.bytes_recv
+                cls._interface_data[interface][
+                    "today_start_sent"
+                ] = current_io.bytes_sent
+                cls._interface_data[interface][
+                    "today_start_recv"
+                ] = current_io.bytes_recv
             else:
                 # Same day - calculate baseline from existing today data
                 cls._interface_data[interface]["today_start_sent"] = (
@@ -380,8 +434,12 @@ class TrafficDataManager:
             if cls._interface_data[interface]["today_date"] != today:
                 # Day changed - finalize yesterday's data and reset for today
                 cls._interface_data[interface]["today_date"] = today
-                cls._interface_data[interface]["today_start_sent"] = current_io.bytes_sent
-                cls._interface_data[interface]["today_start_recv"] = current_io.bytes_recv
+                cls._interface_data[interface][
+                    "today_start_sent"
+                ] = current_io.bytes_sent
+                cls._interface_data[interface][
+                    "today_start_recv"
+                ] = current_io.bytes_recv
                 cls._interface_data[interface]["today_sent"] = 0
                 cls._interface_data[interface]["today_recv"] = 0
                 return
@@ -396,18 +454,30 @@ class TrafficDataManager:
                 and cls._interface_data[interface]["today_start_recv"] is not None
             ):
                 # Handle counter resets
-                if current_io.bytes_sent >= cls._interface_data[interface]["today_start_sent"]:
+                if (
+                    current_io.bytes_sent
+                    >= cls._interface_data[interface]["today_start_sent"]
+                ):
                     cls._interface_data[interface]["today_sent"] = (
-                        current_io.bytes_sent - cls._interface_data[interface]["today_start_sent"]
+                        current_io.bytes_sent
+                        - cls._interface_data[interface]["today_start_sent"]
                     )
-                if current_io.bytes_recv >= cls._interface_data[interface]["today_start_recv"]:
+                if (
+                    current_io.bytes_recv
+                    >= cls._interface_data[interface]["today_start_recv"]
+                ):
                     cls._interface_data[interface]["today_recv"] = (
-                        current_io.bytes_recv - cls._interface_data[interface]["today_start_recv"]
+                        current_io.bytes_recv
+                        - cls._interface_data[interface]["today_start_recv"]
                     )
 
             # Calculate how much today's data increased
-            today_diff_sent = cls._interface_data[interface]["today_sent"] - previous_today_sent
-            today_diff_recv = cls._interface_data[interface]["today_recv"] - previous_today_recv
+            today_diff_sent = (
+                cls._interface_data[interface]["today_sent"] - previous_today_sent
+            )
+            today_diff_recv = (
+                cls._interface_data[interface]["today_recv"] - previous_today_recv
+            )
 
             # Update total data by the same amount that today's data increased
             if today_diff_sent > 0:
@@ -416,7 +486,9 @@ class TrafficDataManager:
                 cls._interface_data[interface]["total_bytes_recv"] += today_diff_recv
 
         except Exception as e:
-            logging.error(f"Error updating today and total tracking for {interface}: {e}")
+            logging.error(
+                f"Error updating today and total tracking for {interface}: {e}"
+            )
 
     @classmethod
     def get_today_totals(cls, interface: str):
@@ -425,7 +497,10 @@ class TrafficDataManager:
             if interface not in cls._interface_data:
                 return 0, 0
 
-            return cls._interface_data[interface]["today_sent"], cls._interface_data[interface]["today_recv"]
+            return (
+                cls._interface_data[interface]["today_sent"],
+                cls._interface_data[interface]["today_recv"],
+            )
         except Exception as e:
             logging.debug(f"Error getting today totals for {interface}: {e}")
         return 0, 0
@@ -435,16 +510,20 @@ class TrafficDataManager:
         """Get total upload/download data for a specific interface"""
         if interface not in cls._interface_data:
             return 0, 0
-        return cls._interface_data[interface]["total_bytes_sent"], cls._interface_data[interface]["total_bytes_recv"]
+        return (
+            cls._interface_data[interface]["total_bytes_sent"],
+            cls._interface_data[interface]["total_bytes_recv"],
+        )
 
     @classmethod
     def get_session_baseline(cls, interface: str):
         """Get session baseline for a specific interface"""
         if interface not in cls._interface_data:
             return 0, 0
-        return cls._interface_data[interface]["session_start_sent"], cls._interface_data[interface][
-            "session_start_recv"
-        ]
+        return (
+            cls._interface_data[interface]["session_start_sent"],
+            cls._interface_data[interface]["session_start_recv"],
+        )
 
     @classmethod
     def reset_interface_data(cls, interface: str):
@@ -467,7 +546,9 @@ class TrafficDataManager:
             cls._interface_data[interface]["session_start_recv"] = current_io.bytes_recv
             cls._interface_data[interface]["today_start_sent"] = current_io.bytes_sent
             cls._interface_data[interface]["today_start_recv"] = current_io.bytes_recv
-            cls._interface_data[interface]["today_date"] = datetime.now().strftime("%Y-%m-%d")
+            cls._interface_data[interface]["today_date"] = datetime.now().strftime(
+                "%Y-%m-%d"
+            )
 
             cls.save_interface_data(interface)
 
@@ -500,7 +581,9 @@ class TrafficDataManager:
             return "< 1 MB"
 
     @classmethod
-    def format_speed(cls, bytes_per_sec, speed_unit="bits", hide_decimal=False, threshold=0):
+    def format_speed(
+        cls, bytes_per_sec, speed_unit="bits", hide_decimal=False, threshold=0
+    ):
         """Format speed with correct units based on configuration"""
 
         if bytes_per_sec < threshold:

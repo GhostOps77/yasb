@@ -108,7 +108,11 @@ def main():
     manager.initialize_bars(init=True)
 
     # Initialise file watcher if needed
-    observer = create_observer(manager) if config["watch_config"] or config["watch_stylesheet"] else None
+    observer = (
+        create_observer(manager)
+        if config["watch_config"] or config["watch_stylesheet"]
+        else None
+    )
     if observer:
         observer.start()
 

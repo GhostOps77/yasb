@@ -24,7 +24,11 @@ DEFAULTS = {
     },
     "animation": {"enabled": True, "type": "fadeInOut", "duration": 200},
     "container_padding": {"top": 0, "left": 0, "bottom": 0, "right": 0},
-    "callbacks": {"on_left": "toggle_chat", "on_middle": "do_nothing", "on_right": "do_nothing"},
+    "callbacks": {
+        "on_left": "toggle_chat",
+        "on_middle": "do_nothing",
+        "on_right": "do_nothing",
+    },
 }
 
 VALIDATION_SCHEMA = {
@@ -34,9 +38,18 @@ VALIDATION_SCHEMA = {
         "required": False,
         "schema": {
             "top": {"type": "integer", "default": DEFAULTS["container_padding"]["top"]},
-            "left": {"type": "integer", "default": DEFAULTS["container_padding"]["left"]},
-            "bottom": {"type": "integer", "default": DEFAULTS["container_padding"]["bottom"]},
-            "right": {"type": "integer", "default": DEFAULTS["container_padding"]["right"]},
+            "left": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["left"],
+            },
+            "bottom": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["bottom"],
+            },
+            "right": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["right"],
+            },
         },
         "default": DEFAULTS["container_padding"],
     },
@@ -45,21 +58,37 @@ VALIDATION_SCHEMA = {
         "required": False,
         "schema": {
             "blur": {"type": "boolean", "default": DEFAULTS["chat"]["blur"]},
-            "round_corners": {"type": "boolean", "default": DEFAULTS["chat"]["round_corners"]},
+            "round_corners": {
+                "type": "boolean",
+                "default": DEFAULTS["chat"]["round_corners"],
+            },
             "round_corners_type": {
                 "type": "string",
                 "default": DEFAULTS["chat"]["round_corners_type"],
                 "allowed": ["normal", "small"],
             },
-            "border_color": {"type": "string", "default": DEFAULTS["chat"]["border_color"]},
+            "border_color": {
+                "type": "string",
+                "default": DEFAULTS["chat"]["border_color"],
+            },
             "alignment": {
                 "type": "string",
                 "default": DEFAULTS["chat"]["alignment"],
                 "allowed": ["left", "right", "center"],
             },
-            "direction": {"type": "string", "default": DEFAULTS["chat"]["direction"], "allowed": ["up", "down"]},
-            "offset_top": {"type": "integer", "default": DEFAULTS["chat"]["offset_top"]},
-            "offset_left": {"type": "integer", "default": DEFAULTS["chat"]["offset_left"]},
+            "direction": {
+                "type": "string",
+                "default": DEFAULTS["chat"]["direction"],
+                "allowed": ["up", "down"],
+            },
+            "offset_top": {
+                "type": "integer",
+                "default": DEFAULTS["chat"]["offset_top"],
+            },
+            "offset_left": {
+                "type": "integer",
+                "default": DEFAULTS["chat"]["offset_left"],
+            },
         },
         "default": DEFAULTS["chat"],
     },
@@ -100,7 +129,10 @@ VALIDATION_SCHEMA = {
         "schema": {
             "enabled": {"type": "boolean", "default": DEFAULTS["animation"]["enabled"]},
             "type": {"type": "string", "default": DEFAULTS["animation"]["type"]},
-            "duration": {"type": "integer", "default": DEFAULTS["animation"]["duration"]},
+            "duration": {
+                "type": "integer",
+                "default": DEFAULTS["animation"]["duration"],
+            },
         },
         "default": DEFAULTS["animation"],
     },
@@ -164,9 +196,21 @@ VALIDATION_SCHEMA = {
                         "schema": {
                             "name": {"type": "string", "required": True},
                             "label": {"type": "string", "required": True},
-                            "max_tokens": {"type": "integer", "required": False, "default": 0},
-                            "temperature": {"type": "number", "required": False, "default": 0.7},
-                            "top_p": {"type": "number", "required": False, "default": 0.95},
+                            "max_tokens": {
+                                "type": "integer",
+                                "required": False,
+                                "default": 0,
+                            },
+                            "temperature": {
+                                "type": "number",
+                                "required": False,
+                                "default": 0.7,
+                            },
+                            "top_p": {
+                                "type": "number",
+                                "required": False,
+                                "default": 0.95,
+                            },
                             "instructions": {
                                 "type": "string",
                                 "required": False,

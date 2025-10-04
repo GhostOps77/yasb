@@ -4,9 +4,22 @@ import re
 
 from PyQt6.QtCore import QPropertyAnimation, QRectF, Qt, QTimer, pyqtProperty
 from PyQt6.QtGui import QColor, QCursor, QPainter, QPen
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
-from core.utils.utilities import PopupWidget, ToastNotifier, add_shadow, build_progress_widget, build_widget_label
+from core.utils.utilities import (
+    PopupWidget,
+    ToastNotifier,
+    add_shadow,
+    build_progress_widget,
+    build_widget_label,
+)
 from core.utils.widgets.animation_manager import AnimationManager
 from core.validation.widgets.yasb.pomodoro import VALIDATION_SCHEMA
 from core.widgets.base import BaseWidget
@@ -89,7 +102,10 @@ class PomodoroWidget(BaseWidget):
         self._widget_container_layout = QHBoxLayout()
         self._widget_container_layout.setSpacing(0)
         self._widget_container_layout.setContentsMargins(
-            self._padding["left"], self._padding["top"], self._padding["right"], self._padding["bottom"]
+            self._padding["left"],
+            self._padding["top"],
+            self._padding["right"],
+            self._padding["bottom"],
         )
 
         # Initialize container
@@ -99,7 +115,9 @@ class PomodoroWidget(BaseWidget):
         add_shadow(self._widget_container, self._container_shadow)
         self.widget_layout.addWidget(self._widget_container)
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(
+            self, self._label_content, self._label_alt_content, self._label_shadow
+        )
 
         self.register_callback("toggle_timer", self._toggle_timer)
         self.register_callback("reset_timer", self._reset_timer)
@@ -114,7 +132,9 @@ class PomodoroWidget(BaseWidget):
         if PomodoroWidget._shared_timer is None:
             PomodoroWidget._shared_timer = QTimer(self)
             PomodoroWidget._shared_timer.setInterval(1000)
-            PomodoroWidget._shared_timer.timeout.connect(PomodoroWidget._update_all_instances)
+            PomodoroWidget._shared_timer.timeout.connect(
+                PomodoroWidget._update_all_instances
+            )
             PomodoroWidget._shared_timer.start()
 
         self._update_from_shared_state()
@@ -123,7 +143,9 @@ class PomodoroWidget(BaseWidget):
     def _update_all_instances(cls):
         # Only update timer if running
         if cls._shared_state["is_running"]:
-            cls._shared_state["remaining_time"] = max(0, cls._shared_state["remaining_time"] - 1)
+            cls._shared_state["remaining_time"] = max(
+                0, cls._shared_state["remaining_time"] - 1
+            )
             cls._shared_state["elapsed_time"] += 1
 
             if cls._shared_state["remaining_time"] <= 0:
@@ -156,9 +178,17 @@ class PomodoroWidget(BaseWidget):
         self._update_label()
         # Update menu if open
         try:
-            if hasattr(self, "_dialog") and self._dialog is not None and self._dialog.isVisible():
+            if (
+                hasattr(self, "_dialog")
+                and self._dialog is not None
+                and self._dialog.isVisible()
+            ):
                 if self._is_break:
-                    max_value = self._long_break_duration if self._is_long_break else self._break_duration
+                    max_value = (
+                        self._long_break_duration
+                        if self._is_long_break
+                        else self._break_duration
+                    )
                     current_value = max_value - self._remaining_time
                 else:
                     max_value = self._work_duration
@@ -168,18 +198,30 @@ class PomodoroWidget(BaseWidget):
                     self._progress_gauge.setMaximum(max_value)
                     self._progress_gauge.setValue(int(current_value))
                     self._progress_gauge.setBreakMode(self._is_break)
-                    status_text = "Paused" if self._is_paused else ("Break" if self._is_break else "Work")
-                    self._progress_gauge.setStatusText(f"{status_text}\n{self._format_time(self._remaining_time)}")
+                    status_text = (
+                        "Paused"
+                        if self._is_paused
+                        else ("Break" if self._is_break else "Work")
+                    )
+                    self._progress_gauge.setStatusText(
+                        f"{status_text}\n{self._format_time(self._remaining_time)}"
+                    )
                     self._session_label.setText(
                         f"Session: {self._session_count + 1}"
-                        + (f"/{self._session_target}" if self._session_target > 0 else "")
+                        + (
+                            f"/{self._session_target}"
+                            if self._session_target > 0
+                            else ""
+                        )
                     )
         except RuntimeError:
             pass
 
     def _toggle_label(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+            AnimationManager.animate(
+                self, self._animation["type"], self._animation["duration"]
+            )
         self._show_alt_label = not self._show_alt_label
         for widget in self._widgets:
             widget.setVisible(not self._show_alt_label)
@@ -189,32 +231,45 @@ class PomodoroWidget(BaseWidget):
 
     def _update_label(self):
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
-        label_parts = re.split("(<span.*?>.*?</span>)", active_label_content)
-        label_parts = [part for part in label_parts if part]
-        widget_index = 0
+        active_widgets_len = len(active_widgets)
+        active_label_content = (
+            self._label_alt_content if self._show_alt_label else self._label_content
+        )
 
         remaining_str = self._format_time(self._remaining_time)
         status = "Paused" if self._is_paused else "Break" if self._is_break else "Work"
-        class_name = "paused" if self._is_paused else "break" if self._is_break else "work"
+        class_name = (
+            "paused" if self._is_paused else "break" if self._is_break else "work"
+        )
 
-        label_options = {
-            "{remaining}": remaining_str,
-            "{status}": status,
-            "{session}": str(self._session_count + 1),
-            "{total_sessions}": str(self._session_target) if self._session_target > 0 else "∞",
-            "{icon}": self._get_current_icon(),
-        }
+        active_label_content = active_label_content.format(
+            remaining=remaining_str,
+            status=status,
+            session=self._session_count + 1,
+            total_sessions=self._session_target if self._session_target > 0 else "∞",
+            icon=self._get_current_icon(),
+        )
+
+        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
+        widget_index = 0
 
         if self._progress_bar["enabled"] and self.progress_widget:
             if self._widget_container_layout.indexOf(self.progress_widget) == -1:
                 self._widget_container_layout.insertWidget(
-                    0 if self._progress_bar["position"] == "left" else self._widget_container_layout.count(),
+                    (
+                        0
+                        if self._progress_bar["position"] == "left"
+                        else self._widget_container_layout.count()
+                    ),
                     self.progress_widget,
                 )
 
             if self._is_break:
-                max_value = self._long_break_duration if self._is_long_break else self._break_duration
+                max_value = (
+                    self._long_break_duration
+                    if self._is_long_break
+                    else self._break_duration
+                )
             else:
                 max_value = self._work_duration
 
@@ -223,25 +278,30 @@ class PomodoroWidget(BaseWidget):
             self.progress_widget.set_value(percent)
 
         for part in label_parts:
+            if widget_index >= active_widgets_len:
+                break
+
             part = part.strip()
-            if part:
-                formatted_text = part
-                for option, value in label_options.items():
-                    formatted_text = formatted_text.replace(option, str(value))
-                if "<span" in part and "</span>" in part:
-                    if widget_index < len(active_widgets) and isinstance(active_widgets[widget_index], QLabel):
-                        active_widgets[widget_index].setText(formatted_text)
-                        base_class = active_widgets[widget_index].property("class").split()[0]
-                        active_widgets[widget_index].setProperty("class", f"{base_class} {class_name}")
-                        active_widgets[widget_index].setStyleSheet("")
-                else:
-                    if widget_index < len(active_widgets) and isinstance(active_widgets[widget_index], QLabel):
-                        alt_class = "alt" if self._show_alt_label else ""
-                        active_widgets[widget_index].setText(formatted_text)
-                        base_class = "label"
-                        active_widgets[widget_index].setProperty("class", f"{base_class} {alt_class} {class_name}")
-                        active_widgets[widget_index].setStyleSheet("")
-                widget_index += 1
+            if not part:
+                continue
+
+            if not isinstance(active_widgets[widget_index], QLabel):
+                continue
+
+            class_names = ""
+
+            if part.startswith("<span") and part.endswith("</span>"):
+                # base class
+                class_names += active_widgets[widget_index].property("class").split()[0]
+            else:
+                class_names += "label"  # base class
+                class_names += " alt" if self._show_alt_label else ""  # alt class
+
+            class_names += " " + class_name
+            active_widgets[widget_index].setText(part)
+            active_widgets[widget_index].setProperty("class", class_names)
+            active_widgets[widget_index].setStyleSheet("")
+            widget_index += 1
 
     def _get_current_icon(self):
         if self._is_paused:
@@ -262,9 +322,14 @@ class PomodoroWidget(BaseWidget):
         s["is_running"] = True
         s["is_paused"] = False
         PomodoroWidget._update_all_instances()
+
         try:
             for inst in PomodoroWidget._instances:
-                if hasattr(inst, "_dialog") and inst._dialog is not None and inst._dialog.isVisible():
+                if (
+                    hasattr(inst, "_dialog")
+                    and inst._dialog is not None
+                    and inst._dialog.isVisible()
+                ):
                     inst._toggle_button.setText("Pause")
                     inst._toggle_button.setProperty("class", "button pause")
                     inst._toggle_button.style().unpolish(inst._toggle_button)
@@ -279,12 +344,18 @@ class PomodoroWidget(BaseWidget):
         PomodoroWidget._update_all_instances()
         try:
             for inst in PomodoroWidget._instances:
-                if hasattr(inst, "_dialog") and inst._dialog is not None and inst._dialog.isVisible():
+                if (
+                    hasattr(inst, "_dialog")
+                    and inst._dialog is not None
+                    and inst._dialog.isVisible()
+                ):
                     inst._toggle_button.setText("Start")
                     inst._toggle_button.setProperty("class", "button start")
                     inst._toggle_button.style().unpolish(inst._toggle_button)
                     inst._toggle_button.style().polish(inst._toggle_button)
-                    inst._progress_gauge.setStatusText(f"Paused\n{inst._format_time(inst._remaining_time)}")
+                    inst._progress_gauge.setStatusText(
+                        f"Paused\n{inst._format_time(inst._remaining_time)}"
+                    )
         except RuntimeError:
             pass
 
@@ -299,11 +370,17 @@ class PomodoroWidget(BaseWidget):
         PomodoroWidget._update_all_instances()
         try:
             for inst in PomodoroWidget._instances:
-                if hasattr(inst, "_dialog") and inst._dialog is not None and inst._dialog.isVisible():
+                if (
+                    hasattr(inst, "_dialog")
+                    and inst._dialog is not None
+                    and inst._dialog.isVisible()
+                ):
                     inst._progress_gauge.setBreakMode(False)
                     inst._progress_gauge.setMaximum(self._work_duration)
                     inst._progress_gauge.setValue(0, skip_animation=True)
-                    inst._progress_gauge.setStatusText(f"Work\n{inst._format_time(self._work_duration)}")
+                    inst._progress_gauge.setStatusText(
+                        f"Work\n{inst._format_time(self._work_duration)}"
+                    )
 
                     inst._toggle_button.setText("Start")
                     inst._toggle_button.setProperty("class", "button start")
@@ -339,11 +416,17 @@ class PomodoroWidget(BaseWidget):
 
             try:
                 for inst in PomodoroWidget._instances:
-                    if hasattr(inst, "_dialog") and inst._dialog is not None and inst._dialog.isVisible():
+                    if (
+                        hasattr(inst, "_dialog")
+                        and inst._dialog is not None
+                        and inst._dialog.isVisible()
+                    ):
                         inst._progress_gauge.setBreakMode(False)
                         inst._progress_gauge.setMaximum(self._work_duration)
                         inst._progress_gauge.setValue(0, skip_animation=True)
-                        inst._progress_gauge.setStatusText(f"Work\n{inst._format_time(self._work_duration)}")
+                        inst._progress_gauge.setStatusText(
+                            f"Work\n{inst._format_time(self._work_duration)}"
+                        )
             except RuntimeError:
                 pass
 
@@ -354,7 +437,10 @@ class PomodoroWidget(BaseWidget):
             # Work completed, increment session count
             s["session_count"] += 1
 
-            if s["session_count"] > 0 and s["session_count"] % self._long_break_interval == 0:
+            if (
+                s["session_count"] > 0
+                and s["session_count"] % self._long_break_interval == 0
+            ):
                 s["is_long_break"] = True
                 s["remaining_time"] = self._long_break_duration
             else:
@@ -366,12 +452,22 @@ class PomodoroWidget(BaseWidget):
 
             try:
                 for inst in PomodoroWidget._instances:
-                    if hasattr(inst, "_dialog") and inst._dialog is not None and inst._dialog.isVisible():
-                        max_value = self._long_break_duration if s["is_long_break"] else self._break_duration
+                    if (
+                        hasattr(inst, "_dialog")
+                        and inst._dialog is not None
+                        and inst._dialog.isVisible()
+                    ):
+                        max_value = (
+                            self._long_break_duration
+                            if s["is_long_break"]
+                            else self._break_duration
+                        )
                         inst._progress_gauge.setBreakMode(True)
                         inst._progress_gauge.setMaximum(max_value)
                         inst._progress_gauge.setValue(0, skip_animation=True)
-                        inst._progress_gauge.setStatusText(f"Break\n{inst._format_time(s['remaining_time'])}")
+                        inst._progress_gauge.setStatusText(
+                            f"Break\n{inst._format_time(s['remaining_time'])}"
+                        )
             except RuntimeError:
                 pass
 
@@ -394,7 +490,9 @@ class PomodoroWidget(BaseWidget):
 
     def _show_desktop_notification(self):
         try:
-            self._icon_path = os.path.join(SCRIPT_PATH, "assets", "images", "app_transparent.png")
+            self._icon_path = os.path.join(
+                SCRIPT_PATH, "assets", "images", "app_transparent.png"
+            )
             title = "Pomodoro Timer"
             message = "Break time!" if not self._is_break else "Work time!"
             toaster = ToastNotifier()
@@ -429,14 +527,20 @@ class PomodoroWidget(BaseWidget):
 
         # Add header title
         title_label = QLabel("Pomodoro Timer")
-        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignCenter)
+        title_label.setAlignment(
+            Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignCenter
+        )
         title_label.setProperty("class", "header")
         header_layout.addWidget(title_label)
 
         layout.addWidget(header_widget)
 
         if self._is_break:
-            max_value = self._long_break_duration if self._is_long_break else self._break_duration
+            max_value = (
+                self._long_break_duration
+                if self._is_long_break
+                else self._break_duration
+            )
             current_value = max_value - self._remaining_time
         else:
             max_value = self._work_duration
@@ -449,9 +553,13 @@ class PomodoroWidget(BaseWidget):
         self._progress_gauge.setBreakMode(self._is_break)  # Set correct mode
 
         # Set the status text directly on the circular widget
-        status_text = "Paused" if self._is_paused else ("Break" if self._is_break else "Work")
+        status_text = (
+            "Paused" if self._is_paused else ("Break" if self._is_break else "Work")
+        )
 
-        self._progress_gauge.setStatusText(f"{status_text}\n{self._format_time(self._remaining_time)}")
+        self._progress_gauge.setStatusText(
+            f"{status_text}\n{self._format_time(self._remaining_time)}"
+        )
         self._status_label = self._progress_gauge._status_label
 
         layout.addWidget(self._progress_gauge)
@@ -465,7 +573,8 @@ class PomodoroWidget(BaseWidget):
 
         # Session count
         self._session_label = QLabel(
-            f"Session: {self._session_count + 1}" + (f"/{self._session_target}" if self._session_target > 0 else "")
+            f"Session: {self._session_count + 1}"
+            + (f"/{self._session_target}" if self._session_target > 0 else "")
         )
         self._session_label.setProperty("class", "session")
         self._session_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -481,7 +590,9 @@ class PomodoroWidget(BaseWidget):
         # Start/Pause button
         self._toggle_button = QPushButton("Pause" if self._is_running else "Start")
         self._toggle_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self._toggle_button.setProperty("class", "button " + ("pause" if self._is_running else "start"))
+        self._toggle_button.setProperty(
+            "class", "button " + ("pause" if self._is_running else "start")
+        )
         self._toggle_button.clicked.connect(self._toggle_timer)
         button_layout.addWidget(self._toggle_button)
 
@@ -539,7 +650,10 @@ class PomodoroWidget(BaseWidget):
             # End work, start break
             s["is_running"] = False
             s["session_count"] += 1
-            if s["session_count"] > 0 and s["session_count"] % self._long_break_interval == 0:
+            if (
+                s["session_count"] > 0
+                and s["session_count"] % self._long_break_interval == 0
+            ):
                 s["is_long_break"] = True
                 s["remaining_time"] = self._long_break_duration
             else:
@@ -624,7 +738,9 @@ class CircularProgressWidget(QWidget):
         height = self.height()
 
         draw_size = min(width, height) - (self._thickness * 2)
-        rect = QRectF((width - draw_size) / 2, (height - draw_size) / 2, draw_size, draw_size)
+        rect = QRectF(
+            (width - draw_size) / 2, (height - draw_size) / 2, draw_size, draw_size
+        )
 
         background_pen = QPen(QColor(self._background_color), self._thickness)
         background_pen.setCapStyle(Qt.PenCapStyle.RoundCap)

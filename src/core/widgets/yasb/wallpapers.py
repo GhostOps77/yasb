@@ -74,7 +74,10 @@ class WallpapersWidget(BaseWidget):
         self._widget_container_layout = QHBoxLayout()
         self._widget_container_layout.setSpacing(0)
         self._widget_container_layout.setContentsMargins(
-            self._padding["left"], self._padding["top"], self._padding["right"], self._padding["bottom"]
+            self._padding["left"],
+            self._padding["top"],
+            self._padding["right"],
+            self._padding["bottom"],
         )
         # Initialize container
         self._widget_container = QFrame()
@@ -88,7 +91,9 @@ class WallpapersWidget(BaseWidget):
         self._create_dynamically_label(self._label_content)
 
         self.set_wallpaper_signal.connect(self.change_background)
-        self._event_service.register_event("set_wallpaper_signal", self.set_wallpaper_signal)
+        self._event_service.register_event(
+            "set_wallpaper_signal", self.set_wallpaper_signal
+        )
 
         self.register_callback("change_background", self.change_background)
 
@@ -105,7 +110,9 @@ class WallpapersWidget(BaseWidget):
         if widget == "wallpapers":
             current_screen = self.window().screen() if self.window() else None
             current_screen_name = current_screen.name() if current_screen else None
-            if not screen or (current_screen_name and screen.lower() == current_screen_name.lower()):
+            if not screen or (
+                current_screen_name and screen.lower() == current_screen_name.lower()
+            ):
                 self._popup_from_cli = True
                 self._toggle_widget()
 
@@ -135,17 +142,17 @@ class WallpapersWidget(BaseWidget):
         """Create labels dynamically based on the provided content."""
 
         def process_content(content, is_alt=False):
-            label_parts = re.split("(<span.*?>.*?</span>)", content)
+            label_parts = re.split(r"(<span[^>]*?>.*?</span>)", content)
             label_parts = [part for part in label_parts if part]
             widgets = []
             for part in label_parts:
                 part = part.strip()  # Remove any leading/trailing whitespace
                 if not part:
                     continue
-                if "<span" in part and "</span>" in part:
+                if part.startswith("<span") and part.endswith("</span>"):
                     class_name = re.search(r'class=(["\'])([^"\']+?)\1', part)
                     class_result = class_name.group(2) if class_name else "icon"
-                    icon = re.sub(r"<span.*?>|</span>", "", part).strip()
+                    icon = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
                     label = QLabel(icon)
                     label.setProperty("class", class_result)
                     label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
@@ -169,20 +176,26 @@ class WallpapersWidget(BaseWidget):
 
     def _update_label(self):
         """Update the label content dynamically."""
+
         active_widgets = self._widgets
+        active_widgets_len = len(active_widgets)
         active_label_content = self._label_content
-        label_parts = re.split("(<span.*?>.*?</span>)", active_label_content)
-        label_parts = [part for part in label_parts if part]
+        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
         widget_index = 0
+
         for part in label_parts:
+            if widget_index >= active_widgets_len:
+                break
+
             part = part.strip()
-            if part:
-                if "<span" in part and "</span>" in part:
-                    icon = re.sub(r"<span.*?>|</span>", "", part).strip()
-                    active_widgets[widget_index].setText(icon)
-                else:
-                    active_widgets[widget_index].setText(part)
-                widget_index += 1
+            if not part:
+                continue
+
+            if part.startswith("<span") and part.endswith("</span>"):
+                part = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
+
+            active_widgets[widget_index].setText(part)
+            widget_index += 1
 
     def _make_filter(self, class_name: str, title: str):
         """
@@ -201,7 +214,9 @@ class WallpapersWidget(BaseWidget):
 
         return enum_windows
 
-    def find_window_handles(self, parent: int = None, window_class: str = None, title: str = None) -> List[int]:
+    def find_window_handles(
+        self, parent: int = None, window_class: str = None, title: str = None
+    ) -> List[int]:
         """Find window handles based on class name and title."""
         cb = self._make_filter(window_class, title)
         try:
@@ -234,7 +249,10 @@ class WallpapersWidget(BaseWidget):
             self.enable_activedesktop()
         pythoncom.CoInitialize()
         iad = pythoncom.CoCreateInstance(
-            shell.CLSID_ActiveDesktop, None, pythoncom.CLSCTX_INPROC_SERVER, shell.IID_IActiveDesktop
+            shell.CLSID_ActiveDesktop,
+            None,
+            pythoncom.CLSCTX_INPROC_SERVER,
+            shell.IID_IActiveDesktop,
         )
         iad.SetWallpaper(str(image_path), 0)
         iad.ApplyChanges(shellcon.AD_APPLY_ALL)
@@ -254,7 +272,9 @@ class WallpapersWidget(BaseWidget):
 
         if self._gallery["enabled"]:
             if self._animation["enabled"]:
-                AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+                AnimationManager.animate(
+                    self, self._animation["type"], self._animation["duration"]
+                )
             if event is None or event.button() == Qt.MouseButton.LeftButton:
                 if self._image_gallery is not None and self._image_gallery.isVisible():
                     self._image_gallery.fade_out_and_close_gallery()
@@ -271,6 +291,7 @@ class WallpapersWidget(BaseWidget):
         """Change the desktop wallpaper to a new image."""
         if self._is_running:
             return
+
         if self._run_after:
             self._is_running = True
             opacity_effect = QGraphicsOpacityEffect()
@@ -286,7 +307,7 @@ class WallpapersWidget(BaseWidget):
         if image_path:
             new_wallpaper = image_path
         else:
-            """Randomly select a new wallpaper and prevent the same wallpaper from being selected """
+            """Randomly select a new wallpaper and prevent the same wallpaper from being selected"""
             new_wallpaper = random.choice(wallpapers)
             while new_wallpaper == self._last_image and len(wallpapers) > 1:
                 new_wallpaper = random.choice(wallpapers)
@@ -298,18 +319,23 @@ class WallpapersWidget(BaseWidget):
             logging.error(f"Error setting wallpaper {new_wallpaper}: {e}")
 
         if self._run_after:
-            threading.Thread(target=self.run_after_command, args=(new_wallpaper,)).start()
+            threading.Thread(
+                target=self.run_after_command, args=(new_wallpaper,)
+            ).start()
 
     def run_after_command(self, new_wallpaper):
         """Run post-change commands after setting the wallpaper."""
         if self._run_after:
             for command in self._run_after:
-                formatted_command = command.replace("{image}", f'"{new_wallpaper}"')
+                formatted_command = command.format(image=f'"{new_wallpaper}"')
                 if DEBUG:
                     logging.debug(f"Running command: {formatted_command}")
-                result = subprocess.run(formatted_command, shell=True, capture_output=True, text=True)
+                result = subprocess.run(
+                    formatted_command, shell=True, capture_output=True, text=True
+                )
                 if result.stderr:
                     logging.error(f"error: {result.stderr}")
+
         reset_effect = QGraphicsOpacityEffect()
         reset_effect.setOpacity(1.0)
         self._widget_container.setGraphicsEffect(reset_effect)

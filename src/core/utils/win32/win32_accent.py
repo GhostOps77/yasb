@@ -1,7 +1,10 @@
 import ctypes
 import logging
 
-from core.utils.win32.bindings import DwmSetWindowAttribute, SetWindowCompositionAttribute
+from core.utils.win32.bindings import (
+    DwmSetWindowAttribute,
+    SetWindowCompositionAttribute,
+)
 
 
 # Define the ACCENTPOLICY structure
@@ -16,7 +19,11 @@ class ACCENTPOLICY(ctypes.Structure):
 
 # Define the WINDOWCOMPOSITIONATTRIBDATA structure
 class WINDOWCOMPOSITIONATTRIBDATA(ctypes.Structure):
-    _fields_ = [("Attribute", ctypes.c_int), ("Data", ctypes.POINTER(ctypes.c_int)), ("SizeOfData", ctypes.c_size_t)]
+    _fields_ = [
+        ("Attribute", ctypes.c_int),
+        ("Data", ctypes.POINTER(ctypes.c_int)),
+        ("SizeOfData", ctypes.c_size_t),
+    ]
 
 
 _SCA = SetWindowCompositionAttribute
@@ -73,7 +80,9 @@ def set_dark_mode(hwnd):
     data = WINDOWCOMPOSITIONATTRIBDATA()
     data.Attribute = 26  # WCA_USEDARKMODECOLORS
     data.SizeOfData = ctypes.sizeof(ctypes.c_int)
-    data.Data = ctypes.cast(ctypes.pointer(ctypes.c_int(1)), ctypes.POINTER(ctypes.c_int))
+    data.Data = ctypes.cast(
+        ctypes.pointer(ctypes.c_int(1)), ctypes.POINTER(ctypes.c_int)
+    )
 
     result = _SCA(hwnd, ctypes.byref(data))
     if result == 0:
@@ -84,7 +93,10 @@ def set_window_corner_preference(hwnd, preference, border_color):
     """Set the window corner preference and border color."""
     preference_value = ctypes.c_int(preference)
     result = DwmSetWindowAttribute(
-        hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, ctypes.byref(preference_value), ctypes.sizeof(preference_value)
+        hwnd,
+        DWMWA_WINDOW_CORNER_PREFERENCE,
+        ctypes.byref(preference_value),
+        ctypes.sizeof(preference_value),
     )
     if result != 0:
         raise ctypes.WinError()
@@ -97,18 +109,30 @@ def set_window_corner_preference(hwnd, preference, border_color):
         border_color_value = ctypes.c_int(HEXtoRGBAint(border_color))
 
     result = DwmSetWindowAttribute(
-        hwnd, DWMWA_BORDER_COLOR, ctypes.byref(border_color_value), ctypes.sizeof(border_color_value)
+        hwnd,
+        DWMWA_BORDER_COLOR,
+        ctypes.byref(border_color_value),
+        ctypes.sizeof(border_color_value),
     )
     if result != 0:
         raise ctypes.WinError()
 
 
-def Blur(hwnd, Acrylic=False, DarkMode=False, RoundCorners=False, RoundCornersType="normal", BorderColor="System"):
+def Blur(
+    hwnd,
+    Acrylic=False,
+    DarkMode=False,
+    RoundCorners=False,
+    RoundCornersType="normal",
+    BorderColor="System",
+):
     """Apply blur, dark mode, and corner preferences to a window."""
     hwnd = int(hwnd)
     try:
         if Acrylic:
-            set_accent_policy(hwnd, ACCENT_ENABLE_ACRYLICBLURBEHIND, HEXtoRGBAint("#ff000000"), 2)
+            set_accent_policy(
+                hwnd, ACCENT_ENABLE_ACRYLICBLURBEHIND, HEXtoRGBAint("#ff000000"), 2
+            )
         else:
             set_accent_policy(hwnd, ACCENT_ENABLE_BLURBEHIND)
 
@@ -117,7 +141,9 @@ def Blur(hwnd, Acrylic=False, DarkMode=False, RoundCorners=False, RoundCornersTy
 
         if RoundCorners:
             set_window_corner_preference(
-                hwnd, DWMWCP_ROUND if RoundCornersType == "normal" else DWMWCP_ROUNDSMALL, BorderColor
+                hwnd,
+                DWMWCP_ROUND if RoundCornersType == "normal" else DWMWCP_ROUNDSMALL,
+                BorderColor,
             )
     except Exception as e:
         logging.debug(f"Failed to apply settings: {e}")

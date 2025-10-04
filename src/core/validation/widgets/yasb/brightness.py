@@ -30,7 +30,11 @@ DEFAULTS = {
     "auto_light_day_level": 100,
     "container_padding": {"top": 0, "left": 0, "bottom": 0, "right": 0},
     "animation": {"enabled": True, "type": "fadeInOut", "duration": 200},
-    "callbacks": {"on_left": "toggle_label", "on_middle": "do_nothing", "on_right": "do_nothing"},
+    "callbacks": {
+        "on_left": "toggle_label",
+        "on_middle": "do_nothing",
+        "on_right": "do_nothing",
+    },
 }
 
 VALIDATION_SCHEMA = {
@@ -59,21 +63,61 @@ VALIDATION_SCHEMA = {
         "required": False,
         "schema": {
             "blur": {"type": "boolean", "default": DEFAULTS["brightness_menu"]["blur"]},
-            "round_corners": {"type": "boolean", "default": DEFAULTS["brightness_menu"]["round_corners"]},
-            "round_corners_type": {"type": "string", "default": DEFAULTS["brightness_menu"]["round_corners_type"]},
-            "border_color": {"type": "string", "default": DEFAULTS["brightness_menu"]["border_color"]},
-            "alignment": {"type": "string", "default": DEFAULTS["brightness_menu"]["alignment"]},
-            "direction": {"type": "string", "default": DEFAULTS["brightness_menu"]["direction"]},
-            "distance": {"type": "integer", "default": DEFAULTS["brightness_menu"]["distance"]},
-            "offset_top": {"type": "integer", "default": DEFAULTS["brightness_menu"]["offset_top"]},
-            "offset_left": {"type": "integer", "default": DEFAULTS["brightness_menu"]["offset_left"]},
+            "round_corners": {
+                "type": "boolean",
+                "default": DEFAULTS["brightness_menu"]["round_corners"],
+            },
+            "round_corners_type": {
+                "type": "string",
+                "default": DEFAULTS["brightness_menu"]["round_corners_type"],
+            },
+            "border_color": {
+                "type": "string",
+                "default": DEFAULTS["brightness_menu"]["border_color"],
+            },
+            "alignment": {
+                "type": "string",
+                "default": DEFAULTS["brightness_menu"]["alignment"],
+            },
+            "direction": {
+                "type": "string",
+                "default": DEFAULTS["brightness_menu"]["direction"],
+            },
+            "distance": {
+                "type": "integer",
+                "default": DEFAULTS["brightness_menu"]["distance"],
+            },
+            "offset_top": {
+                "type": "integer",
+                "default": DEFAULTS["brightness_menu"]["offset_top"],
+            },
+            "offset_left": {
+                "type": "integer",
+                "default": DEFAULTS["brightness_menu"]["offset_left"],
+            },
         },
         "default": DEFAULTS["brightness_menu"],
     },
-    "hide_unsupported": {"type": "boolean", "required": False, "default": DEFAULTS["hide_unsupported"]},
-    "auto_light": {"type": "boolean", "required": False, "default": DEFAULTS["auto_light"]},
-    "auto_light_icon": {"type": "string", "required": False, "default": DEFAULTS["auto_light_icon"]},
-    "auto_light_night_level": {"type": "integer", "required": False, "default": DEFAULTS["auto_light_night_level"]},
+    "hide_unsupported": {
+        "type": "boolean",
+        "required": False,
+        "default": DEFAULTS["hide_unsupported"],
+    },
+    "auto_light": {
+        "type": "boolean",
+        "required": False,
+        "default": DEFAULTS["auto_light"],
+    },
+    "auto_light_icon": {
+        "type": "string",
+        "required": False,
+        "default": DEFAULTS["auto_light_icon"],
+    },
+    "auto_light_night_level": {
+        "type": "integer",
+        "required": False,
+        "default": DEFAULTS["auto_light_night_level"],
+    },
     "auto_light_night_start_time": {
         "type": "string",
         "required": False,
@@ -84,15 +128,28 @@ VALIDATION_SCHEMA = {
         "required": False,
         "default": DEFAULTS["auto_light_night_end_time"],
     },
-    "auto_light_day_level": {"type": "integer", "required": False, "default": DEFAULTS["auto_light_day_level"]},
+    "auto_light_day_level": {
+        "type": "integer",
+        "required": False,
+        "default": DEFAULTS["auto_light_day_level"],
+    },
     "container_padding": {
         "type": "dict",
         "required": False,
         "schema": {
             "top": {"type": "integer", "default": DEFAULTS["container_padding"]["top"]},
-            "left": {"type": "integer", "default": DEFAULTS["container_padding"]["left"]},
-            "bottom": {"type": "integer", "default": DEFAULTS["container_padding"]["bottom"]},
-            "right": {"type": "integer", "default": DEFAULTS["container_padding"]["right"]},
+            "left": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["left"],
+            },
+            "bottom": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["bottom"],
+            },
+            "right": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["right"],
+            },
         },
         "default": DEFAULTS["container_padding"],
     },
@@ -102,7 +159,10 @@ VALIDATION_SCHEMA = {
         "schema": {
             "enabled": {"type": "boolean", "default": DEFAULTS["animation"]["enabled"]},
             "type": {"type": "string", "default": DEFAULTS["animation"]["type"]},
-            "duration": {"type": "integer", "default": DEFAULTS["animation"]["duration"]},
+            "duration": {
+                "type": "integer",
+                "default": DEFAULTS["animation"]["duration"],
+            },
         },
         "default": DEFAULTS["animation"],
     },
@@ -137,11 +197,18 @@ VALIDATION_SCHEMA = {
             "size": {"type": "integer", "default": 18, "min": 8, "max": 64},
             "thickness": {"type": "integer", "default": 3, "min": 1, "max": 10},
             "color": {
-                "anyof": [{"type": "string"}, {"type": "list", "schema": {"type": "string"}}],
+                "anyof": [
+                    {"type": "string"},
+                    {"type": "list", "schema": {"type": "string"}},
+                ],
                 "default": "#00C800",
             },
             "background_color": {"type": "string", "default": "#3C3C3C"},
-            "position": {"type": "string", "allowed": ["left", "right"], "default": "left"},
+            "position": {
+                "type": "string",
+                "allowed": ["left", "right"],
+                "default": "left",
+            },
             "animation": {
                 "type": "boolean",
                 "default": True,

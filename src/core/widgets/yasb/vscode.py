@@ -10,7 +10,14 @@ from typing import Any, List
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QCursor
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QScrollArea, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
 
 from core.utils.utilities import PopupWidget, add_shadow, build_widget_label
 from core.utils.widgets.animation_manager import AnimationManager
@@ -66,13 +73,18 @@ class VSCodeWidget(BaseWidget):
         self._label_shadow = label_shadow
 
         if state_storage_path == "":
-            state_storage_path = os.path.expandvars(r"%APPDATA%\Code\User\globalStorage\state.vscdb")
+            state_storage_path = os.path.expandvars(
+                r"%APPDATA%\Code\User\globalStorage\state.vscdb"
+            )
         self._state_file_path = state_storage_path
 
         self._widget_container_layout = QHBoxLayout()
         self._widget_container_layout.setSpacing(0)
         self._widget_container_layout.setContentsMargins(
-            self._padding["left"], self._padding["top"], self._padding["right"], self._padding["bottom"]
+            self._padding["left"],
+            self._padding["top"],
+            self._padding["right"],
+            self._padding["bottom"],
         )
 
         self._widget_container = QFrame()
@@ -82,7 +94,9 @@ class VSCodeWidget(BaseWidget):
 
         self.widget_layout.addWidget(self._widget_container)
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(
+            self, self._label_content, self._label_alt_content, self._label_shadow
+        )
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("toggle_menu", self._toggle_menu)
@@ -106,7 +120,9 @@ class VSCodeWidget(BaseWidget):
         try:
             conn = sqlite3.connect(self._state_file_path)
             cursor = conn.cursor()
-            cursor.execute("SELECT value FROM ItemTable WHERE key = 'history.recentlyOpenedPathsList'")
+            cursor.execute(
+                "SELECT value FROM ItemTable WHERE key = 'history.recentlyOpenedPathsList'"
+            )
             result = cursor.fetchone()
             result_list = []
             if result:
@@ -114,7 +130,9 @@ class VSCodeWidget(BaseWidget):
                 for path in paths_data:
                     if isinstance(path, dict):
                         if path.get("folderUri"):
-                            folder_path = self._uri_to_windows_path(path.get("folderUri"))
+                            folder_path = self._uri_to_windows_path(
+                                path.get("folderUri")
+                            )
                             if os.path.exists(folder_path):
                                 result_list.append({"folder": folder_path})
                         if path.get("fileUri"):
@@ -133,12 +151,16 @@ class VSCodeWidget(BaseWidget):
 
     def _toggle_menu(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+            AnimationManager.animate(
+                self, self._animation["type"], self._animation["duration"]
+            )
         self.show_menu()
 
     def _toggle_label(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+            AnimationManager.animate(
+                self, self._animation["type"], self._animation["duration"]
+            )
         self._show_alt_label = not self._show_alt_label
         for widget in self._widgets:
             widget.setVisible(not self._show_alt_label)
@@ -148,24 +170,37 @@ class VSCodeWidget(BaseWidget):
 
     def _update_label(self):
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
-        label_parts = re.split("(<span.*?>.*?</span>)", active_label_content)
-        label_parts = [part for part in label_parts if part]
+        active_widgets_len = len(active_widgets)
+        active_label_content = (
+            self._label_alt_content if self._show_alt_label else self._label_content
+        )
+        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
         widget_index = 0
 
         for part in label_parts:
+            if widget_index >= active_widgets_len:
+                break
+
             part = part.strip()
-            if part and widget_index < len(active_widgets) and isinstance(active_widgets[widget_index], QLabel):
-                if "<span" in part and "</span>" in part:
-                    icon = re.sub(r"<span.*?>|</span>", "", part).strip()
-                    active_widgets[widget_index].setText(icon)
-                else:
-                    active_widgets[widget_index].setText(part)
-                widget_index += 1
+            if not part:
+                continue
+
+            if not isinstance(active_widgets[widget_index], QLabel):
+                continue
+
+            if part.startswith("<span") and part.endswith("</span>"):
+                part = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
+
+            active_widgets[widget_index].setText(part)
+            widget_index += 1
 
     def _handle_mouse_press_event(self, event, folder):
         try:
-            subprocess.Popen([self._cli_command, folder], shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
+            subprocess.Popen(
+                [self._cli_command, folder],
+                shell=True,
+                creationflags=subprocess.CREATE_NO_WINDOW,
+            )
         except subprocess.CalledProcessError as e:
             logging.error(f"Failed to open VS Code with folder {folder}: {e}")
         except FileNotFoundError:
@@ -204,7 +239,8 @@ class VSCodeWidget(BaseWidget):
         scroll_area.setWidgetResizable(True)
         scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll_area.setViewportMargins(0, 0, -4, 0)
-        scroll_area.setStyleSheet("""
+        scroll_area.setStyleSheet(
+            """
             QScrollArea { background: transparent; border: none; border-radius:0; }
             QScrollBar:vertical { border: none; background:transparent; width: 4px; }
             QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: transparent; }
@@ -212,7 +248,8 @@ class VSCodeWidget(BaseWidget):
             QScrollBar::handle:vertical:hover { background: rgba(255, 255, 255, 0.35); }
             QScrollBar::sub-line:vertical, QScrollBar::add-line:vertical { height: 0px; }
             QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: transparent; }
-        """)
+        """
+        )
         return scroll_area
 
     def _create_no_recents_label(self):
@@ -235,7 +272,9 @@ class VSCodeWidget(BaseWidget):
 
         is_folder = "folder" in workspace_data
 
-        if (is_folder and not self._hide_folder_icon) or (not is_folder and not self._hide_file_icon):
+        if (is_folder and not self._hide_folder_icon) or (
+            not is_folder and not self._hide_file_icon
+        ):
             icon_label = QLabel(self._folder_icon if is_folder else self._file_icon)
             icon_label.setProperty("class", "folder-icon" if is_folder else "file-icon")
             container_layout.addWidget(icon_label)
@@ -262,7 +301,9 @@ class VSCodeWidget(BaseWidget):
         text_content_layout = QVBoxLayout(text_content)
         text_content_layout.addWidget(title_label)
         text_content_layout.addWidget(date_label)
-        text_content_layout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        text_content_layout.setAlignment(
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        )
         text_content_layout.setContentsMargins(0, 0, 0, 0)
         text_content_layout.setSpacing(0)
 
@@ -293,14 +334,23 @@ class VSCodeWidget(BaseWidget):
 
         if not recent_workspaces:
             scroll_layout.addWidget(self._create_no_recents_label())
-        else:
-            folders = [ws for ws in recent_workspaces if "folder" in ws][: self._max_number_of_folders]
-            files = [ws for ws in recent_workspaces if "file" in ws][: self._max_number_of_files]
-            workspaces_to_show = folders + files
+            return
 
-            for workspace in workspaces_to_show:
-                item = self._create_workspace_item(workspace)
-                scroll_layout.addWidget(item)
+        folders = []
+        files = []
+
+        for ws in recent_workspaces:
+            if "folder" in ws and len(folders) <= self._max_number_of_folders:
+                folders.append(ws)
+
+            if "file" in ws and len(files) <= self._max_number_of_files:
+                files.append(ws)
+
+        workspaces_to_show = folders + files
+
+        for workspace in workspaces_to_show:
+            item = self._create_workspace_item(workspace)
+            scroll_layout.addWidget(item)
 
     def _position_and_show_menu(self):
         self._menu.adjustSize()

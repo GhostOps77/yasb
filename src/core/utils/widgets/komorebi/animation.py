@@ -16,7 +16,10 @@ class KomorebiAnimation:
 
     @staticmethod
     def animate_width(
-        widget, duration: int | None = None, easing: QEasingCurve.Type | None = None, start_width: int | None = None
+        widget,
+        duration: int | None = None,
+        easing: QEasingCurve.Type | None = None,
+        start_width: int | None = None,
     ) -> None:
         if duration is None:
             duration = KomorebiAnimation.DEFAULT_WIDTH_DURATION
@@ -34,7 +37,13 @@ class KomorebiAnimation:
         try:
             if int(target_width) == int(start_width):
                 widget.setFixedWidth(int(target_width))
-                QTimer.singleShot(0, lambda: (widget.setMinimumWidth(0), widget.setMaximumWidth(16777215)))
+                QTimer.singleShot(
+                    0,
+                    lambda: (
+                        widget.setMinimumWidth(0),
+                        widget.setMaximumWidth(16777215),
+                    ),
+                )
                 return
         except Exception:
             pass
@@ -83,7 +92,13 @@ class KomorebiAnimation:
                 if getattr(widget, "_yasb_width_anim", None) is not anim:
                     return
                 widget.setFixedWidth(int(target_width))
-                QTimer.singleShot(0, lambda: (widget.setMinimumWidth(0), widget.setMaximumWidth(16777215)))
+                QTimer.singleShot(
+                    0,
+                    lambda: (
+                        widget.setMinimumWidth(0),
+                        widget.setMaximumWidth(16777215),
+                    ),
+                )
                 try:
                     setattr(widget, "_yasb_width_anim", None)
                 except Exception:
@@ -97,15 +112,24 @@ class KomorebiAnimation:
 
     @staticmethod
     def _animate_width_next_tick(
-        widget, width_duration: int | None, easing: QEasingCurve.Type | None, start_width: int | None = None
+        widget,
+        width_duration: int | None,
+        easing: QEasingCurve.Type | None,
+        start_width: int | None = None,
     ) -> None:
         QTimer.singleShot(
-            0, lambda: KomorebiAnimation.animate_width(widget, width_duration, easing, start_width=start_width)
+            0,
+            lambda: KomorebiAnimation.animate_width(
+                widget, width_duration, easing, start_width=start_width
+            ),
         )
 
     @staticmethod
     def animate_state_transition(
-        widget, new_status, width_duration: int | None = None, easing: QEasingCurve.Type | None = None
+        widget,
+        new_status,
+        width_duration: int | None = None,
+        easing: QEasingCurve.Type | None = None,
     ) -> None:
         if width_duration is None:
             width_duration = KomorebiAnimation.DEFAULT_WIDTH_DURATION
@@ -118,4 +142,6 @@ class KomorebiAnimation:
             current_visual_width = None
 
         widget.update_and_redraw(new_status, lock_width=True)
-        KomorebiAnimation._animate_width_next_tick(widget, width_duration, easing, start_width=current_visual_width)
+        KomorebiAnimation._animate_width_next_tick(
+            widget, width_duration, easing, start_width=current_visual_width
+        )

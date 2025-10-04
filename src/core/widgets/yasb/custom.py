@@ -65,10 +65,16 @@ class CustomWidget(BaseWidget):
         label_shadow: dict = None,
         container_shadow: dict = None,
     ):
-        super().__init__(exec_options["run_interval"], class_name=f"custom-widget {class_name}")
+        super().__init__(
+            exec_options["run_interval"], class_name=f"custom-widget {class_name}"
+        )
         self._label_max_length = label_max_length
         self._exec_data = None
-        self._exec_cmd = exec_options["run_cmd"].split(" ") if exec_options.get("run_cmd", False) else None
+        self._exec_cmd = (
+            exec_options["run_cmd"].split(" ")
+            if exec_options.get("run_cmd", False)
+            else None
+        )
         self._exec_return_type = exec_options["return_format"]
         self._exec_shell = exec_options["use_shell"]
         self._exec_encoding = exec_options["encoding"]
@@ -85,7 +91,10 @@ class CustomWidget(BaseWidget):
         self._widget_container_layout = QHBoxLayout()
         self._widget_container_layout.setSpacing(0)
         self._widget_container_layout.setContentsMargins(
-            self._padding["left"], self._padding["top"], self._padding["right"], self._padding["bottom"]
+            self._padding["left"],
+            self._padding["top"],
+            self._padding["right"],
+            self._padding["bottom"],
         )
         # Initialize container
         self._widget_container = QFrame()
@@ -111,12 +120,17 @@ class CustomWidget(BaseWidget):
             self.start_timer()
 
     def _set_cursor(self, label):
-        if any(cb != "do_nothing" for cb in [self.callback_left, self.callback_right, self.callback_middle]):
+        if any(
+            cb != "do_nothing"
+            for cb in [self.callback_left, self.callback_right, self.callback_middle]
+        ):
             label.setCursor(Qt.CursorShape.PointingHandCursor)
 
     def _toggle_label(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+            AnimationManager.animate(
+                self, self._animation["type"], self._animation["duration"]
+            )
         self._show_alt_label = not self._show_alt_label
         for widget in self._widgets:
             widget.setVisible(not self._show_alt_label)
@@ -126,22 +140,24 @@ class CustomWidget(BaseWidget):
 
     def _create_dynamically_label(self, content: str, content_alt: str):
         def process_content(content, is_alt=False):
-            label_parts = re.split("(<span.*?>.*?</span>)", content)
+            label_parts = re.split(r"(<span[^>]*?>.*?</span>)", content)
             widgets = []
             for part in label_parts:
                 part = part.strip()
                 if not part:
                     continue
-                if "<span" in part and "</span>" in part:
+
+                if part.startswith("<span") and part.endswith("</span>"):
                     class_name = re.search(r'class=(["\'])([^"\']+?)\1', part)
                     class_result = class_name.group(2) if class_name else "icon"
-                    icon = re.sub(r"<span.*?>|</span>", "", part).strip()
+                    icon = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
                     label = QLabel(icon)
                     label.setProperty("class", class_result)
                 else:
                     label = QLabel(part)
                     label.setProperty("class", "label alt" if is_alt else "label")
                     label.setText(self._label_placeholder)
+
                 label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 self._set_cursor(label)
                 add_shadow(label, self._label_shadow)
@@ -164,33 +180,55 @@ class CustomWidget(BaseWidget):
 
     def _update_label(self):
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
-        label_parts = re.split("(<span.*?>.*?</span>)", active_label_content)
+        active_widgets_len = len(active_widgets)
+
+        active_label_content = (
+            self._label_alt_content if self._show_alt_label else self._label_content
+        )
+        active_label_content = active_label_content.format(data=self._exec_data)
+
+        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
         widget_index = 0
+
         try:
             for part in label_parts:
+                if widget_index >= active_widgets_len:
+                    break
+
                 part = part.strip()
-                if part and widget_index < len(active_widgets) and isinstance(active_widgets[widget_index], QLabel):
-                    if "<span" in part and "</span>" in part:
-                        icon = re.sub(r"<span.*?>|</span>", "", part).strip()
-                        active_widgets[widget_index].setText(icon)
-                    else:
-                        active_widgets[widget_index].setText(self._truncate_label(part.format(data=self._exec_data)))
-                    if self._hide_empty:
-                        if self._exec_data:
-                            self.setVisible(True)
-                            # active_widgets[widget_index].show()
-                        else:
-                            self.setVisible(False)
-                            # active_widgets[widget_index].hide()
-                    widget_index += 1
+                # if not part:
+                #     continue
+
+                if not isinstance(active_widgets[widget_index], QLabel):
+                    continue
+
+                if part.startswith("<span") and part.endswith("</span>"):
+                    part = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
+                elif part:
+                    part = self._truncate_label(part)
+
+                active_widgets[widget_index].setText(part)
+                if self._hide_empty:
+                    # if self._exec_data:
+                    #     self.setVisible(True)
+                    #     # active_widgets[widget_index].show()
+                    # else:
+                    #     self.setVisible(False)
+                    #     # active_widgets[widget_index].hide()
+                    self.setVisible(not not self._exec_data)
+                widget_index += 1
+
         except Exception:
             active_widgets[widget_index].setText(self._truncate_label(part))
 
     def _exec_callback(self):
         if self._exec_cmd:
             worker = CustomWorker(
-                self._exec_cmd, self._exec_shell, self._exec_encoding, self._exec_return_type, self._hide_empty
+                self._exec_cmd,
+                self._exec_shell,
+                self._exec_encoding,
+                self._exec_return_type,
+                self._hide_empty,
             )
             worker_thread = threading.Thread(target=worker.run)
             worker.data_ready.connect(self._handle_exec_data)
@@ -206,16 +244,15 @@ class CustomWidget(BaseWidget):
     def _cb_execute_subprocess(self, cmd: str, *cmd_args: list[str]):
         # Overrides the default 'exec' callback from BaseWidget to allow for data formatting
         if self._exec_data:
-            formatted_cmd_args = []
-            for cmd_arg in cmd_args:
+            for idx, cmd_arg in range(len(cmd_args)):
                 try:
-                    formatted_cmd_args.append(cmd_arg.format(data=self._exec_data))
+                    cmd_args[idx].append(cmd_arg.format(data=self._exec_data))
                 except KeyError:
-                    formatted_cmd_args.append(cmd_args)
-            cmd_args = formatted_cmd_args
+                    cmd_args[idx].append(cmd_args)
+
         if cmd in function_map:
             function_map[cmd]()
         else:
             subprocess.Popen(
-                [cmd, *cmd_args] if cmd_args else [cmd], shell=self._exec_shell, encoding=self._exec_encoding
+                [cmd, *cmd_args], shell=self._exec_shell, encoding=self._exec_encoding
             )

@@ -63,11 +63,17 @@ class PowerOperations:
         self.clear_widget()
         try:
             access = win32security.TOKEN_ADJUST_PRIVILEGES | win32security.TOKEN_QUERY
-            htoken = win32security.OpenProcessToken(win32api.GetCurrentProcess(), access)
+            htoken = win32security.OpenProcessToken(
+                win32api.GetCurrentProcess(), access
+            )
             if htoken:
                 try:
-                    priv_id = win32security.LookupPrivilegeValue(None, win32security.SE_SHUTDOWN_NAME)
-                    win32security.AdjustTokenPrivileges(htoken, 0, [(priv_id, win32security.SE_PRIVILEGE_ENABLED)])
+                    priv_id = win32security.LookupPrivilegeValue(
+                        None, win32security.SE_SHUTDOWN_NAME
+                    )
+                    win32security.AdjustTokenPrivileges(
+                        htoken, 0, [(priv_id, win32security.SE_PRIVILEGE_ENABLED)]
+                    )
                     success = ctypes.windll.powrprof.SetSuspendState(False, True, False)
                     if not success:
                         logging.error("Sleep operation failed")
@@ -127,7 +133,10 @@ class PowerOperations:
         self.main_window.fade_out()
 
         # Find bar and trigger autohide if applicable
-        if hasattr(self.main_window, "parent_button") and self.main_window.parent_button:
+        if (
+            hasattr(self.main_window, "parent_button")
+            and self.main_window.parent_button
+        ):
             try:
                 widget = self.main_window.parent_button
                 while widget and not hasattr(widget, "_autohide_bar"):

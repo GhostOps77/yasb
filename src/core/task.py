@@ -31,7 +31,9 @@ def get_current_user_sid():
 def find_pythonw_exe():
     pythonw_path = shutil.which("pythonw.exe")
     if pythonw_path is None:
-        ctypes.windll.user32.MessageBoxW(0, "pythonw.exe not found in PATH.", "Error", 0x10)
+        ctypes.windll.user32.MessageBoxW(
+            0, "pythonw.exe not found in PATH.", "Error", 0x10
+        )
         sys.exit(1)
     return pythonw_path
 
@@ -111,11 +113,15 @@ def enable_task(task_name, enable):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Manage Windows Task Scheduler tasks.")
     parser.add_argument(
-        "action", choices=["create", "delete", "enable", "disable"], help="Action to perform on the task."
+        "action",
+        choices=["create", "delete", "enable", "disable"],
+        help="Action to perform on the task.",
     )
     args = parser.parse_args()
     if not is_admin():
-        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+        ctypes.windll.shell32.ShellExecuteW(
+            None, "runas", sys.executable, " ".join(sys.argv), None, 1
+        )
     else:
         task_name = "YASB"
         script_path = r"src\main.py"

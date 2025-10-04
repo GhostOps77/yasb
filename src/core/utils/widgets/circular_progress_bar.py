@@ -58,7 +58,11 @@ class CircularProgressBar(QFrame):
                 gradient.setColorAt(i * step, QColor(color))
             return gradient
         else:
-            color = self._color_config[0] if isinstance(self._color_config, list) else self._color_config
+            color = (
+                self._color_config[0]
+                if isinstance(self._color_config, list)
+                else self._color_config
+            )
             return QColor(color)
 
     def paintEvent(self, event):
@@ -74,13 +78,27 @@ class CircularProgressBar(QFrame):
         if rect.width() <= 0 or rect.height() <= 0:
             return
 
-        painter.setPen(QPen(self._background_color, self._thickness, Qt.PenStyle.SolidLine, Qt.PenCapStyle.FlatCap))
+        painter.setPen(
+            QPen(
+                self._background_color,
+                self._thickness,
+                Qt.PenStyle.SolidLine,
+                Qt.PenCapStyle.FlatCap,
+            )
+        )
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawArc(rect, 0, 360 * 16)
 
         if self._value > 0:
             progress_brush = self._create_progress_brush(rect)
-            painter.setPen(QPen(progress_brush, self._thickness, Qt.PenStyle.SolidLine, Qt.PenCapStyle.FlatCap))
+            painter.setPen(
+                QPen(
+                    progress_brush,
+                    self._thickness,
+                    Qt.PenStyle.SolidLine,
+                    Qt.PenCapStyle.FlatCap,
+                )
+            )
             painter.drawArc(rect, 90 * 16, -int(self._angle_span * 16))
 
     def set_value(self, value: float):

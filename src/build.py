@@ -57,7 +57,15 @@ build_options = {
     ],
     "silent_level": 1,
     "silent": True,
-    "excludes": ["PySide6", "pydoc_data", "email", "tkinter", "PyQt5", "PySide2", "unittest"],
+    "excludes": [
+        "PySide6",
+        "pydoc_data",
+        "email",
+        "tkinter",
+        "PyQt5",
+        "PySide2",
+        "unittest",
+    ],
     "zip_exclude_packages": ["*"],
     "build_exe": "dist",
     "include_msvcr": True,
@@ -95,13 +103,27 @@ directory_table = [
 msi_data = {
     "Directory": directory_table,
     "ProgId": [
-        ("Prog.Id", None, None, "A highly configurable Windows status bar", "IconId", None),
+        (
+            "Prog.Id",
+            None,
+            None,
+            "A highly configurable Windows status bar",
+            "IconId",
+            None,
+        ),
     ],
     "Icon": [
         ("IconId", "assets/images/app_icon.ico"),
     ],
     "Registry": [
-        ("AppUserModelId", -1, f"Software\\Classes\\AppUserModelId\\{APP_ID}", "DisplayName", "YASB", "TARGETDIR"),
+        (
+            "AppUserModelId",
+            -1,
+            f"Software\\Classes\\AppUserModelId\\{APP_ID}",
+            "DisplayName",
+            "YASB",
+            "TARGETDIR",
+        ),
         (
             "AppUserModelIdIcon",
             -1,

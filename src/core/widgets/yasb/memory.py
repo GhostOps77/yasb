@@ -52,7 +52,10 @@ class MemoryWidget(BaseWidget):
         self._widget_container_layout = QHBoxLayout()
         self._widget_container_layout.setSpacing(0)
         self._widget_container_layout.setContentsMargins(
-            self._padding["left"], self._padding["top"], self._padding["right"], self._padding["bottom"]
+            self._padding["left"],
+            self._padding["top"],
+            self._padding["right"],
+            self._padding["bottom"],
         )
         # Initialize container
         self._widget_container = QFrame()
@@ -62,7 +65,9 @@ class MemoryWidget(BaseWidget):
         # Add the container to the main widget layout
         self.widget_layout.addWidget(self._widget_container)
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(
+            self, self._label_content, self._label_alt_content, self._label_shadow
+        )
 
         self.register_callback("toggle_label", self._toggle_label)
 
@@ -122,57 +127,73 @@ class MemoryWidget(BaseWidget):
     def _update_label(self, virtual_mem, swap_mem):
         """Update label using shared memory data."""
 
+        _round = lambda value: round(value) if self._hide_decimal else value
+        _naturalsize = lambda value: naturalsize(
+            value, True, True, "%.0f" if self._hide_decimal else "%.1f"
+        )
+
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
-        label_parts = re.split("(<span.*?>.*?</span>)", active_label_content)
-        label_parts = [part for part in label_parts if part]
+        active_widgets_len = len(active_widgets)
+        active_label_content = (
+            self._label_alt_content if self._show_alt_label else self._label_content
+        )
+        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
         widget_index = 0
 
-        _round = lambda value: round(value) if self._hide_decimal else value
-        _naturalsize = lambda value: naturalsize(value, True, True, "%.0f" if self._hide_decimal else "%.1f")
-        label_options = {
-            "{virtual_mem_free}": _naturalsize(virtual_mem.free),
-            "{virtual_mem_percent}": _round(virtual_mem.percent),
-            "{virtual_mem_total}": _naturalsize(virtual_mem.total),
-            "{virtual_mem_avail}": _naturalsize(virtual_mem.available),
-            "{virtual_mem_used}": _naturalsize(virtual_mem.used),
-            "{virtual_mem_outof}": f"{_naturalsize(virtual_mem.used)} / {_naturalsize(virtual_mem.total)}",
-            "{swap_mem_free}": _naturalsize(swap_mem.free),
-            "{swap_mem_percent}": _round(swap_mem.percent),
-            "{swap_mem_total}": _naturalsize(swap_mem.total),
-            "{histogram}": "".join([self._get_histogram_bar(virtual_mem.percent, 0, 100)]),
-        }
+        active_label_content = active_label_content.format(
+            virtual_mem_free=_naturalsize(virtual_mem.free),
+            virtual_mem_percent=_round(virtual_mem.percent),
+            virtual_mem_total=_naturalsize(virtual_mem.total),
+            virtual_mem_avail=_naturalsize(virtual_mem.available),
+            virtual_mem_used=_naturalsize(virtual_mem.used),
+            virtual_mem_outof=f"{_naturalsize(virtual_mem.used)} / {_naturalsize(virtual_mem.total)}",
+            swap_mem_free=_naturalsize(swap_mem.free),
+            swap_mem_percent=_round(swap_mem.percent),
+            swap_mem_total=_naturalsize(swap_mem.total),
+            histogram="".join(self._get_histogram_bar(virtual_mem.percent, 0, 100)),
+        )
 
         if self._progress_bar["enabled"] and self.progress_widget:
             if self._widget_container_layout.indexOf(self.progress_widget) == -1:
                 self._widget_container_layout.insertWidget(
-                    0 if self._progress_bar["position"] == "left" else self._widget_container_layout.count(),
+                    (
+                        0
+                        if self._progress_bar["position"] == "left"
+                        else self._widget_container_layout.count()
+                    ),
                     self.progress_widget,
                 )
             self.progress_widget.set_value(virtual_mem.percent)
 
         for part in label_parts:
             part = part.strip()
-            for fmt_str, value in label_options.items():
-                part = part.replace(fmt_str, str(value))
+            if not part:
+                continue
 
-            if part and widget_index < len(active_widgets) and isinstance(active_widgets[widget_index], QLabel):
-                if "<span" in part and "</span>" in part:
-                    icon = re.sub(r"<span.*?>|</span>", "", part).strip()
-                    active_widgets[widget_index].setText(icon)
-                else:
-                    active_widgets[widget_index].setText(part)
-                    # Set memory threshold as property
-                    label_class = "label alt" if self._show_alt_label else "label"
-                    active_widgets[widget_index].setProperty(
-                        "class", f"{label_class} status-{self._get_virtual_memory_threshold(virtual_mem.percent)}"
-                    )
-                    active_widgets[widget_index].setStyleSheet("")
-                widget_index += 1
+            if widget_index >= active_widgets_len or not isinstance(
+                active_widgets[widget_index], QLabel
+            ):
+                continue
+
+            if part.startswith("<span") and part.endswith("</span>"):
+                part = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
+            else:
+                # Set memory threshold as property
+                label_class = "label alt" if self._show_alt_label else "label"
+                active_widgets[widget_index].setProperty(
+                    "class",
+                    f"{label_class} status-{self._get_virtual_memory_threshold(virtual_mem.percent)}",
+                )
+                active_widgets[widget_index].setStyleSheet("")
+
+            active_widgets[widget_index].setText(part)
+            widget_index += 1
 
     def _toggle_label(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+            AnimationManager.animate(
+                self, self._animation["type"], self._animation["duration"]
+            )
         self._show_alt_label = not self._show_alt_label
         for widget in self._widgets:
             widget.setVisible(not self._show_alt_label)
@@ -183,9 +204,17 @@ class MemoryWidget(BaseWidget):
     def _get_virtual_memory_threshold(self, virtual_memory_percent) -> str:
         if virtual_memory_percent <= self._memory_thresholds["low"]:
             return "low"
-        elif self._memory_thresholds["low"] < virtual_memory_percent <= self._memory_thresholds["medium"]:
+        elif (
+            self._memory_thresholds["low"]
+            < virtual_memory_percent
+            <= self._memory_thresholds["medium"]
+        ):
             return "medium"
-        elif self._memory_thresholds["medium"] < virtual_memory_percent <= self._memory_thresholds["high"]:
+        elif (
+            self._memory_thresholds["medium"]
+            < virtual_memory_percent
+            <= self._memory_thresholds["high"]
+        ):
             return "high"
         elif self._memory_thresholds["high"] < virtual_memory_percent:
             return "critical"
@@ -193,6 +222,8 @@ class MemoryWidget(BaseWidget):
     def _get_histogram_bar(self, num, num_min, num_max):
         if num_max == num_min:
             return self._histogram_icons[0]
-        bar_index = int((num - num_min) / (num_max - num_min) * (len(self._histogram_icons) - 1))
+        bar_index = int(
+            (num - num_min) / (num_max - num_min) * (len(self._histogram_icons) - 1)
+        )
         bar_index = min(max(bar_index, 0), len(self._histogram_icons) - 1)
         return self._histogram_icons[bar_index]

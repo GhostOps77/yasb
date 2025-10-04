@@ -12,7 +12,9 @@ from core.validation.widgets.yasb.notifications import VALIDATION_SCHEMA
 from core.widgets.base import BaseWidget
 
 try:
-    from core.utils.widgets.notifications.windows_notification import WindowsNotificationEventListener
+    from core.utils.widgets.notifications.windows_notification import (
+        WindowsNotificationEventListener,
+    )
 except ImportError:
     WindowsNotificationEventListener = None
     logging.warning("Failed to load Windows Notification Event Listener")
@@ -55,7 +57,10 @@ class NotificationsWidget(BaseWidget):
         self._widget_container_layout = QHBoxLayout()
         self._widget_container_layout.setSpacing(0)
         self._widget_container_layout.setContentsMargins(
-            self._padding["left"], self._padding["top"], self._padding["right"], self._padding["bottom"]
+            self._padding["left"],
+            self._padding["top"],
+            self._padding["right"],
+            self._padding["bottom"],
         )
         # Initialize container
         self._widget_container = QFrame()
@@ -66,7 +71,9 @@ class NotificationsWidget(BaseWidget):
         # Add the container to the main widget layout
         self.widget_layout.addWidget(self._widget_container)
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(
+            self, self._label_content, self._label_alt_content, self._label_shadow
+        )
 
         self.callback_left = callbacks["on_left"]
         self.callback_right = callbacks["on_right"]
@@ -78,8 +85,12 @@ class NotificationsWidget(BaseWidget):
 
         # Register the WindowsNotificationUpdate event
         self.event_service = EventService()
-        self.event_service.register_event("WindowsNotificationUpdate", self.windows_notification_update_signal)
-        self.windows_notification_update_signal.connect(self._on_windows_notification_update)
+        self.event_service.register_event(
+            "WindowsNotificationUpdate", self.windows_notification_update_signal
+        )
+        self.windows_notification_update_signal.connect(
+            self._on_windows_notification_update
+        )
 
         self._update_label()
 
@@ -93,7 +104,9 @@ class NotificationsWidget(BaseWidget):
 
     def _toggle_notification(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+            AnimationManager.animate(
+                self, self._animation["type"], self._animation["duration"]
+            )
         if is_windows_10():
             quick_settings()
         else:
@@ -101,7 +114,9 @@ class NotificationsWidget(BaseWidget):
 
     def _toggle_label(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+            AnimationManager.animate(
+                self, self._animation["type"], self._animation["duration"]
+            )
         self._show_alt_label = not self._show_alt_label
         for widget in self._widgets:
             widget.setVisible(not self._show_alt_label)
@@ -111,9 +126,13 @@ class NotificationsWidget(BaseWidget):
 
     def _clear_notifications(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+            AnimationManager.animate(
+                self, self._animation["type"], self._animation["duration"]
+            )
         if WindowsNotificationEventListener:
-            self.event_service.emit_event("WindowsNotificationClear", "clear_all_notifications")
+            self.event_service.emit_event(
+                "WindowsNotificationClear", "clear_all_notifications"
+            )
 
     def _update_label(self):
         if self._notification_count == 0 and self._hide_empty:
@@ -121,43 +140,49 @@ class NotificationsWidget(BaseWidget):
             return
 
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
+        active_widgets_len = len(active_widgets)
+        active_label_content = (
+            self._label_alt_content if self._show_alt_label else self._label_content
+        )
+        active_label_content = active_label_content.format(
+            count=self._notification_count,
+            icon=(
+                self._icons["new"]
+                if self._notification_count > 0
+                else self._icons["default"]
+            ),
+        )
 
-        if self._notification_count > 0:
-            icon = self._icons["new"]
-        else:
-            icon = self._icons["default"]
-
-        label_parts = re.split("(<span.*?>.*?</span>)", active_label_content)
-        label_parts = [part for part in label_parts if part]
+        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
         widget_index = 0
 
-        # Provide replacements for {count} and {icon}
-        label_options = [("{count}", self._notification_count), ("{icon}", icon)]
-
         for part in label_parts:
+            if widget_index >= active_widgets_len:
+                break
+
             part = part.strip()
-            for option, value in label_options:
-                part = part.replace(option, str(value))
+            if not part:
+                continue
 
-            if part and widget_index < len(active_widgets) and isinstance(active_widgets[widget_index], QLabel):
-                if "<span" in part and "</span>" in part:
-                    icon = re.sub(r"<span.*?>|</span>", "", part).strip()
-                    active_widgets[widget_index].setText(icon)
-                else:
-                    active_widgets[widget_index].setText(part)
+            if not isinstance(active_widgets[widget_index], QLabel):
+                continue
 
-                # Update class based on notification count
-                current_class = active_widgets[widget_index].property("class")
-                if self._notification_count > 0:
-                    if "new-notification" not in current_class:
-                        current_class += " new-notification"
-                else:
-                    current_class = current_class.replace(" new-notification", "")
+            if part.startswith("<span") and part.endswith("</span>"):
+                part = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
 
-                active_widgets[widget_index].setProperty("class", current_class.strip())
+            active_widgets[widget_index].setText(part)
 
-                widget_index += 1
+            # Update class based on notification count
+            current_class = active_widgets[widget_index].property("class")
+            if self._notification_count > 0:
+                if "new-notification" not in current_class:
+                    current_class += " new-notification"
+            else:
+                current_class = current_class.replace(" new-notification", "")
+
+            active_widgets[widget_index].setProperty("class", current_class.strip())
+            widget_index += 1
+
         for widget in active_widgets:
             widget.style().unpolish(widget)
             widget.style().polish(widget)

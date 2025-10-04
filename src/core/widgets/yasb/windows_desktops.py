@@ -29,7 +29,13 @@ logging.getLogger("comtypes").setLevel(logging.INFO)
 
 
 class WorkspaceButton(QPushButton):
-    def __init__(self, workspace_index: int, label: str = None, active_label: str = None, parent=None):
+    def __init__(
+        self,
+        workspace_index: int,
+        label: str = None,
+        active_label: str = None,
+        parent=None,
+    ):
         super().__init__(parent)
 
         self.workspace_index = workspace_index
@@ -39,17 +45,23 @@ class WorkspaceButton(QPushButton):
         self.setText(self.default_label)
         self.clicked.connect(self.activate_workspace)
         self.parent_widget = parent
-        self.workspace_animation = getattr(self.parent_widget, "_switch_workspace_animation", False)
+        self.workspace_animation = getattr(
+            self.parent_widget, "_switch_workspace_animation", False
+        )
         self.animation = getattr(self.parent_widget, "_animation", False)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self._width_animation = None
         self._initial_width = None
 
     def update_visible_buttons(self):
-        visible_buttons = [btn for btn in self.parent_widget._workspace_buttons if btn.isVisible()]
+        visible_buttons = [
+            btn for btn in self.parent_widget._workspace_buttons if btn.isVisible()
+        ]
         for index, button in enumerate(visible_buttons):
             current_class = button.property("class")
-            new_class = " ".join([cls for cls in current_class.split() if not cls.startswith("button-")])
+            new_class = " ".join(
+                [cls for cls in current_class.split() if not cls.startswith("button-")]
+            )
             new_class = f"{new_class} button-{index + 1}"
             button.setProperty("class", new_class)
             button.style().unpolish(button)
@@ -68,9 +80,13 @@ class WorkspaceButton(QPushButton):
         try:
             VirtualDesktop(self.workspace_index).go()
             if isinstance(self.parent_widget, WorkspaceWidget):
-                self.parent_widget._event_service.emit_event("virtual_desktop_changed", {"index": self.workspace_index})
+                self.parent_widget._event_service.emit_event(
+                    "virtual_desktop_changed", {"index": self.workspace_index}
+                )
         except Exception:
-            logging.exception(f"Failed to focus desktop at index {self.workspace_index}")
+            logging.exception(
+                f"Failed to focus desktop at index {self.workspace_index}"
+            )
 
     def animate_buttons(self, duration: int = 120):
         if not hasattr(self, "_initial_width") or not self._initial_width:
@@ -165,7 +181,10 @@ class WorkspaceButton(QPushButton):
 
     def set_wallpaper(self):
         image_path, _ = QFileDialog.getOpenFileName(
-            self, "Select Wallpaper Image", "", "Images (*.png *.jpg *.jpeg *.bmp *.gif)"
+            self,
+            "Select Wallpaper Image",
+            "",
+            "Images (*.png *.jpg *.jpeg *.bmp *.gif)",
         )
         if image_path:
             try:
@@ -175,7 +194,10 @@ class WorkspaceButton(QPushButton):
 
     def set_wallpaper_all(self):
         image_path, _ = QFileDialog.getOpenFileName(
-            self, "Select Wallpaper Image", "", "Images (*.png *.jpg *.jpeg *.bmp *.gif)"
+            self,
+            "Select Wallpaper Image",
+            "",
+            "Images (*.png *.jpg *.jpeg *.bmp *.gif)",
         )
         if image_path:
             try:
@@ -185,7 +207,11 @@ class WorkspaceButton(QPushButton):
 
     def rename_desktop(self):
         dialog = QInputDialog(self)
-        dialog.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint | Qt.WindowType.WindowTitleHint)
+        dialog.setWindowFlags(
+            Qt.WindowType.Dialog
+            | Qt.WindowType.CustomizeWindowHint
+            | Qt.WindowType.WindowTitleHint
+        )
         dialog.setWindowTitle("Rename This Desktop")
         dialog.setProperty("class", "rename-dialog")
         dialog.setLabelText("Enter name for this desktop")
@@ -202,7 +228,9 @@ class WorkspaceButton(QPushButton):
                 VirtualDesktop(self.workspace_index).rename(new_name)
                 if isinstance(self.parent_widget, WorkspaceWidget):
                     self.parent_widget._event_service.emit_event(
-                        "virtual_desktop_update", {"index": self.workspace_index}, {"update_buttons": True}
+                        "virtual_desktop_update",
+                        {"index": self.workspace_index},
+                        {"update_buttons": True},
                     )
             except Exception as e:
                 logging.exception(f"Failed to rename desktop: {e}")
@@ -247,10 +275,14 @@ class WorkspaceWidget(BaseWidget):
         self._event_service = EventService()
 
         self.d_signal_virtual_desktop_changed.connect(self._on_desktop_changed)
-        self._event_service.register_event("virtual_desktop_changed", self.d_signal_virtual_desktop_changed)
+        self._event_service.register_event(
+            "virtual_desktop_changed", self.d_signal_virtual_desktop_changed
+        )
 
         self.d_signal_virtual_desktop_update.connect(self._on_update_desktops)
-        self._event_service.register_event("virtual_desktop_update", self.d_signal_virtual_desktop_update)
+        self._event_service.register_event(
+            "virtual_desktop_update", self.d_signal_virtual_desktop_update
+        )
 
         self._label_workspace_btn = label_workspace_btn
         self._label_workspace_active_btn = label_workspace_active_btn
@@ -271,7 +303,10 @@ class WorkspaceWidget(BaseWidget):
         self._workspace_container_layout = QHBoxLayout()
         self._workspace_container_layout.setSpacing(0)
         self._workspace_container_layout.setContentsMargins(
-            self._padding["left"], self._padding["top"], self._padding["right"], self._padding["bottom"]
+            self._padding["left"],
+            self._padding["top"],
+            self._padding["right"],
+            self._padding["bottom"],
         )
         self._workspace_container = QFrame()
         self._workspace_container.setLayout(self._workspace_container_layout)
@@ -288,12 +323,18 @@ class WorkspaceWidget(BaseWidget):
         if WorkspaceWidget._shared_timer is None:
             WorkspaceWidget._shared_timer = QTimer(self)
             WorkspaceWidget._shared_timer.setInterval(500)
-            WorkspaceWidget._shared_timer.timeout.connect(WorkspaceWidget._notify_instances)
+            WorkspaceWidget._shared_timer.timeout.connect(
+                WorkspaceWidget._notify_instances
+            )
             WorkspaceWidget._shared_timer.start()
 
         try:
             self.destroyed.connect(
-                lambda _=None: WorkspaceWidget._instances.remove(self) if self in WorkspaceWidget._instances else None
+                lambda _=None: (
+                    WorkspaceWidget._instances.remove(self)
+                    if self in WorkspaceWidget._instances
+                    else None
+                )
             )
         except Exception:
             pass
@@ -311,8 +352,22 @@ class WorkspaceWidget(BaseWidget):
         self._curr_workspace_index = new_index
 
         # Update only affected buttons (previous and current) and animate both simultaneously
-        prev_btn = next((b for b in self._workspace_buttons if b.workspace_index == self._prev_workspace_index), None)
-        curr_btn = next((b for b in self._workspace_buttons if b.workspace_index == self._curr_workspace_index), None)
+        prev_btn = next(
+            (
+                b
+                for b in self._workspace_buttons
+                if b.workspace_index == self._prev_workspace_index
+            ),
+            None,
+        )
+        curr_btn = next(
+            (
+                b
+                for b in self._workspace_buttons
+                if b.workspace_index == self._curr_workspace_index
+            ),
+            None,
+        )
 
         # Update labels without scheduling the automatic update/animation, we'll start animations explicitly
         if prev_btn is not None:
@@ -329,7 +384,9 @@ class WorkspaceWidget(BaseWidget):
     def on_update_desktops(self):
         # Emit event to update desktops on all monitors
         self._event_service.emit_event(
-            "virtual_desktop_update", {"index": VirtualDesktop.current().number}, {"update_buttons": False}
+            "virtual_desktop_update",
+            {"index": VirtualDesktop.current().number},
+            {"update_buttons": False},
         )
 
     def _on_update_desktops(self, event_data=None, options=None):
@@ -348,7 +405,9 @@ class WorkspaceWidget(BaseWidget):
 
     def refresh_workspace_button_labels(self, animate: bool = False):
         for button in self._workspace_buttons:
-            ws_label, ws_active_label = self._get_workspace_label(button.workspace_index)
+            ws_label, ws_active_label = self._get_workspace_label(
+                button.workspace_index
+            )
             button.default_label = ws_label
             button.active_label = ws_active_label
             button.workspace_name = VirtualDesktop(button.workspace_index).name
@@ -365,7 +424,9 @@ class WorkspaceWidget(BaseWidget):
             self._workspace_container_layout.removeWidget(old_workspace_widget)
             old_workspace_widget.setParent(None)
 
-    def _update_button(self, workspace_btn: WorkspaceButton, schedule_update: bool = True) -> None:
+    def _update_button(
+        self, workspace_btn: WorkspaceButton, schedule_update: bool = True
+    ) -> None:
         existing_class = workspace_btn.property("class") or ""
         tokens = [t for t in str(existing_class).split() if t.startswith("button-")]
 
@@ -392,14 +453,21 @@ class WorkspaceWidget(BaseWidget):
         indices_to_remove = existing_indices - current_indices
         if indices_to_remove:
             self._workspace_buttons = [
-                btn for btn in self._workspace_buttons if btn.workspace_index not in indices_to_remove
+                btn
+                for btn in self._workspace_buttons
+                if btn.workspace_index not in indices_to_remove
             ]
 
         # Handle additions
         for desktop_index in current_indices:
             # Find existing button with matching workspace_index
             existing_button = next(
-                (btn for btn in self._workspace_buttons if btn.workspace_index == desktop_index), None
+                (
+                    btn
+                    for btn in self._workspace_buttons
+                    if btn.workspace_index == desktop_index
+                ),
+                None,
             )
             if existing_button:
                 self._update_button(existing_button)
@@ -412,7 +480,12 @@ class WorkspaceWidget(BaseWidget):
                 self._workspace_container_layout.addWidget(workspace_btn)
                 add_shadow(workspace_btn, self._btn_shadow)
             try:
-                QTimer.singleShot(0, lambda: [btn.update_visible_buttons() for btn in self._workspace_buttons])
+                QTimer.singleShot(
+                    0,
+                    lambda: [
+                        btn.update_visible_buttons() for btn in self._workspace_buttons
+                    ],
+                )
                 for btn in self._workspace_buttons:
                     if getattr(btn, "animation", False):
                         try:
@@ -430,14 +503,20 @@ class WorkspaceWidget(BaseWidget):
         if not ws_name or not ws_name.strip():
             ws_name = f"{workspace_index}"
         label = self._label_workspace_btn.format(index=workspace_index, name=ws_name)
-        active_label = self._label_workspace_active_btn.format(index=workspace_index, name=ws_name)
+        active_label = self._label_workspace_active_btn.format(
+            index=workspace_index, name=ws_name
+        )
         return label, active_label
 
     def _try_add_workspace_button(self, workspace_index: int) -> WorkspaceButton:
-        workspace_button_indexes = [ws_btn.workspace_index for ws_btn in self._workspace_buttons]
+        workspace_button_indexes = [
+            ws_btn.workspace_index for ws_btn in self._workspace_buttons
+        ]
         if workspace_index not in workspace_button_indexes:
             ws_label, ws_active_label = self._get_workspace_label(workspace_index)
-            workspace_btn = WorkspaceButton(workspace_index, ws_label, ws_active_label, self)
+            workspace_btn = WorkspaceButton(
+                workspace_index, ws_label, ws_active_label, self
+            )
             self._update_button(workspace_btn)
             self._workspace_buttons.append(workspace_btn)
             return workspace_btn

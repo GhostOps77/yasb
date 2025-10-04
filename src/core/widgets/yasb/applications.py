@@ -43,7 +43,10 @@ class ApplicationsWidget(BaseWidget):
         self._widget_container_layout = QHBoxLayout()
         self._widget_container_layout.setSpacing(0)
         self._widget_container_layout.setContentsMargins(
-            self._padding["left"], self._padding["top"], self._padding["right"], self._padding["bottom"]
+            self._padding["left"],
+            self._padding["top"],
+            self._padding["right"],
+            self._padding["bottom"],
         )
         # Initialize container
         self._widget_container = QFrame()
@@ -56,50 +59,53 @@ class ApplicationsWidget(BaseWidget):
         self._update_label()
 
     def _update_label(self):
-        if isinstance(self._apps, list):
-            for app_data in self._apps:
-                if "icon" in app_data and "launch" in app_data:
-                    # Create a container widget for each label
-                    label_container = QWidget()
-                    label_layout = QHBoxLayout(label_container)
-                    label_layout.setContentsMargins(0, 0, 0, 0)
-                    label_layout.setSpacing(0)
-
-                    # Create the label
-                    label = ClickableLabel(self)
-                    label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-                    label.setProperty("class", "label")
-
-                    app_name = app_data.get("name", "")
-                    if app_name and self._tooltip:
-                        set_tooltip(label, app_name, 0)
-
-                    # Set icon
-                    icon = app_data["icon"]
-                    if os.path.isfile(icon):
-                        pixmap = QPixmap(icon).scaled(
-                            self._image_icon_size,
-                            self._image_icon_size,
-                            Qt.AspectRatioMode.KeepAspectRatio,
-                            Qt.TransformationMode.SmoothTransformation,
-                        )
-                        label.setPixmap(pixmap)
-                    else:
-                        label.setText(icon)
-
-                    label.data = app_data["launch"]
-                    label.container = label_container  # Store reference to container
-
-                    # Add shadow to the label
-                    add_shadow(label, self._label_shadow)
-
-                    # Add label to its container
-                    label_layout.addWidget(label)
-
-                    # Add container to main layout
-                    self._widget_container_layout.addWidget(label_container)
-        else:
+        if not isinstance(self._apps, list):
             logging.error(f"Expected _apps to be a list but got {type(self._apps)}")
+            return
+
+        for app_data in self._apps:
+            if "icon" not in app_data or "launch" not in app_data:
+                continue
+
+            # Create a container widget for each label
+            label_container = QWidget()
+            label_layout = QHBoxLayout(label_container)
+            label_layout.setContentsMargins(0, 0, 0, 0)
+            label_layout.setSpacing(0)
+
+            # Create the label
+            label = ClickableLabel(self)
+            label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+            label.setProperty("class", "label")
+
+            app_name = app_data.get("name", "")
+            if app_name and self._tooltip:
+                set_tooltip(label, app_name, 0)
+
+            # Set icon
+            icon = app_data["icon"]
+            if os.path.isfile(icon):
+                pixmap = QPixmap(icon).scaled(
+                    self._image_icon_size,
+                    self._image_icon_size,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
+                )
+                label.setPixmap(pixmap)
+            else:
+                label.setText(icon)
+
+            label.data = app_data["launch"]
+            label.container = label_container  # Store reference to container
+
+            # Add shadow to the label
+            add_shadow(label, self._label_shadow)
+
+            # Add label to its container
+            label_layout.addWidget(label)
+
+            # Add container to main layout
+            self._widget_container_layout.addWidget(label_container)
 
     def execute_code(self, data):
         try:
@@ -107,9 +113,17 @@ class ApplicationsWidget(BaseWidget):
                 function_map[data]()
             else:
                 try:
-                    if not any(param in data for param in ["-new-tab", "-new-window", "-private-window"]):
+                    if not any(
+                        param in data
+                        for param in ["-new-tab", "-new-window", "-private-window"]
+                    ):
                         data = data.split()
-                    subprocess.Popen(data, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
+                    subprocess.Popen(
+                        data,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        shell=True,
+                    )
                 except Exception as e:
                     logging.error(f"Error starting app: {str(e)}")
         except Exception as e:
@@ -126,6 +140,8 @@ class ClickableLabel(QLabel):
         if event.button() == Qt.MouseButton.LeftButton and self.data:
             if self.parent_widget._animation["enabled"]:
                 AnimationManager.animate(
-                    self.container, self.parent_widget._animation["type"], self.parent_widget._animation["duration"]
+                    self.container,
+                    self.parent_widget._animation["type"],
+                    self.parent_widget._animation["duration"],
                 )
             self.parent_widget.execute_code(self.data)

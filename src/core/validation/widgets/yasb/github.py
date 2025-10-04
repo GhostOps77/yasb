@@ -40,7 +40,12 @@ DEFAULTS = {
 VALIDATION_SCHEMA = {
     "label": {"type": "string", "default": DEFAULTS["label"]},
     "label_alt": {"type": "string", "default": DEFAULTS["label_alt"]},
-    "update_interval": {"type": "integer", "default": DEFAULTS["update_interval"], "min": 60, "max": 3600},
+    "update_interval": {
+        "type": "integer",
+        "default": DEFAULTS["update_interval"],
+        "min": 60,
+        "max": 3600,
+    },
     "token": {"type": "string", "default": DEFAULTS["token"]},
     "tooltip": {"type": "boolean", "required": False, "default": DEFAULTS["tooltip"]},
     "max_notification": {"type": "integer", "default": DEFAULTS["max_notification"]},
@@ -72,14 +77,29 @@ VALIDATION_SCHEMA = {
         "required": False,
         "schema": {
             "blur": {"type": "boolean", "default": DEFAULTS["menu"]["blur"]},
-            "round_corners": {"type": "boolean", "default": DEFAULTS["menu"]["round_corners"]},
-            "round_corners_type": {"type": "string", "default": DEFAULTS["menu"]["round_corners_type"]},
-            "border_color": {"type": "string", "default": DEFAULTS["menu"]["border_color"]},
+            "round_corners": {
+                "type": "boolean",
+                "default": DEFAULTS["menu"]["round_corners"],
+            },
+            "round_corners_type": {
+                "type": "string",
+                "default": DEFAULTS["menu"]["round_corners_type"],
+            },
+            "border_color": {
+                "type": "string",
+                "default": DEFAULTS["menu"]["border_color"],
+            },
             "alignment": {"type": "string", "default": DEFAULTS["menu"]["alignment"]},
             "direction": {"type": "string", "default": DEFAULTS["menu"]["direction"]},
             "distance": {"type": "integer", "default": DEFAULTS["menu"]["distance"]},
-            "offset_top": {"type": "integer", "default": DEFAULTS["menu"]["offset_top"]},
-            "offset_left": {"type": "integer", "default": DEFAULTS["menu"]["offset_left"]},
+            "offset_top": {
+                "type": "integer",
+                "default": DEFAULTS["menu"]["offset_top"],
+            },
+            "offset_left": {
+                "type": "integer",
+                "default": DEFAULTS["menu"]["offset_left"],
+            },
         },
         "default": DEFAULTS["menu"],
     },
@@ -88,12 +108,24 @@ VALIDATION_SCHEMA = {
         "required": False,
         "schema": {
             "issue": {"type": "string", "default": DEFAULTS["icons"]["issue"]},
-            "pull_request": {"type": "string", "default": DEFAULTS["icons"]["pull_request"]},
+            "pull_request": {
+                "type": "string",
+                "default": DEFAULTS["icons"]["pull_request"],
+            },
             "release": {"type": "string", "default": DEFAULTS["icons"]["release"]},
-            "discussion": {"type": "string", "default": DEFAULTS["icons"]["discussion"]},
-            "checksuite": {"type": "string", "default": DEFAULTS["icons"]["checksuite"]},
+            "discussion": {
+                "type": "string",
+                "default": DEFAULTS["icons"]["discussion"],
+            },
+            "checksuite": {
+                "type": "string",
+                "default": DEFAULTS["icons"]["checksuite"],
+            },
             "default": {"type": "string", "default": DEFAULTS["icons"]["default"]},
-            "github_logo": {"type": "string", "default": DEFAULTS["icons"]["github_logo"]},
+            "github_logo": {
+                "type": "string",
+                "default": DEFAULTS["icons"]["github_logo"],
+            },
         },
         "default": DEFAULTS["icons"],
     },
@@ -103,7 +135,10 @@ VALIDATION_SCHEMA = {
         "schema": {
             "enabled": {"type": "boolean", "default": DEFAULTS["animation"]["enabled"]},
             "type": {"type": "string", "default": DEFAULTS["animation"]["type"]},
-            "duration": {"type": "integer", "default": DEFAULTS["animation"]["duration"]},
+            "duration": {
+                "type": "integer",
+                "default": DEFAULTS["animation"]["duration"],
+            },
         },
         "default": DEFAULTS["animation"],
     },
@@ -134,9 +169,18 @@ VALIDATION_SCHEMA = {
         "required": False,
         "schema": {
             "top": {"type": "integer", "default": DEFAULTS["container_padding"]["top"]},
-            "left": {"type": "integer", "default": DEFAULTS["container_padding"]["left"]},
-            "bottom": {"type": "integer", "default": DEFAULTS["container_padding"]["bottom"]},
-            "right": {"type": "integer", "default": DEFAULTS["container_padding"]["right"]},
+            "left": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["left"],
+            },
+            "bottom": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["bottom"],
+            },
+            "right": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["right"],
+            },
         },
         "default": DEFAULTS["container_padding"],
     },

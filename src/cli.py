@@ -145,7 +145,9 @@ class CLIHandler:
                 None,
             )
             if pipe_handle == INVALID_HANDLE_VALUE:
-                print("Failed to connect to YASB. Pipe not found. It may not be running.")
+                print(
+                    "Failed to connect to YASB. Pipe not found. It may not be running."
+                )
                 return
 
             # Send the command as bytes
@@ -209,60 +211,110 @@ class CLIHandler:
             print(f"Failed to remove {APP_NAME} from startup: {e}")
 
     def parse_arguments(self):
-        parser = CustomArgumentParser(description="The command-line interface for YASB Reborn.", add_help=False)
+        parser = CustomArgumentParser(
+            description="The command-line interface for YASB Reborn.", add_help=False
+        )
         subparsers = parser.add_subparsers(dest="command", help="Commands")
 
         start_parser = subparsers.add_parser("start", help="Start the application")
-        start_parser.add_argument("-s", "--silent", action="store_true", help="Silence print messages")
+        start_parser.add_argument(
+            "-s", "--silent", action="store_true", help="Silence print messages"
+        )
 
         stop_parser = subparsers.add_parser("stop", help="Stop the application")
-        stop_parser.add_argument("-s", "--silent", action="store_true", help="Silence print messages")
-        stop_parser.add_argument("-f", "--force", action="store_true", help="Force stop the application")
+        stop_parser.add_argument(
+            "-s", "--silent", action="store_true", help="Silence print messages"
+        )
+        stop_parser.add_argument(
+            "-f", "--force", action="store_true", help="Force stop the application"
+        )
 
         reload_parser = subparsers.add_parser("reload", help="Reload the application")
-        reload_parser.add_argument("-s", "--silent", action="store_true", help="Silence print messages")
+        reload_parser.add_argument(
+            "-s", "--silent", action="store_true", help="Silence print messages"
+        )
 
         subparsers.add_parser("update", help="Update the application")
 
-        enable_autostart_parser = subparsers.add_parser("enable-autostart", help="Enable autostart on system boot")
-        enable_autostart_parser.add_argument("--task", action="store_true", help="Enable autostart as a scheduled task")
+        enable_autostart_parser = subparsers.add_parser(
+            "enable-autostart", help="Enable autostart on system boot"
+        )
+        enable_autostart_parser.add_argument(
+            "--task", action="store_true", help="Enable autostart as a scheduled task"
+        )
 
-        disable_autostart_parser = subparsers.add_parser("disable-autostart", help="Disable autostart on system boot")
+        disable_autostart_parser = subparsers.add_parser(
+            "disable-autostart", help="Disable autostart on system boot"
+        )
         disable_autostart_parser.add_argument(
             "--task", action="store_true", help="Disable autostart as a scheduled task"
         )
 
-        subparsers.add_parser("monitor-information", help="Show information about connected monitors")
-
-        show_bar_parser = subparsers.add_parser("show-bar", help="Show the bar on a specific screen")
-        show_bar_parser.add_argument("-s", "--screen", type=str, help="Screen name (optional)")
-
-        hide_bar_parser = subparsers.add_parser("hide-bar", help="Hide the bar on a specific screen")
-        hide_bar_parser.add_argument("-s", "--screen", type=str, help="Screen name (optional)")
-
-        toggle_bar_parser = subparsers.add_parser("toggle-bar", help="Toggle the bar on a specific screen")
-        toggle_bar_parser.add_argument("-s", "--screen", type=str, help="Screen name (optional)")
-
-        widget_toggle_parser = subparsers.add_parser("toggle-widget", help="Toggle a widget show/hide")
-        widget_toggle_parser.add_argument("widget_name", type=str, help="Name of the widget to toggle")
-        widget_toggle_parser.add_argument("-s", "--screen", type=str, help="Screen name (optional)")
-        widget_toggle_parser.add_argument("--follow-mouse", action="store_true", help="Follow mouse cursor (optional)")
-        widget_toggle_parser.add_argument(
-            "--follow-focus", action="store_true", help="Follow focused window (optional)"
+        subparsers.add_parser(
+            "monitor-information", help="Show information about connected monitors"
         )
 
-        subparsers.add_parser("reset", help="Restore default config files and clear cache")
+        show_bar_parser = subparsers.add_parser(
+            "show-bar", help="Show the bar on a specific screen"
+        )
+        show_bar_parser.add_argument(
+            "-s", "--screen", type=str, help="Screen name (optional)"
+        )
+
+        hide_bar_parser = subparsers.add_parser(
+            "hide-bar", help="Hide the bar on a specific screen"
+        )
+        hide_bar_parser.add_argument(
+            "-s", "--screen", type=str, help="Screen name (optional)"
+        )
+
+        toggle_bar_parser = subparsers.add_parser(
+            "toggle-bar", help="Toggle the bar on a specific screen"
+        )
+        toggle_bar_parser.add_argument(
+            "-s", "--screen", type=str, help="Screen name (optional)"
+        )
+
+        widget_toggle_parser = subparsers.add_parser(
+            "toggle-widget", help="Toggle a widget show/hide"
+        )
+        widget_toggle_parser.add_argument(
+            "widget_name", type=str, help="Name of the widget to toggle"
+        )
+        widget_toggle_parser.add_argument(
+            "-s", "--screen", type=str, help="Screen name (optional)"
+        )
+        widget_toggle_parser.add_argument(
+            "--follow-mouse", action="store_true", help="Follow mouse cursor (optional)"
+        )
+        widget_toggle_parser.add_argument(
+            "--follow-focus",
+            action="store_true",
+            help="Follow focused window (optional)",
+        )
+
+        subparsers.add_parser(
+            "reset", help="Restore default config files and clear cache"
+        )
 
         subparsers.add_parser("help", help="Show help message")
         subparsers.add_parser("log", help="Tail yasb process logs (cancel with Ctrl-C)")
-        parser.add_argument("-v", "--version", action="store_true", help="Show program's version number and exit.")
-        parser.add_argument("-h", "--help", action="store_true", help="Show help message")
+        parser.add_argument(
+            "-v",
+            "--version",
+            action="store_true",
+            help="Show program's version number and exit.",
+        )
+        parser.add_argument(
+            "-h", "--help", action="store_true", help="Show help message"
+        )
         args = parser.parse_args()
 
         if args.command == "start":
             if not args.silent:
                 print(
-                    textwrap.dedent(f"""\
+                    textwrap.dedent(
+                        f"""\
                     Start YASB Reborn v{YASB_VERSION} in background.
 
                     # Community
@@ -272,7 +324,8 @@ class CLIHandler:
                     # Documentation
                     * Read the docs https://github.com/amnweb/yasb/wiki - how to configure and use YASB
                     * Read the FAQ https://github.com/amnweb/yasb/wiki/FAQ
-                """)
+                """
+                    )
                 )
             subprocess.Popen(["yasb.exe"])
             sys.exit(0)
@@ -281,7 +334,10 @@ class CLIHandler:
             if args.force:
                 for proc in ["yasb.exe", "yasb_themes.exe"]:
                     if is_process_running(proc):
-                        subprocess.run(["taskkill", "/f", "/im", proc], creationflags=subprocess.CREATE_NO_WINDOW)
+                        subprocess.run(
+                            ["taskkill", "/f", "/im", proc],
+                            creationflags=subprocess.CREATE_NO_WINDOW,
+                        )
             else:
                 self.send_command_to_application("stop")
             sys.exit(0)
@@ -398,7 +454,8 @@ class CLIHandler:
                 for i, screen in enumerate(screens, 1):
                     geometry = screen.geometry()
                     print(
-                        textwrap.dedent(f"""\
+                        textwrap.dedent(
+                            f"""\
                         {Format.underline}Monitor {i}:{Format.reset}
                           Name: {screen.name()}
                           Resolution: {geometry.width()}x{geometry.height()}
@@ -407,7 +464,8 @@ class CLIHandler:
                           Scale Factor: {screen.devicePixelRatio():.2f}
                           Manufacturer: {screen.manufacturer() or "Unknown"}
                           Model: {screen.model() or "Unknown"}
-                    """)
+                    """
+                        )
                     )
                 app.quit()
             except Exception as e:
@@ -440,7 +498,10 @@ class CLIHandler:
             # Stop YASB if it is running
             for proc in ["yasb.exe", "yasb_themes.exe"]:
                 if is_process_running(proc):
-                    subprocess.run(["taskkill", "/f", "/im", proc], creationflags=subprocess.CREATE_NO_WINDOW)
+                    subprocess.run(
+                        ["taskkill", "/f", "/im", proc],
+                        creationflags=subprocess.CREATE_NO_WINDOW,
+                    )
 
             # Delete styles.css and config.yaml if they exist
             for fname in ["styles.css", "config.yaml"]:
@@ -471,7 +532,8 @@ class CLIHandler:
 
         elif args.command == "help" or args.help:
             print(
-                textwrap.dedent(f"""\
+                textwrap.dedent(
+                    f"""\
                 The command-line interface for YASB Reborn.
 
                 {Format.underline}Usage{Format.reset}: yasbc <COMMAND>
@@ -495,7 +557,8 @@ class CLIHandler:
                 {Format.underline}Options{Format.reset}:
                 -v, --version  Print version
                 -h, --help     Print this message
-            """)
+            """
+                )
             )
             sys.exit(0)
 
@@ -531,7 +594,9 @@ class CLITaskHandler:
         scheduler.Connect()
         root_folder = scheduler.GetFolder("\\")
         task_def = scheduler.NewTask(0)
-        task_def.RegistrationInfo.Description = "A highly configurable Windows status bar."
+        task_def.RegistrationInfo.Description = (
+            "A highly configurable Windows status bar."
+        )
         task_def.RegistrationInfo.Author = "AmN"
         task_def.Settings.Compatibility = 6
         trigger = task_def.Triggers.Create(9)
@@ -562,7 +627,9 @@ class CLITaskHandler:
         action.Path = EXE_PATH
         action.WorkingDirectory = INSTALLATION_PATH
         try:
-            root_folder.RegisterTaskDefinition("YASB Reborn", task_def, 6, None, None, 3, None)
+            root_folder.RegisterTaskDefinition(
+                "YASB Reborn", task_def, 6, None, None, 3, None
+            )
             print("Task YASB Reborn created successfully.")
         except Exception as e:
             print(f"Failed to create task YASB Reborn. Error: {e}")
@@ -590,7 +657,9 @@ class CLIUpdateHandler:
         product_code = ctypes.create_unicode_buffer(MAX_GUID_CHARS + 1)
         index = 0
         while True:
-            result = msi.MsiEnumRelatedProductsW("{3f620cf5-07b5-47fd-8e37-9ca8ad14b608}", 0, index, product_code)
+            result = msi.MsiEnumRelatedProductsW(
+                "{3f620cf5-07b5-47fd-8e37-9ca8ad14b608}", 0, index, product_code
+            )
             if result == ERROR_NO_MORE_ITEMS:
                 break
             elif result == 0:
@@ -615,11 +684,17 @@ class CLIUpdateHandler:
         if Version(tag) <= Version(yasb_version):
             print("\nYASB Reborn is already up to date.\n")
             sys.exit(0)
-        print(f"\nYASB Reborn version {Format.underline}{tag}{Format.reset} is available.")
+        print(
+            f"\nYASB Reborn version {Format.underline}{tag}{Format.reset} is available."
+        )
         print(f"\nChangelog {changelog}")
         # Ask the user if they want to continue with the update
         try:
-            user_input = input("\nDo you want to continue with the update? (Y/n): ").strip().lower()
+            user_input = (
+                input("\nDo you want to continue with the update? (Y/n): ")
+                .strip()
+                .lower()
+            )
             if user_input not in ["y", "yes", ""]:
                 print("\nUpdate canceled.")
                 sys.exit(0)
@@ -632,10 +707,15 @@ class CLIUpdateHandler:
         # Step 4: Run the MSI installer in silent mode and restart the application
         for proc in ["yasb.exe", "yasb_themes.exe"]:
             if is_process_running(proc):
-                subprocess.run(["taskkill", "/f", "/im", proc], creationflags=subprocess.CREATE_NO_WINDOW)
+                subprocess.run(
+                    ["taskkill", "/f", "/im", proc],
+                    creationflags=subprocess.CREATE_NO_WINDOW,
+                )
 
         # Construct the install command as a string
-        install_command = f'msiexec /i "{os.path.abspath(msi_path)}" /passive /norestart'
+        install_command = (
+            f'msiexec /i "{os.path.abspath(msi_path)}" /passive /norestart'
+        )
         run_after_command = f'"{EXE_PATH}"'
         # combined_command = f'{uninstall_command} && {install_command} && {run_after_command}'
         combined_command = f"{install_command} && {run_after_command}"

@@ -21,13 +21,21 @@ DEFAULTS = {
     },
     "animation": {"enabled": True, "type": "fadeInOut", "duration": 200},
     "container_padding": {"top": 0, "left": 0, "bottom": 0, "right": 0},
-    "callbacks": {"on_left": "toggle_mic_menu", "on_middle": "toggle_label", "on_right": "toggle_mute"},
+    "callbacks": {
+        "on_left": "toggle_mic_menu",
+        "on_middle": "toggle_label",
+        "on_right": "toggle_mute",
+    },
 }
 
 VALIDATION_SCHEMA = {
     "label": {"type": "string", "default": DEFAULTS["label"]},
     "label_alt": {"type": "string", "default": DEFAULTS["label_alt"]},
-    "class_name": {"type": "string", "required": False, "default": DEFAULTS["class_name"]},
+    "class_name": {
+        "type": "string",
+        "required": False,
+        "default": DEFAULTS["class_name"],
+    },
     "mute_text": {"type": "string", "default": DEFAULTS["mute_text"]},
     "tooltip": {"type": "boolean", "required": False, "default": DEFAULTS["tooltip"]},
     "scroll_step": {
@@ -50,13 +58,34 @@ VALIDATION_SCHEMA = {
         "required": False,
         "schema": {
             "blur": {"type": "boolean", "default": DEFAULTS["mic_menu"]["blur"]},
-            "round_corners": {"type": "boolean", "default": DEFAULTS["mic_menu"]["round_corners"]},
-            "round_corners_type": {"type": "string", "default": DEFAULTS["mic_menu"]["round_corners_type"]},
-            "border_color": {"type": "string", "default": DEFAULTS["mic_menu"]["border_color"]},
-            "alignment": {"type": "string", "default": DEFAULTS["mic_menu"]["alignment"]},
-            "direction": {"type": "string", "default": DEFAULTS["mic_menu"]["direction"]},
-            "offset_top": {"type": "integer", "default": DEFAULTS["mic_menu"]["offset_top"]},
-            "offset_left": {"type": "integer", "default": DEFAULTS["mic_menu"]["offset_left"]},
+            "round_corners": {
+                "type": "boolean",
+                "default": DEFAULTS["mic_menu"]["round_corners"],
+            },
+            "round_corners_type": {
+                "type": "string",
+                "default": DEFAULTS["mic_menu"]["round_corners_type"],
+            },
+            "border_color": {
+                "type": "string",
+                "default": DEFAULTS["mic_menu"]["border_color"],
+            },
+            "alignment": {
+                "type": "string",
+                "default": DEFAULTS["mic_menu"]["alignment"],
+            },
+            "direction": {
+                "type": "string",
+                "default": DEFAULTS["mic_menu"]["direction"],
+            },
+            "offset_top": {
+                "type": "integer",
+                "default": DEFAULTS["mic_menu"]["offset_top"],
+            },
+            "offset_left": {
+                "type": "integer",
+                "default": DEFAULTS["mic_menu"]["offset_left"],
+            },
         },
         "default": DEFAULTS["mic_menu"],
     },
@@ -66,7 +95,10 @@ VALIDATION_SCHEMA = {
         "schema": {
             "enabled": {"type": "boolean", "default": DEFAULTS["animation"]["enabled"]},
             "type": {"type": "string", "default": DEFAULTS["animation"]["type"]},
-            "duration": {"type": "integer", "default": DEFAULTS["animation"]["duration"]},
+            "duration": {
+                "type": "integer",
+                "default": DEFAULTS["animation"]["duration"],
+            },
         },
         "default": DEFAULTS["animation"],
     },
@@ -75,9 +107,18 @@ VALIDATION_SCHEMA = {
         "required": False,
         "schema": {
             "top": {"type": "integer", "default": DEFAULTS["container_padding"]["top"]},
-            "left": {"type": "integer", "default": DEFAULTS["container_padding"]["left"]},
-            "bottom": {"type": "integer", "default": DEFAULTS["container_padding"]["bottom"]},
-            "right": {"type": "integer", "default": DEFAULTS["container_padding"]["right"]},
+            "left": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["left"],
+            },
+            "bottom": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["bottom"],
+            },
+            "right": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["right"],
+            },
         },
         "default": DEFAULTS["container_padding"],
     },
@@ -112,11 +153,18 @@ VALIDATION_SCHEMA = {
             "size": {"type": "integer", "default": 18, "min": 8, "max": 64},
             "thickness": {"type": "integer", "default": 3, "min": 1, "max": 10},
             "color": {
-                "anyof": [{"type": "string"}, {"type": "list", "schema": {"type": "string"}}],
+                "anyof": [
+                    {"type": "string"},
+                    {"type": "list", "schema": {"type": "string"}},
+                ],
                 "default": "#00C800",
             },
             "background_color": {"type": "string", "default": "#3C3C3C"},
-            "position": {"type": "string", "allowed": ["left", "right"], "default": "left"},
+            "position": {
+                "type": "string",
+                "allowed": ["left", "right"],
+                "default": "left",
+            },
             "animation": {
                 "type": "boolean",
                 "default": True,

@@ -28,34 +28,98 @@ DEFAULTS = {
     "bar_type": "bars",
     "edge_fade": 0,
     "container_padding": {"top": 0, "left": 0, "bottom": 0, "right": 0},
-    "callbacks": {"on_left": "do_nothing", "on_middle": "do_nothing", "on_right": "reload_cava"},
+    "callbacks": {
+        "on_left": "do_nothing",
+        "on_middle": "do_nothing",
+        "on_right": "reload_cava",
+    },
 }
 
 VALIDATION_SCHEMA = {
-    "class_name": {"type": "string", "required": False, "default": DEFAULTS["class_name"]},
-    "bar_height": {"type": "integer", "required": False, "default": DEFAULTS["bar_height"]},
-    "min_bar_height": {"type": "integer", "required": False, "default": DEFAULTS["min_bar_height"]},
-    "bars_number": {"type": "integer", "required": False, "default": DEFAULTS["bars_number"]},
-    "output_bit_format": {"type": "string", "required": False, "default": DEFAULTS["output_bit_format"]},
+    "class_name": {
+        "type": "string",
+        "required": False,
+        "default": DEFAULTS["class_name"],
+    },
+    "bar_height": {
+        "type": "integer",
+        "required": False,
+        "default": DEFAULTS["bar_height"],
+    },
+    "min_bar_height": {
+        "type": "integer",
+        "required": False,
+        "default": DEFAULTS["min_bar_height"],
+    },
+    "bars_number": {
+        "type": "integer",
+        "required": False,
+        "default": DEFAULTS["bars_number"],
+    },
+    "output_bit_format": {
+        "type": "string",
+        "required": False,
+        "default": DEFAULTS["output_bit_format"],
+    },
     "orientation": {
         "type": "string",
         "required": False,
         "allowed": ["top", "bottom"],
         "default": DEFAULTS["orientation"],
     },
-    "bar_spacing": {"type": "integer", "required": False, "default": DEFAULTS["bar_spacing"]},
-    "bar_width": {"type": "integer", "required": False, "default": DEFAULTS["bar_width"]},
-    "sleep_timer": {"type": "integer", "required": False, "default": DEFAULTS["sleep_timer"]},
-    "sensitivity": {"type": "integer", "required": False, "default": DEFAULTS["sensitivity"]},
-    "lower_cutoff_freq": {"type": "integer", "required": False, "default": DEFAULTS["lower_cutoff_freq"]},
-    "higher_cutoff_freq": {"type": "integer", "required": False, "default": DEFAULTS["higher_cutoff_freq"]},
-    "framerate": {"type": "integer", "required": False, "default": DEFAULTS["framerate"]},
-    "noise_reduction": {"type": "float", "required": False, "default": DEFAULTS["noise_reduction"]},
+    "bar_spacing": {
+        "type": "integer",
+        "required": False,
+        "default": DEFAULTS["bar_spacing"],
+    },
+    "bar_width": {
+        "type": "integer",
+        "required": False,
+        "default": DEFAULTS["bar_width"],
+    },
+    "sleep_timer": {
+        "type": "integer",
+        "required": False,
+        "default": DEFAULTS["sleep_timer"],
+    },
+    "sensitivity": {
+        "type": "integer",
+        "required": False,
+        "default": DEFAULTS["sensitivity"],
+    },
+    "lower_cutoff_freq": {
+        "type": "integer",
+        "required": False,
+        "default": DEFAULTS["lower_cutoff_freq"],
+    },
+    "higher_cutoff_freq": {
+        "type": "integer",
+        "required": False,
+        "default": DEFAULTS["higher_cutoff_freq"],
+    },
+    "framerate": {
+        "type": "integer",
+        "required": False,
+        "default": DEFAULTS["framerate"],
+    },
+    "noise_reduction": {
+        "type": "float",
+        "required": False,
+        "default": DEFAULTS["noise_reduction"],
+    },
     "channels": {"type": "string", "required": False, "default": DEFAULTS["channels"]},
-    "mono_option": {"type": "string", "required": False, "default": DEFAULTS["mono_option"]},
+    "mono_option": {
+        "type": "string",
+        "required": False,
+        "default": DEFAULTS["mono_option"],
+    },
     "reverse": {"type": "integer", "required": False, "default": DEFAULTS["reverse"]},
     "waveform": {"type": "integer", "required": False, "default": DEFAULTS["waveform"]},
-    "foreground": {"type": "string", "required": False, "default": DEFAULTS["foreground"]},
+    "foreground": {
+        "type": "string",
+        "required": False,
+        "default": DEFAULTS["foreground"],
+    },
     "gradient": {"type": "integer", "required": False, "default": DEFAULTS["gradient"]},
     "gradient_color_1": {
         "type": "string",
@@ -75,9 +139,17 @@ VALIDATION_SCHEMA = {
         "nullable": True,
         "default": DEFAULTS["gradient_color_3"],
     },
-    "monstercat": {"type": "integer", "required": False, "default": DEFAULTS["monstercat"]},
+    "monstercat": {
+        "type": "integer",
+        "required": False,
+        "default": DEFAULTS["monstercat"],
+    },
     "waves": {"type": "integer", "required": False, "default": DEFAULTS["waves"]},
-    "hide_empty": {"type": "boolean", "required": False, "default": DEFAULTS["hide_empty"]},
+    "hide_empty": {
+        "type": "boolean",
+        "required": False,
+        "default": DEFAULTS["hide_empty"],
+    },
     "bar_type": {
         "type": "string",
         "required": False,
@@ -87,7 +159,12 @@ VALIDATION_SCHEMA = {
     "edge_fade": {
         "anyof": [
             {"type": "integer"},
-            {"type": "list", "schema": {"type": "integer"}, "minlength": 2, "maxlength": 2},
+            {
+                "type": "list",
+                "schema": {"type": "integer"},
+                "minlength": 2,
+                "maxlength": 2,
+            },
         ],
         "required": False,
         "default": DEFAULTS["edge_fade"],
@@ -97,9 +174,18 @@ VALIDATION_SCHEMA = {
         "required": False,
         "schema": {
             "top": {"type": "integer", "default": DEFAULTS["container_padding"]["top"]},
-            "left": {"type": "integer", "default": DEFAULTS["container_padding"]["left"]},
-            "bottom": {"type": "integer", "default": DEFAULTS["container_padding"]["bottom"]},
-            "right": {"type": "integer", "default": DEFAULTS["container_padding"]["right"]},
+            "left": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["left"],
+            },
+            "bottom": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["bottom"],
+            },
+            "right": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["right"],
+            },
         },
         "default": DEFAULTS["container_padding"],
     },

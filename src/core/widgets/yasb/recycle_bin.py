@@ -50,7 +50,10 @@ class RecycleBinWidget(BaseWidget):
         self._widget_container_layout = QHBoxLayout()
         self._widget_container_layout.setSpacing(0)
         self._widget_container_layout.setContentsMargins(
-            self._padding["left"], self._padding["top"], self._padding["right"], self._padding["bottom"]
+            self._padding["left"],
+            self._padding["top"],
+            self._padding["right"],
+            self._padding["bottom"],
         )
         self._widget_container = QFrame()
         self._widget_container.setLayout(self._widget_container_layout)
@@ -58,7 +61,9 @@ class RecycleBinWidget(BaseWidget):
         add_shadow(self._widget_container, self._container_shadow)
         self.widget_layout.addWidget(self._widget_container)
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(
+            self, self._label_content, self._label_alt_content, self._label_shadow
+        )
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("empty_bin", self._empty_bin)
@@ -74,7 +79,9 @@ class RecycleBinWidget(BaseWidget):
 
     def _toggle_label(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+            AnimationManager.animate(
+                self, self._animation["type"], self._animation["duration"]
+            )
         self._show_alt_label = not self._show_alt_label
         for widget in self._widgets:
             widget.setVisible(not self._show_alt_label)
@@ -84,39 +91,48 @@ class RecycleBinWidget(BaseWidget):
 
     def _update_label(self):
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
-        label_parts = re.split("(<span.*?>.*?</span>)", active_label_content)
-        label_parts = [part for part in label_parts if part]
-        widget_index = 0
+        active_widgets_len = len(active_widgets)
+        active_label_content = (
+            self._label_alt_content if self._show_alt_label else self._label_content
+        )
 
         class_name = "bin-filled" if self._bin_info["num_items"] > 0 else "bin-empty"
 
-        label_options = {
-            "{items_count}": self._bin_info["num_items"],
-            "{items_size}": self._format_size(self._bin_info["size_bytes"]),
-            "{icon}": self._get_current_icon(),
-        }
+        active_label_content = active_label_content.format(
+            items_count=self._bin_info["num_items"],
+            items_size=self._format_size(self._bin_info["size_bytes"]),
+            icon=self._get_current_icon(),
+        )
+
+        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
+        widget_index = 0
 
         for part in label_parts:
+            if widget_index >= active_widgets_len:
+                break
+
             part = part.strip()
-            if part:
-                formatted_text = part
-                for option, value in label_options.items():
-                    formatted_text = formatted_text.replace(option, str(value))
-                if "<span" in part and "</span>" in part:
-                    if widget_index < len(active_widgets) and isinstance(active_widgets[widget_index], QLabel):
-                        active_widgets[widget_index].setText(formatted_text)
-                        base_class = active_widgets[widget_index].property("class").split()[0]
-                        active_widgets[widget_index].setProperty("class", f"{base_class} {class_name}")
-                        active_widgets[widget_index].setStyleSheet("")
-                else:
-                    if widget_index < len(active_widgets) and isinstance(active_widgets[widget_index], QLabel):
-                        alt_class = "alt" if self._show_alt_label else ""
-                        active_widgets[widget_index].setText(formatted_text)
-                        base_class = "label"
-                        active_widgets[widget_index].setProperty("class", f"{base_class} {alt_class} {class_name}")
-                        active_widgets[widget_index].setStyleSheet("")
-                widget_index += 1
+            if not part:
+                continue
+
+            if not isinstance(active_widgets[widget_index], QLabel):
+                continue
+
+            class_names = ""
+
+            if part.startswith("<span") and part.endswith("</span>"):
+                # base class
+                class_names += active_widgets[widget_index].property("class").split()[0]
+            else:
+                class_names += "label"  # base class
+                class_names += "alt" if self._show_alt_label else ""  # alt class
+
+            class_names += " " + class_name
+            active_widgets[widget_index].setProperty("class", class_names)
+            active_widgets[widget_index].setStyleSheet("")
+            active_widgets[widget_index].setText(part)
+            widget_index += 1
+
         if self._tooltip:
             set_tooltip(
                 self._widget_container,
@@ -136,7 +152,7 @@ class RecycleBinWidget(BaseWidget):
 
     def _format_size(self, size_bytes):
         """Format bytes into a human-readable format"""
-        for unit in ["B", "KB", "MB", "GB", "TB"]:
+        for unit in ("B", "KB", "MB", "GB", "TB"):
             if size_bytes < 1024 or unit == "TB":
                 return f"{size_bytes:.2f} {unit}"
             size_bytes /= 1024
@@ -147,7 +163,9 @@ class RecycleBinWidget(BaseWidget):
             return
 
         if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+            AnimationManager.animate(
+                self, self._animation["type"], self._animation["duration"]
+            )
 
         self._is_emptying = True
 
@@ -155,6 +173,7 @@ class RecycleBinWidget(BaseWidget):
         for widget in self._widgets:
             if "label" in widget.property("class"):
                 widget.setText("Emptying...")
+
         # Get the thread and signal from monitor, and store the thread reference
         signal, self._empty_thread = self.monitor.empty_recycle_bin_async()
         signal.connect(self._on_empty_finished)
@@ -168,7 +187,9 @@ class RecycleBinWidget(BaseWidget):
     def _open_bin(self):
         """Open the recycle bin"""
         if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+            AnimationManager.animate(
+                self, self._animation["type"], self._animation["duration"]
+            )
         self.monitor.open_recycle_bin()
 
     def shutdown(self):

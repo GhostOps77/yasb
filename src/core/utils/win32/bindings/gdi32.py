@@ -24,7 +24,15 @@ gdi32 = windll.gdi32
 gdi32.GetObjectW.argtypes = [HANDLE, c_int, LPVOID]
 gdi32.GetObjectW.restype = c_int
 
-gdi32.GetDIBits.argtypes = [HDC, HBITMAP, DWORD, DWORD, LPVOID, POINTER(BITMAPINFO), DWORD]
+gdi32.GetDIBits.argtypes = [
+    HDC,
+    HBITMAP,
+    DWORD,
+    DWORD,
+    LPVOID,
+    POINTER(BITMAPINFO),
+    DWORD,
+]
 gdi32.GetDIBits.restype = c_int
 
 gdi32.DeleteObject.argtypes = [HANDLE]

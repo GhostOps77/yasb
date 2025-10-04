@@ -8,7 +8,10 @@ from typing import Any
 from PyQt6.QtCore import QObject, QTimer, QUrl, pyqtSignal
 from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 
-HEADER = (b"User-Agent", b"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0")
+HEADER = (
+    b"User-Agent",
+    b"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0",
+)
 CACHE_CONTROL = (b"Cache-Control", b"no-cache")
 
 
@@ -72,12 +75,18 @@ class WeatherDataFetcher(QObject):
                 reply.deleteLater()
                 return
             elif error == QNetworkReply.NetworkError.HostNotFoundError:
-                raise HostNotFoundError("No internet connection or host not found. Unable to fetch weather.")
+                raise HostNotFoundError(
+                    "No internet connection or host not found. Unable to fetch weather."
+                )
             elif status in {400, 401, 403}:
                 data = json.loads(reply.readAll().data().decode())
-                raise BadRequestError(f"Weather response error {status}: {data['error']['message']}")
+                raise BadRequestError(
+                    f"Weather response error {status}: {data['error']['message']}"
+                )
             else:
-                raise Exception(f"Weather response error {status}: {error.name} {error.value}.")
+                raise Exception(
+                    f"Weather response error {status}: {error.name} {error.value}."
+                )
         except json.JSONDecodeError as e:
             logging.error(f"Weather API invalid JSON response: {e}")
         except (BadRequestError, HostNotFoundError) as e:
@@ -132,7 +141,9 @@ class IconFetcher(QObject):
                 self._icon_cache[url] = data
                 self._pending_icons.discard(url)
             else:
-                raise Exception(f"Failed to fetch icon {url}: {reply.error().name} {reply.error().value}")
+                raise Exception(
+                    f"Failed to fetch icon {url}: {reply.error().name} {reply.error().value}"
+                )
         except Exception as e:
             logging.warning(e)
         finally:

@@ -1,7 +1,10 @@
 import ctypes as ct
 
 from core.utils.win32.bindings.kernel32 import FormatMessage
-from core.utils.win32.constants import FORMAT_MESSAGE_FROM_SYSTEM, FORMAT_MESSAGE_IGNORE_INSERTS
+from core.utils.win32.constants import (
+    FORMAT_MESSAGE_FROM_SYSTEM,
+    FORMAT_MESSAGE_IGNORE_INSERTS,
+)
 
 
 def format_error_message(error_code: int) -> str:

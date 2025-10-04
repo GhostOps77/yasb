@@ -61,7 +61,10 @@ class HomeWidget(BaseWidget):
         self._widget_container_layout = QHBoxLayout()
         self._widget_container_layout.setSpacing(0)
         self._widget_container_layout.setContentsMargins(
-            self._padding["left"], self._padding["top"], self._padding["right"], self._padding["bottom"]
+            self._padding["left"],
+            self._padding["top"],
+            self._padding["right"],
+            self._padding["bottom"],
         )
         # Initialize container
         self._widget_container = QFrame()
@@ -77,14 +80,20 @@ class HomeWidget(BaseWidget):
 
     def create_menu_action(self, path):
         path = os.path.expanduser(path)
-        return (
-            lambda: os.startfile(path)
+        return lambda: (
+            os.startfile(path)
             if os.path.exists(path)
             else logging.error(f"The system cannot find the file specified: '{path}'")
         )
 
     def _create_menu(self):
-        self._menu = PopupWidget(self, self._blur, self._round_corners, self._round_corners_type, self._border_color)
+        self._menu = PopupWidget(
+            self,
+            self._blur,
+            self._round_corners,
+            self._round_corners_type,
+            self._border_color,
+        )
         self._menu.setProperty("class", "home-menu")
 
         # Create main vertical layout for the popup
@@ -97,17 +106,25 @@ class HomeWidget(BaseWidget):
             self._add_menu_item(
                 main_layout,
                 self._menu_labels["about"],
-                lambda: subprocess.Popen("winver", shell=True, creationflags=subprocess.CREATE_NO_WINDOW),
+                lambda: subprocess.Popen(
+                    "winver", shell=True, creationflags=subprocess.CREATE_NO_WINDOW
+                ),
             )
 
             self._menu._add_separator(main_layout)
 
-            self._add_menu_item(main_layout, self._menu_labels["system"], lambda: os.startfile("ms-settings:"))
+            self._add_menu_item(
+                main_layout,
+                self._menu_labels["system"],
+                lambda: os.startfile("ms-settings:"),
+            )
 
             self._add_menu_item(
                 main_layout,
                 self._menu_labels["task_manager"],
-                lambda: subprocess.Popen("taskmgr", shell=True, creationflags=subprocess.CREATE_NO_WINDOW),
+                lambda: subprocess.Popen(
+                    "taskmgr", shell=True, creationflags=subprocess.CREATE_NO_WINDOW
+                ),
             )
 
             self._menu._add_separator(main_layout)
@@ -116,20 +133,52 @@ class HomeWidget(BaseWidget):
         if isinstance(self._menu_list, list):
             for menu_item in self._menu_list:
                 if "title" in menu_item and "path" in menu_item:
-                    self._add_menu_item(main_layout, menu_item["title"], self.create_menu_action(menu_item["path"]))
-        if self._menu_list is not None and len(self._menu_list) > 0 and self._power_menu:
+                    self._add_menu_item(
+                        main_layout,
+                        menu_item["title"],
+                        self.create_menu_action(menu_item["path"]),
+                    )
+        if (
+            self._menu_list is not None
+            and len(self._menu_list) > 0
+            and self._power_menu
+        ):
             self._menu._add_separator(main_layout)
 
         if self._power_menu:
-            self._add_menu_item(main_layout, self._menu_labels["hibernate"], lambda: self.power_operations.hibernate())
-            self._add_menu_item(main_layout, self._menu_labels["sleep"], lambda: self.power_operations.sleep())
-            self._add_menu_item(main_layout, self._menu_labels["restart"], lambda: self.power_operations.restart())
-            self._add_menu_item(main_layout, self._menu_labels["shutdown"], lambda: self.power_operations.shutdown())
+            self._add_menu_item(
+                main_layout,
+                self._menu_labels["hibernate"],
+                lambda: self.power_operations.hibernate(),
+            )
+            self._add_menu_item(
+                main_layout,
+                self._menu_labels["sleep"],
+                lambda: self.power_operations.sleep(),
+            )
+            self._add_menu_item(
+                main_layout,
+                self._menu_labels["restart"],
+                lambda: self.power_operations.restart(),
+            )
+            self._add_menu_item(
+                main_layout,
+                self._menu_labels["shutdown"],
+                lambda: self.power_operations.shutdown(),
+            )
 
             self._menu._add_separator(main_layout)
 
-            self._add_menu_item(main_layout, self._menu_labels["lock"], lambda: self.power_operations.lock())
-            self._add_menu_item(main_layout, self._menu_labels["logout"], lambda: self.power_operations.signout())
+            self._add_menu_item(
+                main_layout,
+                self._menu_labels["lock"],
+                lambda: self.power_operations.lock(),
+            )
+            self._add_menu_item(
+                main_layout,
+                self._menu_labels["logout"],
+                lambda: self.power_operations.signout(),
+            )
 
         self._menu.adjustSize()
         self._menu.setPosition(
@@ -168,5 +217,7 @@ class HomeWidget(BaseWidget):
 
     def _toggle_menu(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+            AnimationManager.animate(
+                self, self._animation["type"], self._animation["duration"]
+            )
         self._create_menu()

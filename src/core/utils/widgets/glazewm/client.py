@@ -101,16 +101,24 @@ class GlazewmClient(QObject):
         self._websocket.sendTextMessage("command toggle-tiling-direction")
 
     def disable_binding_mode(self, binding_mode_name: str):
-        self._websocket.sendTextMessage(f"command wm-disable-binding-mode --name {binding_mode_name}")
+        self._websocket.sendTextMessage(
+            f"command wm-disable-binding-mode --name {binding_mode_name}"
+        )
 
     def enable_binding_mode(self, binding_mode_name: str):
-        self._websocket.sendTextMessage(f"command wm-enable-binding-mode --name {binding_mode_name}")
+        self._websocket.sendTextMessage(
+            f"command wm-enable-binding-mode --name {binding_mode_name}"
+        )
 
     def focus_next_workspace(self):
-        self._websocket.sendTextMessage("command focus --next-active-workspace-on-monitor")
+        self._websocket.sendTextMessage(
+            "command focus --next-active-workspace-on-monitor"
+        )
 
     def focus_prev_workspace(self):
-        self._websocket.sendTextMessage("command focus --prev-active-workspace-on-monitor")
+        self._websocket.sendTextMessage(
+            "command focus --prev-active-workspace-on-monitor"
+        )
 
     def connect(self):
         if self._websocket.state() == QAbstractSocket.SocketState.ConnectedState:
@@ -129,7 +137,9 @@ class GlazewmClient(QObject):
 
     def _on_state_changed(self, state: QAbstractSocket.SocketState):
         logger.debug(f"WebSocket state changed: {state}")
-        self.glazewm_connection_status.emit(state == QAbstractSocket.SocketState.ConnectedState)
+        self.glazewm_connection_status.emit(
+            state == QAbstractSocket.SocketState.ConnectedState
+        )
 
     def _on_error(self, error: QAbstractSocket.SocketError) -> None:
         logger.warning(f"WebSocket error: {error}\nReconnecting...")
@@ -149,7 +159,9 @@ class GlazewmClient(QObject):
         elif response.get("messageType") == MessageType.CLIENT_RESPONSE:
             raw_data: Any = response.get("data")
             if not isinstance(raw_data, dict):
-                logger.warning(f"Expected 'data' to be a dict, got {type(raw_data).__name__}")
+                logger.warning(
+                    f"Expected 'data' to be a dict, got {type(raw_data).__name__}"
+                )
                 return
             data = cast(dict[str, Any], raw_data)
             if response.get("clientMessage") == QueryType.MONITORS:
@@ -159,14 +171,20 @@ class GlazewmClient(QObject):
                     return
                 self.workspaces_data_processed.emit(self._process_workspaces(monitors))
             elif response.get("clientMessage") == QueryType.TILING_DIRECTION:
-                tiling_direction = TilingDirection(data.get("tilingDirection", TilingDirection.HORIZONTAL))
+                tiling_direction = TilingDirection(
+                    data.get("tilingDirection", TilingDirection.HORIZONTAL)
+                )
                 self.tiling_direction_processed.emit(tiling_direction)
             elif response.get("clientMessage") == QueryType.BINDING_MODES:
                 binding_modes = data.get("bindingModes", [])
                 if binding_modes is None:
-                    logger.warning(f"Expected 'bindingModes' to be a list, got {type(binding_modes).__name__}")
+                    logger.warning(
+                        f"Expected 'bindingModes' to be a list, got {type(binding_modes).__name__}"
+                    )
                     return
-                self.binding_mode_changed.emit(self._process_binding_modes(binding_modes))
+                self.binding_mode_changed.emit(
+                    self._process_binding_modes(binding_modes)
+                )
 
     def _process_workspaces(self, data: list[dict[str, Any]]) -> list[Monitor]:
         monitors: list[Monitor] = []

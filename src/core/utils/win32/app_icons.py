@@ -10,7 +10,14 @@ from PIL import Image
 from win32con import DIB_RGB_COLORS
 
 from core.utils.win32.app_aumid import get_aumid_for_window, get_icon_for_aumid
-from core.utils.win32.bindings import DeleteObject, GetDC, GetDIBits, GetIconInfo, GetObject, ReleaseDC
+from core.utils.win32.bindings import (
+    DeleteObject,
+    GetDC,
+    GetDIBits,
+    GetIconInfo,
+    GetObject,
+    ReleaseDC,
+)
 from core.utils.win32.structs import BITMAP, BITMAPINFO, BITMAPINFOHEADER, ICONINFO
 
 pil_logger = logging.getLogger("PIL")
@@ -97,7 +104,11 @@ def get_window_icon(hwnd: int):
                 return False
 
         # Ask the window for its icons
-        for which in (win32con.ICON_BIG, win32con.ICON_SMALL, getattr(win32con, "ICON_SMALL2", 2)):
+        for which in (
+            win32con.ICON_BIG,
+            win32con.ICON_SMALL,
+            getattr(win32con, "ICON_SMALL2", 2),
+        ):
             try:
                 hicon = win32gui.SendMessage(hwnd, win32con.WM_GETICON, which, 0)
             except Exception:
@@ -124,11 +135,19 @@ def get_window_icon(hwnd: int):
         try:
             if hasattr(win32gui, "GetClassLongPtr"):
                 # Try small icon first, then big
-                class_hicon = win32gui.GetClassLongPtr(hwnd, getattr(win32con, "GCLP_HICONSM", 0)) or 0
+                class_hicon = (
+                    win32gui.GetClassLongPtr(hwnd, getattr(win32con, "GCLP_HICONSM", 0))
+                    or 0
+                )
                 if not class_hicon:
-                    class_hicon = win32gui.GetClassLongPtr(hwnd, win32con.GCLP_HICON) or 0
+                    class_hicon = (
+                        win32gui.GetClassLongPtr(hwnd, win32con.GCLP_HICON) or 0
+                    )
             else:
-                class_hicon = win32gui.GetClassLong(hwnd, getattr(win32con, "GCL_HICONSM", -34)) or 0
+                class_hicon = (
+                    win32gui.GetClassLong(hwnd, getattr(win32con, "GCL_HICONSM", -34))
+                    or 0
+                )
                 if not class_hicon:
                     class_hicon = win32gui.GetClassLong(hwnd, win32con.GCL_HICON) or 0
         except Exception:
@@ -239,7 +258,9 @@ def hicon_to_image(hicon: int) -> Image.Image | None:
     mask_bytes = mask_buffer.raw
 
     # Check if icon is mask-based
-    is_mask_based = all(b == 0 for _, _, _, b in struct.iter_unpack("BBBB", color_bytes))
+    is_mask_based = all(
+        b == 0 for _, _, _, b in struct.iter_unpack("BBBB", color_bytes)
+    )
 
     # Process pixel data
     img_data = bytearray(buffer_size)
@@ -261,4 +282,6 @@ def hicon_to_image(hicon: int) -> Image.Image | None:
         img_data[i : i + 4] = bytes((r, g, b, a))
 
     # Create PIL Image
-    return Image.frombuffer("RGBA", (width, height), bytes(img_data), "raw", "RGBA", 0, 1)
+    return Image.frombuffer(
+        "RGBA", (width, height), bytes(img_data), "raw", "RGBA", 0, 1
+    )

@@ -20,17 +20,42 @@ DEFAULTS = {
 VALIDATION_SCHEMA = {
     "label_offline": {"type": "string", "default": DEFAULTS["label_offline"]},
     "label_window": {"type": "string", "default": DEFAULTS["label_window"]},
-    "label_window_active": {"type": "string", "default": DEFAULTS["label_window_active"]},
+    "label_window_active": {
+        "type": "string",
+        "default": DEFAULTS["label_window_active"],
+    },
     "label_no_window": {"type": "string", "default": DEFAULTS["label_no_window"]},
     "label_zero_index": {"type": "boolean", "default": DEFAULTS["label_zero_index"]},
     "hide_if_offline": {"type": "boolean", "default": DEFAULTS["hide_if_offline"]},
-    "show_icons": {"type": "string", "allowed": ["focused", "always", "never"], "default": DEFAULTS["show_icons"]},
+    "show_icons": {
+        "type": "string",
+        "allowed": ["focused", "always", "never"],
+        "default": DEFAULTS["show_icons"],
+    },
     "icon_size": {"type": "integer", "min": 0, "default": DEFAULTS["icon_size"]},
     "show_only_stack": {"type": "boolean", "default": DEFAULTS["show_only_stack"]},
-    "max_length": {"type": "integer", "min": 1, "nullable": True, "default": DEFAULTS["max_length"]},
-    "max_length_active": {"type": "integer", "min": 1, "nullable": True, "default": DEFAULTS["max_length"]},
-    "max_length_overall": {"type": "integer", "min": 1, "nullable": True, "default": DEFAULTS["max_length"]},
-    "max_length_ellipsis": {"type": "string", "default": DEFAULTS["max_length_ellipsis"]},
+    "max_length": {
+        "type": "integer",
+        "min": 1,
+        "nullable": True,
+        "default": DEFAULTS["max_length"],
+    },
+    "max_length_active": {
+        "type": "integer",
+        "min": 1,
+        "nullable": True,
+        "default": DEFAULTS["max_length"],
+    },
+    "max_length_overall": {
+        "type": "integer",
+        "min": 1,
+        "nullable": True,
+        "default": DEFAULTS["max_length"],
+    },
+    "max_length_ellipsis": {
+        "type": "string",
+        "default": DEFAULTS["max_length_ellipsis"],
+    },
     "animation": {"type": "boolean", "default": DEFAULTS["animation"]},
     "rewrite": {
         "type": "list",
@@ -49,9 +74,19 @@ VALIDATION_SCHEMA = {
         },
         "default": DEFAULTS["rewrite"],
     },
-    "enable_scroll_switching": {"type": "boolean", "default": DEFAULTS["enable_scroll_switching"]},
-    "reverse_scroll_direction": {"type": "boolean", "default": DEFAULTS["reverse_scroll_direction"]},
-    "container_padding": {"type": "dict", "default": DEFAULTS["container_padding"], "required": False},
+    "enable_scroll_switching": {
+        "type": "boolean",
+        "default": DEFAULTS["enable_scroll_switching"],
+    },
+    "reverse_scroll_direction": {
+        "type": "boolean",
+        "default": DEFAULTS["reverse_scroll_direction"],
+    },
+    "container_padding": {
+        "type": "dict",
+        "default": DEFAULTS["container_padding"],
+        "required": False,
+    },
     "btn_shadow": {
         "type": "dict",
         "required": False,

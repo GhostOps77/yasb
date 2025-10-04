@@ -13,16 +13,35 @@ VALIDATION_SCHEMA = {
     "uptime": {"type": "boolean", "default": DEFAULTS["uptime"], "required": False},
     "blur": {"type": "boolean", "default": DEFAULTS["blur"]},
     "blur_background": {"type": "boolean", "default": DEFAULTS["blur_background"]},
-    "animation_duration": {"type": "integer", "default": DEFAULTS["animation_duration"], "min": 0, "max": 2000},
-    "button_row": {"type": "integer", "default": DEFAULTS["button_row"], "min": 1, "max": 5},
+    "animation_duration": {
+        "type": "integer",
+        "default": DEFAULTS["animation_duration"],
+        "min": 0,
+        "max": 2000,
+    },
+    "button_row": {
+        "type": "integer",
+        "default": DEFAULTS["button_row"],
+        "min": 1,
+        "max": 5,
+    },
     "container_padding": {
         "type": "dict",
         "required": False,
         "schema": {
             "top": {"type": "integer", "default": DEFAULTS["container_padding"]["top"]},
-            "left": {"type": "integer", "default": DEFAULTS["container_padding"]["left"]},
-            "bottom": {"type": "integer", "default": DEFAULTS["container_padding"]["bottom"]},
-            "right": {"type": "integer", "default": DEFAULTS["container_padding"]["right"]},
+            "left": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["left"],
+            },
+            "bottom": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["bottom"],
+            },
+            "right": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["right"],
+            },
         },
         "default": DEFAULTS["container_padding"],
     },

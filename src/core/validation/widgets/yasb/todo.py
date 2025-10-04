@@ -31,7 +31,11 @@ DEFAULTS = {
         "soon": {"label": "Complete soon"},
         "today": {"label": "End of day"},
     },
-    "callbacks": {"on_left": "toggle_menu", "on_middle": "do_nothing", "on_right": "toggle_label"},
+    "callbacks": {
+        "on_left": "toggle_menu",
+        "on_middle": "do_nothing",
+        "on_right": "toggle_label",
+    },
 }
 
 VALIDATION_SCHEMA = {
@@ -42,9 +46,18 @@ VALIDATION_SCHEMA = {
         "required": False,
         "schema": {
             "top": {"type": "integer", "default": DEFAULTS["container_padding"]["top"]},
-            "left": {"type": "integer", "default": DEFAULTS["container_padding"]["left"]},
-            "bottom": {"type": "integer", "default": DEFAULTS["container_padding"]["bottom"]},
-            "right": {"type": "integer", "default": DEFAULTS["container_padding"]["right"]},
+            "left": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["left"],
+            },
+            "bottom": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["bottom"],
+            },
+            "right": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["right"],
+            },
         },
         "default": DEFAULTS["container_padding"],
     },
@@ -54,7 +67,10 @@ VALIDATION_SCHEMA = {
         "schema": {
             "enabled": {"type": "boolean", "default": DEFAULTS["animation"]["enabled"]},
             "type": {"type": "string", "default": DEFAULTS["animation"]["type"]},
-            "duration": {"type": "integer", "default": DEFAULTS["animation"]["duration"]},
+            "duration": {
+                "type": "integer",
+                "default": DEFAULTS["animation"]["duration"],
+            },
         },
         "default": DEFAULTS["animation"],
     },
@@ -63,17 +79,29 @@ VALIDATION_SCHEMA = {
         "required": False,
         "schema": {
             "blur": {"type": "boolean", "default": DEFAULTS["menu"]["blur"]},
-            "round_corners": {"type": "boolean", "default": DEFAULTS["menu"]["round_corners"]},
+            "round_corners": {
+                "type": "boolean",
+                "default": DEFAULTS["menu"]["round_corners"],
+            },
             "round_corners_type": {
                 "type": "string",
                 "default": DEFAULTS["menu"]["round_corners_type"],
                 "allowed": ["normal", "small"],
             },
-            "border_color": {"type": "string", "default": DEFAULTS["menu"]["border_color"]},
+            "border_color": {
+                "type": "string",
+                "default": DEFAULTS["menu"]["border_color"],
+            },
             "alignment": {"type": "string", "default": DEFAULTS["menu"]["alignment"]},
             "direction": {"type": "string", "default": DEFAULTS["menu"]["direction"]},
-            "offset_top": {"type": "integer", "default": DEFAULTS["menu"]["offset_top"]},
-            "offset_left": {"type": "integer", "default": DEFAULTS["menu"]["offset_left"]},
+            "offset_top": {
+                "type": "integer",
+                "default": DEFAULTS["menu"]["offset_top"],
+            },
+            "offset_left": {
+                "type": "integer",
+                "default": DEFAULTS["menu"]["offset_left"],
+            },
         },
         "default": DEFAULTS["menu"],
     },
@@ -100,35 +128,50 @@ VALIDATION_SCHEMA = {
             "default": {
                 "type": "dict",
                 "schema": {
-                    "label": {"type": "string", "default": DEFAULTS["categories"]["default"]["label"]},
+                    "label": {
+                        "type": "string",
+                        "default": DEFAULTS["categories"]["default"]["label"],
+                    },
                 },
                 "default": DEFAULTS["categories"]["default"],
             },
             "urgent": {
                 "type": "dict",
                 "schema": {
-                    "label": {"type": "string", "default": DEFAULTS["categories"]["urgent"]["label"]},
+                    "label": {
+                        "type": "string",
+                        "default": DEFAULTS["categories"]["urgent"]["label"],
+                    },
                 },
                 "default": DEFAULTS["categories"]["urgent"],
             },
             "important": {
                 "type": "dict",
                 "schema": {
-                    "label": {"type": "string", "default": DEFAULTS["categories"]["important"]["label"]},
+                    "label": {
+                        "type": "string",
+                        "default": DEFAULTS["categories"]["important"]["label"],
+                    },
                 },
                 "default": DEFAULTS["categories"]["important"],
             },
             "soon": {
                 "type": "dict",
                 "schema": {
-                    "label": {"type": "string", "default": DEFAULTS["categories"]["soon"]["label"]},
+                    "label": {
+                        "type": "string",
+                        "default": DEFAULTS["categories"]["soon"]["label"],
+                    },
                 },
                 "default": DEFAULTS["categories"]["soon"],
             },
             "today": {
                 "type": "dict",
                 "schema": {
-                    "label": {"type": "string", "default": DEFAULTS["categories"]["today"]["label"]},
+                    "label": {
+                        "type": "string",
+                        "default": DEFAULTS["categories"]["today"]["label"],
+                    },
                 },
                 "default": DEFAULTS["categories"]["today"],
             },
@@ -141,8 +184,14 @@ VALIDATION_SCHEMA = {
         "required": False,
         "schema": {
             "on_left": {"type": "string", "default": DEFAULTS["callbacks"]["on_left"]},
-            "on_middle": {"type": "string", "default": DEFAULTS["callbacks"]["on_middle"]},
-            "on_right": {"type": "string", "default": DEFAULTS["callbacks"]["on_right"]},
+            "on_middle": {
+                "type": "string",
+                "default": DEFAULTS["callbacks"]["on_middle"],
+            },
+            "on_right": {
+                "type": "string",
+                "default": DEFAULTS["callbacks"]["on_right"],
+            },
         },
         "default": DEFAULTS["callbacks"],
     },

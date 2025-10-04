@@ -11,7 +11,9 @@ class AnimationManager:
     @classmethod
     def animate(cls, widget, animation_type: str, duration: int = 200):
         if animation_type not in cls.ALLOWED_ANIMATIONS:
-            logging.error(f"Animation type '{animation_type}' not supported. Allowed types: {cls.ALLOWED_ANIMATIONS}")
+            logging.error(
+                f"Animation type '{animation_type}' not supported. Allowed types: {cls.ALLOWED_ANIMATIONS}"
+            )
             return
         key = f"{animation_type}_{duration}"
         if key not in cls._instances:

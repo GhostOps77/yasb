@@ -15,15 +15,28 @@ VALIDATION_SCHEMA = {
             "required": False,
         },
     },
-    "hide_empty": {"type": "boolean", "required": False, "default": DEFAULTS["hide_empty"]},
+    "hide_empty": {
+        "type": "boolean",
+        "required": False,
+        "default": DEFAULTS["hide_empty"],
+    },
     "container_padding": {
         "type": "dict",
         "required": False,
         "schema": {
             "top": {"type": "integer", "default": DEFAULTS["container_padding"]["top"]},
-            "left": {"type": "integer", "default": DEFAULTS["container_padding"]["left"]},
-            "bottom": {"type": "integer", "default": DEFAULTS["container_padding"]["bottom"]},
-            "right": {"type": "integer", "default": DEFAULTS["container_padding"]["right"]},
+            "left": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["left"],
+            },
+            "bottom": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["bottom"],
+            },
+            "right": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["right"],
+            },
         },
         "default": DEFAULTS["container_padding"],
     },

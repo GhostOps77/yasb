@@ -30,7 +30,15 @@ class AppListLoader(QThread):
         import glob
         import subprocess
 
-        filter_keywords = {"uninstall", "readme", "help", "documentation", "license", "setup", "installer"}
+        filter_keywords = {
+            "uninstall",
+            "readme",
+            "help",
+            "documentation",
+            "license",
+            "setup",
+            "installer",
+        }
 
         start_menu_dirs = [
             os.path.expandvars(r"%APPDATA%\Microsoft\Windows\Start Menu\Programs"),
@@ -83,7 +91,12 @@ class AppListLoader(QThread):
                 for entry in uwp_list:
                     name = entry.get("Name")
                     appid = entry.get("AppID")
-                    if name and appid and name.lower() not in seen_names and not should_filter_app(name):
+                    if (
+                        name
+                        and appid
+                        and name.lower() not in seen_names
+                        and not should_filter_app(name)
+                    ):
                         apps.append((name, f"UWP::{appid}", None))
                         seen_names.add(name.lower())
         except Exception:

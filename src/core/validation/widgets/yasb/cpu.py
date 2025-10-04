@@ -3,11 +3,25 @@ DEFAULTS = {
     "label_alt": "\uf200 CPU: {info[percent][total]}% | freq: {info[freq][current]:.2f} Mhz",
     "class_name": "",
     "update_interval": 1000,
-    "histogram_icons": ["\u2581", "\u2581", "\u2582", "\u2583", "\u2584", "\u2585", "\u2586", "\u2587", "\u2588"],
+    "histogram_icons": [
+        "\u2581",
+        "\u2581",
+        "\u2582",
+        "\u2583",
+        "\u2584",
+        "\u2585",
+        "\u2586",
+        "\u2587",
+        "\u2588",
+    ],
     "histogram_num_columns": 10,
     "animation": {"enabled": True, "type": "fadeInOut", "duration": 200},
     "container_padding": {"top": 0, "left": 0, "bottom": 0, "right": 0},
-    "callbacks": {"on_left": "toggle_label", "on_middle": "do_nothing", "on_right": "do_nothing"},
+    "callbacks": {
+        "on_left": "toggle_label",
+        "on_middle": "do_nothing",
+        "on_right": "do_nothing",
+    },
     "cpu_thresholds": {
         "low": 25,
         "medium": 50,
@@ -19,8 +33,17 @@ DEFAULTS = {
 VALIDATION_SCHEMA = {
     "label": {"type": "string", "default": DEFAULTS["label"]},
     "label_alt": {"type": "string", "default": DEFAULTS["label_alt"]},
-    "class_name": {"type": "string", "required": False, "default": DEFAULTS["class_name"]},
-    "update_interval": {"type": "integer", "default": DEFAULTS["update_interval"], "min": 1000, "max": 60000},
+    "class_name": {
+        "type": "string",
+        "required": False,
+        "default": DEFAULTS["class_name"],
+    },
+    "update_interval": {
+        "type": "integer",
+        "default": DEFAULTS["update_interval"],
+        "min": 1000,
+        "max": 60000,
+    },
     "histogram_icons": {
         "type": "list",
         "default": DEFAULTS["histogram_icons"],
@@ -28,14 +51,22 @@ VALIDATION_SCHEMA = {
         "maxlength": 9,
         "schema": {"type": "string"},
     },
-    "histogram_num_columns": {"type": "integer", "default": DEFAULTS["histogram_num_columns"], "min": 0, "max": 128},
+    "histogram_num_columns": {
+        "type": "integer",
+        "default": DEFAULTS["histogram_num_columns"],
+        "min": 0,
+        "max": 128,
+    },
     "animation": {
         "type": "dict",
         "required": False,
         "schema": {
             "enabled": {"type": "boolean", "default": DEFAULTS["animation"]["enabled"]},
             "type": {"type": "string", "default": DEFAULTS["animation"]["type"]},
-            "duration": {"type": "integer", "default": DEFAULTS["animation"]["duration"]},
+            "duration": {
+                "type": "integer",
+                "default": DEFAULTS["animation"]["duration"],
+            },
         },
         "default": DEFAULTS["animation"],
     },
@@ -44,9 +75,18 @@ VALIDATION_SCHEMA = {
         "required": False,
         "schema": {
             "top": {"type": "integer", "default": DEFAULTS["container_padding"]["top"]},
-            "left": {"type": "integer", "default": DEFAULTS["container_padding"]["left"]},
-            "bottom": {"type": "integer", "default": DEFAULTS["container_padding"]["bottom"]},
-            "right": {"type": "integer", "default": DEFAULTS["container_padding"]["right"]},
+            "left": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["left"],
+            },
+            "bottom": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["bottom"],
+            },
+            "right": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["right"],
+            },
         },
         "default": DEFAULTS["container_padding"],
     },
@@ -81,11 +121,18 @@ VALIDATION_SCHEMA = {
             "size": {"type": "integer", "default": 18, "min": 8, "max": 64},
             "thickness": {"type": "integer", "default": 3, "min": 1, "max": 10},
             "color": {
-                "anyof": [{"type": "string"}, {"type": "list", "schema": {"type": "string"}}],
+                "anyof": [
+                    {"type": "string"},
+                    {"type": "list", "schema": {"type": "string"}},
+                ],
                 "default": "#00C800",
             },
             "background_color": {"type": "string", "default": "#3C3C3C"},
-            "position": {"type": "string", "allowed": ["left", "right"], "default": "left"},
+            "position": {
+                "type": "string",
+                "allowed": ["left", "right"],
+                "default": "left",
+            },
             "animation": {
                 "type": "boolean",
                 "default": True,
@@ -114,9 +161,24 @@ VALIDATION_SCHEMA = {
         "type": "dict",
         "required": False,
         "schema": {
-            "low": {"type": "integer", "default": DEFAULTS["cpu_thresholds"]["low"], "min": 0, "max": 100},
-            "medium": {"type": "integer", "default": DEFAULTS["cpu_thresholds"]["medium"], "min": 0, "max": 100},
-            "high": {"type": "integer", "default": DEFAULTS["cpu_thresholds"]["high"], "min": 0, "max": 100},
+            "low": {
+                "type": "integer",
+                "default": DEFAULTS["cpu_thresholds"]["low"],
+                "min": 0,
+                "max": 100,
+            },
+            "medium": {
+                "type": "integer",
+                "default": DEFAULTS["cpu_thresholds"]["medium"],
+                "min": 0,
+                "max": 100,
+            },
+            "high": {
+                "type": "integer",
+                "default": DEFAULTS["cpu_thresholds"]["high"],
+                "min": 0,
+                "max": 100,
+            },
         },
         "default": DEFAULTS["cpu_thresholds"],
     },

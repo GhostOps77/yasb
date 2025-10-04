@@ -16,12 +16,19 @@ DEFAULTS = {
 VALIDATION_SCHEMA = {
     "label": {"type": "string", "default": DEFAULTS["label"]},
     "label_alt": {"type": "string", "default": DEFAULTS["label_alt"]},
-    "class_name": {"type": "string", "required": False, "default": DEFAULTS["class_name"]},
+    "class_name": {
+        "type": "string",
+        "required": False,
+        "default": DEFAULTS["class_name"],
+    },
     "icons": {
         "type": "dict",
         "schema": {
             "bin_empty": {"type": "string", "default": DEFAULTS["icons"]["bin_empty"]},
-            "bin_filled": {"type": "string", "default": DEFAULTS["icons"]["bin_filled"]},
+            "bin_filled": {
+                "type": "string",
+                "default": DEFAULTS["icons"]["bin_filled"],
+            },
         },
         "default": DEFAULTS["icons"],
     },
@@ -32,7 +39,10 @@ VALIDATION_SCHEMA = {
         "schema": {
             "enabled": {"type": "boolean", "default": DEFAULTS["animation"]["enabled"]},
             "type": {"type": "string", "default": DEFAULTS["animation"]["type"]},
-            "duration": {"type": "integer", "default": DEFAULTS["animation"]["duration"]},
+            "duration": {
+                "type": "integer",
+                "default": DEFAULTS["animation"]["duration"],
+            },
         },
         "default": DEFAULTS["animation"],
     },
@@ -41,9 +51,18 @@ VALIDATION_SCHEMA = {
         "required": False,
         "schema": {
             "top": {"type": "integer", "default": DEFAULTS["container_padding"]["top"]},
-            "left": {"type": "integer", "default": DEFAULTS["container_padding"]["left"]},
-            "bottom": {"type": "integer", "default": DEFAULTS["container_padding"]["bottom"]},
-            "right": {"type": "integer", "default": DEFAULTS["container_padding"]["right"]},
+            "left": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["left"],
+            },
+            "bottom": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["bottom"],
+            },
+            "right": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["right"],
+            },
         },
         "default": DEFAULTS["container_padding"],
     },

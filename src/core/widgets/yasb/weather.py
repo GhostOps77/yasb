@@ -50,20 +50,28 @@ class WeatherWidget(BaseWidget):
         super().__init__(class_name=f"weather-widget {class_name}")
         self._label_content = label
         self._label_alt_content = label_alt
-        self._location = location if location != "env" else os.getenv("YASB_WEATHER_LOCATION")
+        self._location = (
+            location if location != "env" else os.getenv("YASB_WEATHER_LOCATION")
+        )
         self._hide_decimal = hide_decimal
         self._icons = icons
         self._tooltip = tooltip
-        self._api_key = api_key if api_key != "env" else os.getenv("YASB_WEATHER_API_KEY")
+        self._api_key = (
+            api_key if api_key != "env" else os.getenv("YASB_WEATHER_API_KEY")
+        )
         if not self._api_key or not self._location:
-            logging.error("API key or location is missing. Please provide a valid API key and location.")
+            logging.error(
+                "API key or location is missing. Please provide a valid API key and location."
+            )
             self.hide()
             return
 
         self._api_url = f"http://api.weatherapi.com/v1/forecast.json?key={self._api_key}&q={urllib.parse.quote(self._location)}&days=3&aqi=no&alerts=yes"
 
         # Create network manager, request and timer
-        self._weather_fetcher = WeatherDataFetcher.get_instance(self, QUrl(self._api_url), update_interval * 1000)
+        self._weather_fetcher = WeatherDataFetcher.get_instance(
+            self, QUrl(self._api_url), update_interval * 1000
+        )
         self._weather_fetcher.finished.connect(self.process_weather_data)  # type: ignore[reportUnknownMemberType]
         self._weather_fetcher.finished.connect(lambda *_: self._update_label(True))  # type: ignore[reportUnknownMemberType]
         self._icon_fetcher = IconFetcher.get_instance(self)
@@ -156,7 +164,9 @@ class WeatherWidget(BaseWidget):
         frame_today.setProperty("class", "weather-card-today")
         layout_today = QVBoxLayout(frame_today)
 
-        today_label0 = QLabel(f"{self._weather_data['{location}']} {self._weather_data['{temp}']}")
+        today_label0 = QLabel(
+            f"{self._weather_data['{location}']} {self._weather_data['{temp}']}"
+        )
         today_label0.setProperty("class", "label location")
         today_label0.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -177,7 +187,11 @@ class WeatherWidget(BaseWidget):
 
         layout_today.addWidget(today_label0)
         layout_today.addWidget(today_label1)
-        if self._show_alerts and self._weather_data["{alert_title}"] and self._weather_data["{alert_desc}"]:
+        if (
+            self._show_alerts
+            and self._weather_data["{alert_title}"]
+            and self._weather_data["{alert_desc}"]
+        ):
             layout_today.addWidget(today_label2)
 
         # Create hourly layout and add frames (before the daily widget to pass it to press event)
@@ -212,7 +226,9 @@ class WeatherWidget(BaseWidget):
                 parsed_data.append(
                     HourlyData(
                         temp=temp,
-                        wind=h["wind_kph"] if self._units == "metric" else h["wind_mph"],
+                        wind=(
+                            h["wind_kph"] if self._units == "metric" else h["wind_mph"]
+                        ),
                         icon_url=f"http:{h['condition']['icon']}",
                         time=datetime.strptime(h["time"], "%Y-%m-%d %H:%M"),
                     )
@@ -232,7 +248,9 @@ class WeatherWidget(BaseWidget):
             frame_day = ClickableWidget()
             self._weather_card_daily_widgets.append(frame_day)
             if self._hourly_data_today and self._weather_card["show_hourly_forecast"]:
-                frame_day.clicked.connect(lambda i=i: switch_hourly_data(i))  # pyright: ignore[reportUnknownMemberType]
+                frame_day.clicked.connect(
+                    lambda i=i: switch_hourly_data(i)
+                )  # pyright: ignore[reportUnknownMemberType]
             frame_day.setProperty("class", "weather-card-day")
             if i == 0:
                 name = "Today"
@@ -242,7 +260,9 @@ class WeatherWidget(BaseWidget):
                 name = self._weather_data[f"{{day{i}_name}}"]
                 min_temp = self._weather_data[f"{{day{i}_min_temp}}"]
                 max_temp = self._weather_data[f"{{day{i}_max_temp}}"]
-            row_day_label = QLabel(f"{name}\nMin: {min_temp}\nMax: {max_temp}", frame_day)
+            row_day_label = QLabel(
+                f"{name}\nMin: {min_temp}\nMax: {max_temp}", frame_day
+            )
             row_day_label.setProperty("class", "label")
 
             # Create the icon label and pixmap
@@ -295,7 +315,9 @@ class WeatherWidget(BaseWidget):
             try:
                 # Create a temporary icon fetcher to fetch the missing icons
                 temp_icon_fetcher = IconFetcher(self.dialog)
-                temp_icon_fetcher.fetch_icons([icon_url for _, icon_url in failed_icons])
+                temp_icon_fetcher.fetch_icons(
+                    [icon_url for _, icon_url in failed_icons]
+                )
 
                 def update_failed_icons():
                     for label, icon_url in failed_icons:
@@ -325,17 +347,17 @@ class WeatherWidget(BaseWidget):
 
     def _create_dynamically_label(self, content: str, content_alt: str):
         def process_content(content: str, is_alt: bool = False) -> list[QLabel]:
-            label_parts = re.split("(<span.*?>.*?</span>)", content)
+            label_parts = re.split(r"(<span[^>]*?>.*?</span>)", content)
             label_parts = [part for part in label_parts if part]
             widgets: list[QLabel] = []
             for part in label_parts:
                 part = part.strip()
                 if not part:
                     continue
-                if "<span" in part and "</span>" in part:
+                if part.startswith("<span") and part.endswith("</span>"):
                     class_name = re.search(r'class=(["\'])([^"\']+?)\1', part)
                     class_result = class_name.group(2) if class_name else "icon"
-                    icon = re.sub(r"<span.*?>|</span>", "", part).strip()
+                    icon = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
                     label = QLabel(icon)
                     label.setProperty("class", class_result)
                     label.hide()
@@ -367,42 +389,50 @@ class WeatherWidget(BaseWidget):
             return
 
         active_widgets = self._show_alt_label and self._widgets_alt or self._widgets
-        active_label_content = self._show_alt_label and self._label_alt_content or self._label_content
+        active_widgets_len = len(active_widgets)
+        active_label_content = (
+            self._show_alt_label and self._label_alt_content or self._label_content
+        )
         label_parts = re.split(r"(<span.*?>.*?</span>)", active_label_content)
-        label_parts = [part for part in label_parts if part]
 
         if self._tooltip:
             set_tooltip(
                 self,
-                f"{self._weather_data['{location}']}\nMin {self._weather_data['{min_temp}']}\nMax {self._weather_data['{max_temp}']}",
+                f"{self._weather_data['{location}']}\n"
+                f"Min {self._weather_data['{min_temp}']}\nMax {self._weather_data['{max_temp}']}",
             )
 
         widget_index = 0
 
         try:
             for part in label_parts:
+                if widget_index >= active_widgets_len:
+                    break
+
                 part = part.strip()
-                for option, value in self._weather_data.items():
-                    part = part.replace(option, str(value))
-                if not part or widget_index >= len(active_widgets):
+                if not part:
                     continue
-                if "<span" in part and "</span>" in part:
-                    icon = re.sub(r"<span.*?>|</span>", "", part).strip()
+
+                if part.startswith("<span") and part.endswith("</span>"):
+                    part = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
+
                     # Only replace with icons dictionary if the content is actually in the dictionary
-                    if icon in self._icons:
-                        icon = self._icons.get(icon)
-                    active_widgets[widget_index].setText(icon)
+                    if part in self._icons:
+                        part = self._icons[part]
+
                     if update_class:
                         # Retrieve current class and append new class based on weather conditions
-                        current_class = active_widgets[widget_index].property("class") or ""
+                        current_class = (
+                            active_widgets[widget_index].property("class") or ""
+                        )
                         append_class_icon = self._weather_data.get("{icon_class}", "")
                         # Create the new class string
                         new_class = f"{current_class} {append_class_icon}"
                         active_widgets[widget_index].setProperty("class", new_class)
                         # Update css
                         self._reload_css(active_widgets[widget_index])
-                else:
-                    active_widgets[widget_index].setText(part)
+
+                active_widgets[widget_index].setText(part)
 
                 if not active_widgets[widget_index].isVisible():
                     active_widgets[widget_index].show()
@@ -426,7 +456,9 @@ class WeatherWidget(BaseWidget):
         value = round(temp) if self._hide_decimal else temp
         return f"{value}{unit}"
 
-    def _format_measurement(self, imperial_val: str, imperial_unit: str, metric_val: str, metric_unit: str) -> str:
+    def _format_measurement(
+        self, imperial_val: str, imperial_unit: str, metric_val: str, metric_unit: str
+    ) -> str:
         if self._units == "imperial":
             return f"{imperial_val} {imperial_unit}"
         return f"{metric_val} {metric_unit}"
@@ -435,6 +467,7 @@ class WeatherWidget(BaseWidget):
         try:
             if not weather_data:
                 raise Exception("Weather data is empty.")
+
             alerts = weather_data["alerts"]
             forecast = weather_data["forecast"]["forecastday"][0]["day"]
             forecast1 = weather_data["forecast"]["forecastday"][1]
@@ -443,32 +476,46 @@ class WeatherWidget(BaseWidget):
             self._hourly_data_today = weather_data["forecast"]["forecastday"][0]["hour"]
             self._hourly_data_2 = forecast1["hour"]
             self._hourly_data_3 = forecast2["hour"]
-            self._current_time = datetime.strptime(weather_data["location"]["localtime"], "%Y-%m-%d %H:%M")
-            all_hourly_data = self._hourly_data_today + self._hourly_data_2 + self._hourly_data_3
+            self._current_time = datetime.strptime(
+                weather_data["location"]["localtime"], "%Y-%m-%d %H:%M"
+            )
+            all_hourly_data = (
+                self._hourly_data_today + self._hourly_data_2 + self._hourly_data_3
+            )
 
             current: dict[str, Any] = weather_data["current"]
             conditions_data = current["condition"]["text"]
             conditions_code = current["condition"]["code"]
 
             # Get the weather icon string and weather text based on the code and time of day
-            weather_icon_string, weather_text = get_weather(conditions_code, current["is_day"])
+            weather_icon_string, weather_text = get_weather(
+                conditions_code, current["is_day"]
+            )
 
             # Load icons images into cache for current and future forecasts if not already cached
             img_icon_keys = [
                 f"http:{day['condition']['icon']}"
-                for day in [forecast] + [forecast1["day"], forecast2["day"]] + all_hourly_data
+                for day in [forecast]
+                + [forecast1["day"], forecast2["day"]]
+                + all_hourly_data
             ]
             self._icon_fetcher.fetch_icons(list(set(img_icon_keys)))
 
             self._weather_data = {
                 # Current conditions
                 "{temp}": self._format_temp(current["temp_f"], current["temp_c"]),
-                "{feelslike}": self._format_temp(current["feelslike_f"], current["feelslike_c"]),
+                "{feelslike}": self._format_temp(
+                    current["feelslike_f"], current["feelslike_c"]
+                ),
                 "{humidity}": f"{current['humidity']}%",
                 "{cloud}": current["cloud"],
                 # Forecast today
-                "{min_temp}": self._format_temp(forecast["mintemp_f"], forecast["mintemp_c"]),
-                "{max_temp}": self._format_temp(forecast["maxtemp_f"], forecast["maxtemp_c"]),
+                "{min_temp}": self._format_temp(
+                    forecast["mintemp_f"], forecast["mintemp_c"]
+                ),
+                "{max_temp}": self._format_temp(
+                    forecast["maxtemp_f"], forecast["maxtemp_c"]
+                ),
                 # Location and conditions
                 "{location}": weather_data["location"]["name"],
                 "{location_region}": weather_data["location"]["region"],
@@ -483,35 +530,61 @@ class WeatherWidget(BaseWidget):
                 "{icon_class}": weather_icon_string,
                 "{day0_icon}": f"http:{forecast['condition']['icon']}",
                 # Wind data
-                "{wind}": self._format_measurement(current["wind_mph"], "mph", current["wind_kph"], "km/h"),
+                "{wind}": self._format_measurement(
+                    current["wind_mph"], "mph", current["wind_kph"], "km/h"
+                ),
                 "{wind_dir}": current["wind_dir"],
                 "{wind_degree}": current["wind_degree"],
                 # Other measurements
-                "{pressure}": self._format_measurement(current["pressure_in"], "in", current["pressure_mb"], "mb"),
-                "{precip}": self._format_measurement(current["precip_in"], "in", current["precip_mm"], "mm"),
-                "{vis}": self._format_measurement(current["vis_miles"], "mi", current["vis_km"], "km"),
+                "{pressure}": self._format_measurement(
+                    current["pressure_in"], "in", current["pressure_mb"], "mb"
+                ),
+                "{precip}": self._format_measurement(
+                    current["precip_in"], "in", current["precip_mm"], "mm"
+                ),
+                "{vis}": self._format_measurement(
+                    current["vis_miles"], "mi", current["vis_km"], "km"
+                ),
                 "{uv}": current["uv"],
                 # Future forecasts
                 "{day1_name}": self._format_date_string(forecast1["date"]),
-                "{day1_min_temp}": self._format_temp(forecast1["day"]["mintemp_f"], forecast1["day"]["mintemp_c"]),
-                "{day1_max_temp}": self._format_temp(forecast1["day"]["maxtemp_f"], forecast1["day"]["maxtemp_c"]),
+                "{day1_min_temp}": self._format_temp(
+                    forecast1["day"]["mintemp_f"], forecast1["day"]["mintemp_c"]
+                ),
+                "{day1_max_temp}": self._format_temp(
+                    forecast1["day"]["maxtemp_f"], forecast1["day"]["maxtemp_c"]
+                ),
                 "{day1_icon}": f"http:{forecast1['day']['condition']['icon']}",
                 "{day2_name}": self._format_date_string(forecast2["date"]),
-                "{day2_min_temp}": self._format_temp(forecast2["day"]["mintemp_f"], forecast2["day"]["mintemp_c"]),
-                "{day2_max_temp}": self._format_temp(forecast2["day"]["maxtemp_f"], forecast2["day"]["maxtemp_c"]),
+                "{day2_min_temp}": self._format_temp(
+                    forecast2["day"]["mintemp_f"], forecast2["day"]["mintemp_c"]
+                ),
+                "{day2_max_temp}": self._format_temp(
+                    forecast2["day"]["maxtemp_f"], forecast2["day"]["maxtemp_c"]
+                ),
                 "{day2_icon}": f"http:{forecast2['day']['condition']['icon']}",
                 # Alerts
-                "{alert_title}": alerts["alert"][0]["headline"]
-                if alerts["alert"] and alerts["alert"][0]["headline"]
-                else None,
-                "{alert_desc}": alerts["alert"][0]["desc"] if alerts["alert"] and alerts["alert"][0]["desc"] else None,
-                "{alert_end_date}": self._format_alert_datetime(alerts["alert"][0]["expires"])
-                if alerts["alert"] and alerts["alert"][0]["expires"]
-                else None,
+                "{alert_title}": (
+                    alerts["alert"][0]["headline"]
+                    if alerts["alert"] and alerts["alert"][0]["headline"]
+                    else None
+                ),
+                "{alert_desc}": (
+                    alerts["alert"][0]["desc"]
+                    if alerts["alert"] and alerts["alert"][0]["desc"]
+                    else None
+                ),
+                "{alert_end_date}": (
+                    self._format_alert_datetime(alerts["alert"][0]["expires"])
+                    if alerts["alert"] and alerts["alert"][0]["expires"]
+                    else None
+                ),
             }
         except Exception as e:
             if not self._retry_timer.isActive():
-                err = f"Error processing weather data: {e}. Retrying fetch in 10 seconds."
+                err = (
+                    f"Error processing weather data: {e}. Retrying fetch in 10 seconds."
+                )
                 if isinstance(e, (IndexError, KeyError, TypeError)):
                     err += f"\n{traceback.format_exc()}"
                 logging.warning(err)

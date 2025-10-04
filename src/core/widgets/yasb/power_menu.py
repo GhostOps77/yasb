@@ -70,7 +70,11 @@ class AnimatedWidget(QWidget):
 class OverlayWidget(BaseStyledWidget, AnimatedWidget):
     def __init__(self, animation_duration, uptime):
         super().__init__(animation_duration)
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool)
+        self.setWindowFlags(
+            Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.WindowStaysOnTopHint
+            | Qt.WindowType.Tool
+        )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         if uptime:
             self.boot_time()
@@ -159,7 +163,10 @@ class PowerMenuWidget(BaseWidget):
         self._widget_container_layout = QHBoxLayout()
         self._widget_container_layout.setSpacing(0)
         self._widget_container_layout.setContentsMargins(
-            self._padding["left"], self._padding["top"], self._padding["right"], self._padding["bottom"]
+            self._padding["left"],
+            self._padding["top"],
+            self._padding["right"],
+            self._padding["bottom"],
         )
         # Initialize container
 
@@ -186,7 +193,9 @@ class PowerMenuWidget(BaseWidget):
         if widget == "powermenu":
             current_screen = self.window().screen() if self.window() else None
             current_screen_name = current_screen.name() if current_screen else None
-            if not screen or (current_screen_name and screen.lower() == current_screen_name.lower()):
+            if not screen or (
+                current_screen_name and screen.lower() == current_screen_name.lower()
+            ):
                 self._popup_from_cli = True
                 self.show_main_window()
 
@@ -218,7 +227,16 @@ class PowerMenuWidget(BaseWidget):
 
 
 class MainWindow(BaseStyledWidget, AnimatedWidget):
-    def __init__(self, parent_button, uptime, blur, blur_background, animation_duration, button_row, buttons):
+    def __init__(
+        self,
+        parent_button,
+        uptime,
+        blur,
+        blur_background,
+        animation_duration,
+        button_row,
+        buttons,
+    ):
         super(MainWindow, self).__init__(animation_duration)
 
         self.overlay = OverlayWidget(animation_duration, uptime)
@@ -233,7 +251,11 @@ class MainWindow(BaseStyledWidget, AnimatedWidget):
         self.current_focus_index = -1
 
         self.setProperty("class", "power-menu-popup")
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool)
+        self.setWindowFlags(
+            Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.WindowStaysOnTopHint
+            | Qt.WindowType.Tool
+        )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
 
@@ -317,31 +339,45 @@ class MainWindow(BaseStyledWidget, AnimatedWidget):
         self.fade_in()
 
     def center_on_screen(self):
-        screen = QApplication.screenAt(self.parent_button.mapToGlobal(QtCore.QPoint(0, 0)))
+        screen = QApplication.screenAt(
+            self.parent_button.mapToGlobal(QtCore.QPoint(0, 0))
+        )
         if screen is None:
             screen = QApplication.primaryScreen()
         screen_geometry = screen.geometry()
         window_geometry = self.geometry()
-        x = (screen_geometry.width() - window_geometry.width()) // 2 + screen_geometry.x()
-        y = (screen_geometry.height() - window_geometry.height()) // 2 + screen_geometry.y()
+        x = (
+            screen_geometry.width() - window_geometry.width()
+        ) // 2 + screen_geometry.x()
+        y = (
+            screen_geometry.height() - window_geometry.height()
+        ) // 2 + screen_geometry.y()
         self.move(x, y)
-        self.overlay.update_geometry(screen_geometry)  # Update overlay geometry to match screen
+        self.overlay.update_geometry(
+            screen_geometry
+        )  # Update overlay geometry to match screen
 
     def paintEvent(self, event):
         option = QStyleOption()
         option.initFrom(self)
         painter = QtGui.QPainter(self)
-        self.style().drawPrimitive(QStyle.PrimitiveElement.PE_Widget, option, painter, self)
+        self.style().drawPrimitive(
+            QStyle.PrimitiveElement.PE_Widget, option, painter, self
+        )
 
     def eventFilter(self, source, event):
         if event.type() == QtCore.QEvent.Type.Enter and isinstance(source, QPushButton):
-            source.setProperty("class", f"button {source.property('class').split()[1]} hover")
+            source.setProperty(
+                "class", f"button {source.property('class').split()[1]} hover"
+            )
             source.style().unpolish(source)
             source.style().polish(source)
             for child in source.findChildren(QLabel):
                 child.style().unpolish(child)
                 child.style().polish(child)
-        elif event.type() == QtCore.QEvent.Type.Leave and isinstance(source, QPushButton):
+        elif event.type() == QtCore.QEvent.Type.Leave and isinstance(
+            source, QPushButton
+        ):
             source.setProperty("class", f"button {source.property('class').split()[1]}")
             source.style().unpolish(source)
             source.style().polish(source)
@@ -400,7 +436,9 @@ class MainWindow(BaseStyledWidget, AnimatedWidget):
                 new_index = (current + 1) % total_buttons
             elif step == -1:  # Left
                 new_index = (current - 1) % total_buttons
-            elif step == self.button_row or step == -self.button_row:  # Up/Down - vertical movement
+            elif (
+                step == self.button_row or step == -self.button_row
+            ):  # Up/Down - vertical movement
                 # Calculate the current row and column
                 current_row = current // self.button_row
                 current_col = current % self.button_row

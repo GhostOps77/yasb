@@ -25,9 +25,21 @@ DEFAULTS = {
 
 VALIDATION_SCHEMA = {
     "label": {"type": "string", "default": DEFAULTS["label"]},
-    "update_interval": {"type": "integer", "default": DEFAULTS["update_interval"], "min": 60, "max": 86400},
-    "change_automatically": {"type": "boolean", "default": DEFAULTS["change_automatically"]},
-    "image_path": {"required": True, "type": "string", "default": DEFAULTS["image_path"]},
+    "update_interval": {
+        "type": "integer",
+        "default": DEFAULTS["update_interval"],
+        "min": 60,
+        "max": 86400,
+    },
+    "change_automatically": {
+        "type": "boolean",
+        "default": DEFAULTS["change_automatically"],
+    },
+    "image_path": {
+        "required": True,
+        "type": "string",
+        "default": DEFAULTS["image_path"],
+    },
     "tooltip": {"required": False, "type": "boolean", "default": DEFAULTS["tooltip"]},
     "gallery": {
         "type": "dict",
@@ -35,7 +47,12 @@ VALIDATION_SCHEMA = {
         "schema": {
             "enabled": {"type": "boolean", "default": DEFAULTS["gallery"]["enabled"]},
             "blur": {"type": "boolean", "default": DEFAULTS["gallery"]["blur"]},
-            "image_width": {"type": "integer", "default": DEFAULTS["gallery"]["image_width"], "min": 32, "max": 640},
+            "image_width": {
+                "type": "integer",
+                "default": DEFAULTS["gallery"]["image_width"],
+                "min": 32,
+                "max": 640,
+            },
             "image_per_page": {
                 "type": "integer",
                 "default": DEFAULTS["gallery"]["image_per_page"],
@@ -48,14 +65,25 @@ VALIDATION_SCHEMA = {
                 "min": 0,
                 "max": 50,
             },
-            "show_buttons": {"type": "boolean", "default": DEFAULTS["gallery"]["show_buttons"]},
+            "show_buttons": {
+                "type": "boolean",
+                "default": DEFAULTS["gallery"]["show_buttons"],
+            },
             "orientation": {
                 "type": "string",
                 "default": DEFAULTS["gallery"]["orientation"],
                 "allowed": ["landscape", "portrait"],
             },
-            "image_spacing": {"type": "integer", "default": DEFAULTS["gallery"]["image_spacing"], "min": 0, "max": 100},
-            "lazy_load": {"type": "boolean", "default": DEFAULTS["gallery"]["lazy_load"]},
+            "image_spacing": {
+                "type": "integer",
+                "default": DEFAULTS["gallery"]["image_spacing"],
+                "min": 0,
+                "max": 100,
+            },
+            "lazy_load": {
+                "type": "boolean",
+                "default": DEFAULTS["gallery"]["lazy_load"],
+            },
             "lazy_load_fadein": {
                 "type": "integer",
                 "default": DEFAULTS["gallery"]["lazy_load_fadein"],
@@ -68,17 +96,28 @@ VALIDATION_SCHEMA = {
                 "min": 0,
                 "max": 1000,
             },
-            "enable_cache": {"type": "boolean", "default": DEFAULTS["gallery"]["enable_cache"]},
+            "enable_cache": {
+                "type": "boolean",
+                "default": DEFAULTS["gallery"]["enable_cache"],
+            },
         },
     },
-    "run_after": {"required": False, "type": "list", "default": DEFAULTS["run_after"], "schema": {"type": "string"}},
+    "run_after": {
+        "required": False,
+        "type": "list",
+        "default": DEFAULTS["run_after"],
+        "schema": {"type": "string"},
+    },
     "animation": {
         "type": "dict",
         "required": False,
         "schema": {
             "enabled": {"type": "boolean", "default": DEFAULTS["animation"]["enabled"]},
             "type": {"type": "string", "default": DEFAULTS["animation"]["type"]},
-            "duration": {"type": "integer", "default": DEFAULTS["animation"]["duration"]},
+            "duration": {
+                "type": "integer",
+                "default": DEFAULTS["animation"]["duration"],
+            },
         },
         "default": DEFAULTS["animation"],
     },
@@ -109,9 +148,18 @@ VALIDATION_SCHEMA = {
         "required": False,
         "schema": {
             "top": {"type": "integer", "default": DEFAULTS["container_padding"]["top"]},
-            "left": {"type": "integer", "default": DEFAULTS["container_padding"]["left"]},
-            "bottom": {"type": "integer", "default": DEFAULTS["container_padding"]["bottom"]},
-            "right": {"type": "integer", "default": DEFAULTS["container_padding"]["right"]},
+            "left": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["left"],
+            },
+            "bottom": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["bottom"],
+            },
+            "right": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["right"],
+            },
         },
         "default": DEFAULTS["container_padding"],
     },

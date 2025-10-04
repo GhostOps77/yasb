@@ -5,7 +5,11 @@ DEFAULTS: dict[str, Any] = {
     "label_alt": "{wifi_icon} {wifi_name}",
     "update_interval": 1000,
     "class_name": "",
-    "callbacks": {"on_left": "toggle_label", "on_middle": "do_nothing", "on_right": "do_nothing"},
+    "callbacks": {
+        "on_left": "toggle_label",
+        "on_middle": "do_nothing",
+        "on_right": "do_nothing",
+    },
     "wifi_icons": [
         "\udb82\udd2e",  # Icon for 0% strength
         "\udb82\udd1f",  # Icon for 1-24% strength
@@ -47,13 +51,29 @@ DEFAULTS: dict[str, Any] = {
 VALIDATION_SCHEMA: dict[str, Any] = {
     "label": {"type": "string", "default": DEFAULTS["label"]},
     "label_alt": {"type": "string", "default": DEFAULTS["label_alt"]},
-    "update_interval": {"type": "integer", "default": DEFAULTS["update_interval"], "min": 0, "max": 60000},
-    "class_name": {"type": "string", "required": False, "default": DEFAULTS["class_name"]},
-    "wifi_icons": {"type": "list", "default": DEFAULTS["wifi_icons"], "schema": {"type": "string", "required": False}},
+    "update_interval": {
+        "type": "integer",
+        "default": DEFAULTS["update_interval"],
+        "min": 0,
+        "max": 60000,
+    },
+    "class_name": {
+        "type": "string",
+        "required": False,
+        "default": DEFAULTS["class_name"],
+    },
+    "wifi_icons": {
+        "type": "list",
+        "default": DEFAULTS["wifi_icons"],
+        "schema": {"type": "string", "required": False},
+    },
     "ethernet_label": {"type": "string", "default": DEFAULTS["ethernet_label"]},
     "ethernet_label_alt": {"type": "string", "default": DEFAULTS["ethernet_label_alt"]},
     "ethernet_icon": {"type": "string", "default": DEFAULTS["ethernet_icon"]},
-    "get_exact_wifi_strength": {"type": "boolean", "default": DEFAULTS["get_exact_wifi_strength"]},
+    "get_exact_wifi_strength": {
+        "type": "boolean",
+        "default": DEFAULTS["get_exact_wifi_strength"],
+    },
     "hide_if_ethernet": {"type": "boolean", "default": DEFAULTS["hide_if_ethernet"]},
     "animation": {
         "type": "dict",
@@ -61,7 +81,10 @@ VALIDATION_SCHEMA: dict[str, Any] = {
         "schema": {
             "enabled": {"type": "boolean", "default": DEFAULTS["animation"]["enabled"]},
             "type": {"type": "string", "default": DEFAULTS["animation"]["type"]},
-            "duration": {"type": "integer", "default": DEFAULTS["animation"]["duration"]},
+            "duration": {
+                "type": "integer",
+                "default": DEFAULTS["animation"]["duration"],
+            },
         },
         "default": DEFAULTS["animation"],
     },
@@ -70,9 +93,18 @@ VALIDATION_SCHEMA: dict[str, Any] = {
         "required": False,
         "schema": {
             "top": {"type": "integer", "default": DEFAULTS["container_padding"]["top"]},
-            "left": {"type": "integer", "default": DEFAULTS["container_padding"]["left"]},
-            "bottom": {"type": "integer", "default": DEFAULTS["container_padding"]["bottom"]},
-            "right": {"type": "integer", "default": DEFAULTS["container_padding"]["right"]},
+            "left": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["left"],
+            },
+            "bottom": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["bottom"],
+            },
+            "right": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["right"],
+            },
         },
         "default": DEFAULTS["container_padding"],
     },
@@ -121,19 +153,43 @@ VALIDATION_SCHEMA: dict[str, Any] = {
         "required": False,
         "schema": {
             "blur": {"type": "boolean", "default": DEFAULTS["menu_config"]["blur"]},
-            "round_corners": {"type": "boolean", "default": DEFAULTS["menu_config"]["round_corners"]},
+            "round_corners": {
+                "type": "boolean",
+                "default": DEFAULTS["menu_config"]["round_corners"],
+            },
             "round_corners_type": {
                 "type": "string",
                 "default": DEFAULTS["menu_config"]["round_corners_type"],
                 "allowed": ["normal", "small"],
             },
-            "border_color": {"type": "string", "default": DEFAULTS["menu_config"]["border_color"]},
-            "alignment": {"type": "string", "default": DEFAULTS["menu_config"]["alignment"]},
-            "direction": {"type": "string", "default": DEFAULTS["menu_config"]["direction"]},
-            "offset_top": {"type": "integer", "default": DEFAULTS["menu_config"]["offset_top"]},
-            "offset_left": {"type": "integer", "default": DEFAULTS["menu_config"]["offset_left"]},
-            "wifi_icons_secured": {"type": "list", "default": DEFAULTS["menu_config"]["wifi_icons_secured"]},
-            "wifi_icons_unsecured": {"type": "list", "default": DEFAULTS["menu_config"]["wifi_icons_unsecured"]},
+            "border_color": {
+                "type": "string",
+                "default": DEFAULTS["menu_config"]["border_color"],
+            },
+            "alignment": {
+                "type": "string",
+                "default": DEFAULTS["menu_config"]["alignment"],
+            },
+            "direction": {
+                "type": "string",
+                "default": DEFAULTS["menu_config"]["direction"],
+            },
+            "offset_top": {
+                "type": "integer",
+                "default": DEFAULTS["menu_config"]["offset_top"],
+            },
+            "offset_left": {
+                "type": "integer",
+                "default": DEFAULTS["menu_config"]["offset_left"],
+            },
+            "wifi_icons_secured": {
+                "type": "list",
+                "default": DEFAULTS["menu_config"]["wifi_icons_secured"],
+            },
+            "wifi_icons_unsecured": {
+                "type": "list",
+                "default": DEFAULTS["menu_config"]["wifi_icons_unsecured"],
+            },
         },
         "default": DEFAULTS["menu_config"],
     },

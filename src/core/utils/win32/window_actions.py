@@ -16,7 +16,11 @@ def resolve_base_and_focus(hwnd: int) -> tuple[int, int]:
     GA_ROOTOWNER = 3
     base = hwnd
     try:
-        base = u32.GetAncestor(hwnd, GA_ROOTOWNER) or u32.GetAncestor(hwnd, GA_ROOT) or hwnd
+        base = (
+            u32.GetAncestor(hwnd, GA_ROOTOWNER)
+            or u32.GetAncestor(hwnd, GA_ROOT)
+            or hwnd
+        )
     except Exception:
         base = hwnd
 
@@ -193,7 +197,9 @@ def close_application(hwnd: int):
             if not endtask_ok:
                 logging.warning(f"EndTask failed for HWND: {target_hwnd}")
         except Exception as et_ex:
-            logging.warning(f"EndTask unavailable/failed for HWND {target_hwnd}: {et_ex}")
+            logging.warning(
+                f"EndTask unavailable/failed for HWND {target_hwnd}: {et_ex}"
+            )
 
     except Exception as e:
         logging.error(f"Failed to close window {hwnd}: {e}")

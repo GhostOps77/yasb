@@ -8,7 +8,12 @@ from PyQt6.QtGui import QCursor
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
 
 from core.utils.utilities import PopupWidget, add_shadow, build_widget_label
-from core.utils.win32.bindings import PowerEnumerate, PowerGetActiveScheme, PowerReadFriendlyName, PowerSetActiveScheme
+from core.utils.win32.bindings import (
+    PowerEnumerate,
+    PowerGetActiveScheme,
+    PowerReadFriendlyName,
+    PowerSetActiveScheme,
+)
 from core.utils.win32.structs import GUID
 from core.validation.widgets.yasb.power_plan import VALIDATION_SCHEMA
 from core.widgets.base import BaseWidget
@@ -53,7 +58,10 @@ class PowerPlanWidget(BaseWidget):
         self._widget_container_layout = QHBoxLayout()
         self._widget_container_layout.setSpacing(0)
         self._widget_container_layout.setContentsMargins(
-            self._padding["left"], self._padding["top"], self._padding["right"], self._padding["bottom"]
+            self._padding["left"],
+            self._padding["top"],
+            self._padding["right"],
+            self._padding["bottom"],
         )
 
         self._widget_container = QFrame()
@@ -63,7 +71,9 @@ class PowerPlanWidget(BaseWidget):
 
         self.widget_layout.addWidget(self._widget_container)
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(
+            self, self._label_content, self._label_alt_content, self._label_shadow
+        )
 
         self.register_callback("toggle_menu", self._show_menu)
         self.register_callback("toggle_label", self._toggle_label)
@@ -77,7 +87,9 @@ class PowerPlanWidget(BaseWidget):
         if update_interval > 0 and PowerPlanWidget._shared_timer is None:
             PowerPlanWidget._shared_timer = QTimer(self)
             PowerPlanWidget._shared_timer.setInterval(update_interval)
-            PowerPlanWidget._shared_timer.timeout.connect(PowerPlanWidget._notify_instances)
+            PowerPlanWidget._shared_timer.timeout.connect(
+                PowerPlanWidget._notify_instances
+            )
             PowerPlanWidget._shared_timer.start()
         PowerPlanWidget._notify_instances()
 
@@ -122,7 +134,9 @@ class PowerPlanWidget(BaseWidget):
             self._plan_class_name = "unknown"
 
             for plan in self._plans:
-                if self._active_guid and self._guids_equal(plan["guid"], self._active_guid):
+                if self._active_guid and self._guids_equal(
+                    plan["guid"], self._active_guid
+                ):
                     self._active_plan_name = plan["name"]
                     self._plan_class_name = plan["name"].replace(" ", "-").lower()
                     break
@@ -134,28 +148,39 @@ class PowerPlanWidget(BaseWidget):
 
     def _update_label(self):
         """Update the label with the current power plan name."""
+
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
-        label_parts = re.split("(<span.*?>.*?</span>)", active_label_content)
-        label_parts = [part for part in label_parts if part]
+        active_widgets_len = len(active_widgets)
+        active_label_content = (
+            self._label_alt_content if self._show_alt_label else self._label_content
+        )
+        active_label_content = active_label_content.format(
+            active_plan=self._active_plan_name
+        )
+
+        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
         widget_index = 0
 
-        label_options = {"{active_plan}": self._active_plan_name}
-
         for part in label_parts:
+            if widget_index >= active_widgets_len:
+                break
+
             part = part.strip()
-            if part:
-                formatted_text = part
-                for option, value in label_options.items():
-                    formatted_text = formatted_text.replace(option, str(value))
-                if widget_index < len(active_widgets) and isinstance(active_widgets[widget_index], QLabel):
-                    active_widgets[widget_index].setText(formatted_text)
-                    # Get the base class (without any power plan classes)
-                    alt_class = "alt" if self._show_alt_label else ""
-                    base_class = "icon" if "<span" in part else f"label {alt_class}"
-                    active_widgets[widget_index].setProperty("class", f"{base_class} {self._plan_class_name}")
-                    active_widgets[widget_index].setStyleSheet("")
-                widget_index += 1
+            if not part:
+                continue
+
+            if not isinstance(active_widgets[widget_index], QLabel):
+                continue
+
+            active_widgets[widget_index].setText(part)
+            # Get the base class (without any power plan classes)
+            alt_class = "alt" if self._show_alt_label else ""
+            base_class = "icon" if "<span" in part else f"label {alt_class}"
+            active_widgets[widget_index].setProperty(
+                "class", f"{base_class} {self._plan_class_name}"
+            )
+            active_widgets[widget_index].setStyleSheet("")
+            widget_index += 1
 
     def _toggle_label(self):
         """Toggle between main and alt labels."""
@@ -203,7 +228,11 @@ class PowerPlanWidget(BaseWidget):
             else:
                 btn.setProperty("class", "button")
 
-            btn.clicked.connect(lambda checked, guid=plan["guid"], name=plan["name"]: self._change_plan(guid, name))
+            btn.clicked.connect(
+                lambda checked, guid=plan["guid"], name=plan["name"]: self._change_plan(
+                    guid, name
+                )
+            )
 
             frame_layout.addWidget(btn)
 
@@ -214,45 +243,56 @@ class PowerPlanWidget(BaseWidget):
         self._popup_menu.adjustSize()
 
         self._popup_menu.setPosition(
-            self._menu["alignment"], self._menu["direction"], self._menu["offset_left"], self._menu["offset_top"]
+            self._menu["alignment"],
+            self._menu["direction"],
+            self._menu["offset_left"],
+            self._menu["offset_top"],
         )
 
         self._popup_menu.show()
 
     def _change_plan(self, guid, name):
         """Change the active power plan."""
+
         self._popup_menu.hide()
         try:
             result = self.set_power_plan(guid)
-            if result == 0:
-                self._active_plan_name = name
-                self._plan_class_name = name.replace(" ", "-").lower()
-                try:
-                    PowerPlanWidget._notify_instances()
-                except Exception as e:
-                    logging.warning(f"Failed to notify instances after changing power plan: {e}")
-            else:
+            if not result == 0:
                 logging.error(f"Failed to change power plan. Error code: {result}")
+                return
+
+            self._active_plan_name = name
+            self._plan_class_name = name.replace(" ", "-").lower()
+            try:
+                PowerPlanWidget._notify_instances()
+            except Exception as e:
+                logging.warning(
+                    f"Failed to notify instances after changing power plan: {e}"
+                )
         except Exception as e:
             logging.error(f"Error changing power plan: {e}")
 
     def _guids_equal(self, guid1, guid2):
         """Compare two GUIDs for equality."""
         try:
-            return ctypes.string_at(ctypes.byref(guid1), ctypes.sizeof(GUID)) == ctypes.string_at(
-                ctypes.byref(guid2), ctypes.sizeof(GUID)
-            )
+            return ctypes.string_at(
+                ctypes.byref(guid1), ctypes.sizeof(GUID)
+            ) == ctypes.string_at(ctypes.byref(guid2), ctypes.sizeof(GUID))
         except:
             return False
 
     def get_power_plans(self):
         """Get all available power plans and the currently active one."""
+
         index = 0
         plans = []
+
         while True:
             guid_buf = (ctypes.c_ubyte * 16)()
             size = wintypes.DWORD(16)
-            res = PowerEnumerate(None, None, None, 16, index, guid_buf, ctypes.byref(size))
+            res = PowerEnumerate(
+                None, None, None, 16, index, guid_buf, ctypes.byref(size)
+            )
             if res != 0:
                 break
             guid = GUID.from_buffer_copy(guid_buf)
@@ -260,8 +300,14 @@ class PowerPlanWidget(BaseWidget):
             # Get friendly name
             name_buf = (ctypes.c_ubyte * 1024)()
             name_size = wintypes.DWORD(1024)
-            PowerReadFriendlyName(None, ctypes.byref(guid), None, None, name_buf, ctypes.byref(name_size))
-            name = bytes(name_buf[: name_size.value]).decode("utf-16", errors="ignore").strip("\x00")
+            PowerReadFriendlyName(
+                None, ctypes.byref(guid), None, None, name_buf, ctypes.byref(name_size)
+            )
+            name = (
+                bytes(name_buf[: name_size.value])
+                .decode("utf-16", errors="ignore")
+                .strip("\x00")
+            )
 
             plans.append({"guid": guid, "name": name})
             index += 1

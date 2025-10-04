@@ -21,20 +21,35 @@ VALIDATION_SCHEMA = {
         "schema": {
             "host": {"type": "string", "default": DEFAULTS["connection"]["host"]},
             "port": {"type": "integer", "default": DEFAULTS["connection"]["port"]},
-            "password": {"type": "string", "default": DEFAULTS["connection"]["password"]},
+            "password": {
+                "type": "string",
+                "default": DEFAULTS["connection"]["password"],
+            },
         },
         "default": DEFAULTS["connection"],
     },
-    "hide_when_not_recording": {"type": "boolean", "default": DEFAULTS["hide_when_not_recording"]},
+    "hide_when_not_recording": {
+        "type": "boolean",
+        "default": DEFAULTS["hide_when_not_recording"],
+    },
     "blinking_icon": {"type": "boolean", "default": DEFAULTS["blinking_icon"]},
     "container_padding": {
         "type": "dict",
         "required": False,
         "schema": {
             "top": {"type": "integer", "default": DEFAULTS["container_padding"]["top"]},
-            "left": {"type": "integer", "default": DEFAULTS["container_padding"]["left"]},
-            "bottom": {"type": "integer", "default": DEFAULTS["container_padding"]["bottom"]},
-            "right": {"type": "integer", "default": DEFAULTS["container_padding"]["right"]},
+            "left": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["left"],
+            },
+            "bottom": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["bottom"],
+            },
+            "right": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["right"],
+            },
         },
         "default": DEFAULTS["container_padding"],
     },

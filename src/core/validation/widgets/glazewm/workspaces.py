@@ -61,7 +61,11 @@ VALIDATION_SCHEMA = {
         "type": "boolean",
         "default": DEFAULTS["hide_if_offline"],
     },
-    "container_padding": {"type": "dict", "default": DEFAULTS["container_padding"], "required": False},
+    "container_padding": {
+        "type": "dict",
+        "default": DEFAULTS["container_padding"],
+        "required": False,
+    },
     "glazewm_server_uri": {
         "type": "string",
         "default": DEFAULTS["glazewm_server_uri"],
@@ -100,13 +104,31 @@ VALIDATION_SCHEMA = {
         "type": "dict",
         "default": DEFAULTS["app_icons"],
         "schema": {
-            "enabled_populated": {"type": "boolean", "default": DEFAULTS["app_icons"]["enabled_populated"]},
-            "enabled_active": {"type": "boolean", "default": DEFAULTS["app_icons"]["enabled_active"]},
+            "enabled_populated": {
+                "type": "boolean",
+                "default": DEFAULTS["app_icons"]["enabled_populated"],
+            },
+            "enabled_active": {
+                "type": "boolean",
+                "default": DEFAULTS["app_icons"]["enabled_active"],
+            },
             "size": {"type": "integer", "default": DEFAULTS["app_icons"]["size"]},
-            "max_icons": {"type": "integer", "default": DEFAULTS["app_icons"]["max_icons"]},
-            "hide_label": {"type": "boolean", "default": DEFAULTS["app_icons"]["hide_label"]},
-            "hide_duplicates": {"type": "boolean", "default": DEFAULTS["app_icons"]["hide_duplicates"]},
-            "hide_floating": {"type": "boolean", "default": DEFAULTS["app_icons"]["hide_floating"]},
+            "max_icons": {
+                "type": "integer",
+                "default": DEFAULTS["app_icons"]["max_icons"],
+            },
+            "hide_label": {
+                "type": "boolean",
+                "default": DEFAULTS["app_icons"]["hide_label"],
+            },
+            "hide_duplicates": {
+                "type": "boolean",
+                "default": DEFAULTS["app_icons"]["hide_duplicates"],
+            },
+            "hide_floating": {
+                "type": "boolean",
+                "default": DEFAULTS["app_icons"]["hide_floating"],
+            },
         },
     },
     "animation": {"type": "boolean", "default": DEFAULTS["animation"]},

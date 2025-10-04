@@ -47,7 +47,9 @@ class PreviewAnimation:
         try:
             self._widget.setWindowOpacity(0.0)
             self._widget.show()
-            self._anim = QPropertyAnimation(self._widget, b"windowOpacity", self._widget)
+            self._anim = QPropertyAnimation(
+                self._widget, b"windowOpacity", self._widget
+            )
             self._anim.setDuration(self._duration)
             self._anim.setStartValue(0.0)
             self._anim.setEndValue(1.0)
@@ -90,7 +92,14 @@ class PreviewPopup(QFrame):
     ICON_SIZE = 16
     HEADER_SPACING = 6
 
-    def __init__(self, parent=None, width: int = 240, padding: int = 8, margin: int = 8, animation_duration: int = 300):
+    def __init__(
+        self,
+        parent=None,
+        width: int = 240,
+        padding: int = 8,
+        margin: int = 8,
+        animation_duration: int = 300,
+    ):
         super().__init__(parent)
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint
@@ -192,7 +201,9 @@ class PreviewPopup(QFrame):
         except Exception:
             self._dpr = 1.0
 
-        self._header_title_full = title if title is not None else (win32gui.GetWindowText(src_hwnd) or "")
+        self._header_title_full = (
+            title if title is not None else (win32gui.GetWindowText(src_hwnd) or "")
+        )
         self._title_label.setText(self._header_title_full)
         if isinstance(icon, QPixmap) and not icon.isNull():
             dpr = self.get_dpr()
@@ -212,7 +223,9 @@ class PreviewPopup(QFrame):
         screen_geom = anchor_widget.screen().geometry()
         self._anchor_center_x = anchor_center.x()
         self._anchor_top = anchor_widget.mapToGlobal(anchor_widget.rect().topLeft()).y()
-        self._anchor_bottom = anchor_widget.mapToGlobal(anchor_widget.rect().bottomLeft()).y()
+        self._anchor_bottom = anchor_widget.mapToGlobal(
+            anchor_widget.rect().bottomLeft()
+        ).y()
         self._screen_geom = screen_geom
 
         # compute and apply final popup geometry, return global rect for thumbnail host
@@ -237,7 +250,9 @@ class PreviewPopup(QFrame):
 
         # Compute available popup vertical space near the anchor (above or below)
         space_above = max(0, self._anchor_top - self._screen_geom.top() - self._margin)
-        space_below = max(0, self._screen_geom.bottom() - self._anchor_bottom - self._margin)
+        space_below = max(
+            0, self._screen_geom.bottom() - self._anchor_bottom - self._margin
+        )
         max_popup_space = max(space_above, space_below)
 
         # Available height for thumbnail content is popup space minus header and vertical paddings
@@ -273,22 +288,32 @@ class PreviewPopup(QFrame):
             y = self._anchor_bottom + self._margin
             self._above_anchor = False
 
-        x = max(self._screen_geom.left() + self._margin, min(self._screen_geom.right() - popup_w - self._margin, x))
-        y = max(self._screen_geom.top() + self._margin, min(self._screen_geom.bottom() - total_h - self._margin, y))
+        x = max(
+            self._screen_geom.left() + self._margin,
+            min(self._screen_geom.right() - popup_w - self._margin, x),
+        )
+        y = max(
+            self._screen_geom.top() + self._margin,
+            min(self._screen_geom.bottom() - total_h - self._margin, y),
+        )
 
         self._final_pos = QPoint(x, y)
 
         # Apply final geometry
         self.setGeometry(x, y, popup_w, total_h)
         self._content.setGeometry(0, 0, popup_w, total_h)
-        self._header.setGeometry(self._padding, self._padding, popup_w - (2 * self._padding), header_h)
+        self._header.setGeometry(
+            self._padding, self._padding, popup_w - (2 * self._padding), header_h
+        )
         self._update_header_elided_title()
 
         # Center thumbnail horizontally inside the popup. Vertically it is below the header.
         thumb_x_local = (popup_w - thumb_w) // 2
         thumb_y_local = self._padding + header_h
         self._thumb_local_rect = QRect(thumb_x_local, thumb_y_local, thumb_w, thumb_h)
-        thumb_global_rect = QRect(x + thumb_x_local, y + thumb_y_local, thumb_w, thumb_h)
+        thumb_global_rect = QRect(
+            x + thumb_x_local, y + thumb_y_local, thumb_w, thumb_h
+        )
 
         return thumb_global_rect
 
@@ -298,7 +323,11 @@ class PreviewPopup(QFrame):
         if hasattr(self, "_thumb") and self._thumb and self._thumb.value:
             try:
                 sz = SIZE(0, 0)
-                if DwmQueryThumbnailSourceSize(self._thumb, byref(sz)) == 0 and sz.cx > 0 and sz.cy > 0:
+                if (
+                    DwmQueryThumbnailSourceSize(self._thumb, byref(sz)) == 0
+                    and sz.cx > 0
+                    and sz.cy > 0
+                ):
                     # DWM reports physical pixels. Convert to logical pixels using devicePixelRatio
                     try:
                         dpr = self.get_dpr()
@@ -318,7 +347,11 @@ class PreviewPopup(QFrame):
                 src_h = max(1, b - t)
                 return src_w, src_h
             except Exception:
-                logger.debug("GetWindowRect failed for hwnd %s", getattr(self, "_src_hwnd", None), exc_info=True)
+                logger.debug(
+                    "GetWindowRect failed for hwnd %s",
+                    getattr(self, "_src_hwnd", None),
+                    exc_info=True,
+                )
 
         # Default fallback
         return 800, 600
@@ -346,7 +379,9 @@ class PreviewPopup(QFrame):
         if avail <= 0:
             self._title_label.setText("")
         else:
-            self._title_label.setText(fm.elidedText(text, Qt.TextElideMode.ElideRight, avail))
+            self._title_label.setText(
+                fm.elidedText(text, Qt.TextElideMode.ElideRight, avail)
+            )
 
     def start_animation(self):
         try:
@@ -363,7 +398,15 @@ class PreviewPopup(QFrame):
 class TaskbarThumbnailManager:
     """Encapsulates preview popup & DWM thumbnail host logic for TaskbarWidget."""
 
-    def __init__(self, taskbar_widget, width: int, delay: int, padding: int, margin: int, animation: bool):
+    def __init__(
+        self,
+        taskbar_widget,
+        width: int,
+        delay: int,
+        padding: int,
+        margin: int,
+        animation: bool,
+    ):
         self._taskbar = taskbar_widget
         self.width = width
         self.delay = delay
@@ -428,7 +471,9 @@ class TaskbarThumbnailManager:
             self._thumb_handle = wintypes.HANDLE(0)
             # Clear any reference held by the preview popup to avoid lingering handles
             try:
-                if getattr(self, "_preview_popup", None) and getattr(self._preview_popup, "_thumb", None):
+                if getattr(self, "_preview_popup", None) and getattr(
+                    self._preview_popup, "_thumb", None
+                ):
                     self._preview_popup._thumb = wintypes.HANDLE(0)
             except Exception:
                 pass
@@ -457,7 +502,11 @@ class TaskbarThumbnailManager:
                 self._thumb_host = None
 
             self._preview_popup = PreviewPopup(
-                self._taskbar, self.width, self.padding, self.margin, self.animation_duration
+                self._taskbar,
+                self.width,
+                self.padding,
+                self.margin,
+                self.animation_duration,
             )
             title = icon = None
             data = getattr(self._taskbar, "_window_buttons", {}).get(hwnd)
@@ -473,9 +522,15 @@ class TaskbarThumbnailManager:
             # Add flashing class to preview content if window is flashing
             if is_flashing and hasattr(self._preview_popup, "_content"):
                 try:
-                    self._preview_popup._content.setProperty("class", "taskbar-preview flashing")
-                    self._preview_popup._content.style().unpolish(self._preview_popup._content)
-                    self._preview_popup._content.style().polish(self._preview_popup._content)
+                    self._preview_popup._content.setProperty(
+                        "class", "taskbar-preview flashing"
+                    )
+                    self._preview_popup._content.style().unpolish(
+                        self._preview_popup._content
+                    )
+                    self._preview_popup._content.style().polish(
+                        self._preview_popup._content
+                    )
                 except Exception:
                     pass
 
@@ -528,7 +583,12 @@ class TaskbarThumbnailManager:
         host = self._ensure_thumb_host()
         self._unregister_thumbnail()
         hthumb = wintypes.HANDLE(0)
-        if DwmRegisterThumbnail(int(host.winId()), wintypes.HWND(src_hwnd), byref(hthumb)) != 0:
+        if (
+            DwmRegisterThumbnail(
+                int(host.winId()), wintypes.HWND(src_hwnd), byref(hthumb)
+            )
+            != 0
+        ):
             return
         self._thumb_handle = hthumb
 
@@ -570,7 +630,12 @@ class TaskbarThumbnailManager:
 
         # Configure DWM thumbnail properties
         props = DWM_THUMBNAIL_PROPERTIES()
-        props.dwFlags = DWM_TNP_RECTDESTINATION | DWM_TNP_VISIBLE | DWM_TNP_OPACITY | DWM_TNP_SOURCECLIENTAREAONLY
+        props.dwFlags = (
+            DWM_TNP_RECTDESTINATION
+            | DWM_TNP_VISIBLE
+            | DWM_TNP_OPACITY
+            | DWM_TNP_SOURCECLIENTAREAONLY
+        )
         props.rcDestination = RECT(0, 0, phys_w, phys_h)
         props.rcSource = RECT(0, 0, 0, 0)
         props.opacity = 255
@@ -579,7 +644,9 @@ class TaskbarThumbnailManager:
         try:
             DwmUpdateThumbnailProperties(self._thumb_handle, byref(props))
         except Exception:
-            logger.exception("DwmUpdateThumbnailProperties failed for handle %s", self._thumb_handle)
+            logger.exception(
+                "DwmUpdateThumbnailProperties failed for handle %s", self._thumb_handle
+            )
 
         # Set up masking and final positioning
         try:
@@ -590,7 +657,10 @@ class TaskbarThumbnailManager:
             full_region = QRegion(0, 0, preview_popup.width(), preview_popup.height())
             # use the thumbnail local offsets for hole region
             hole_region = QRegion(
-                preview_popup._thumb_local_rect.x(), preview_popup._thumb_local_rect.y(), thumb_w, thumb_h
+                preview_popup._thumb_local_rect.x(),
+                preview_popup._thumb_local_rect.y(),
+                thumb_w,
+                thumb_h,
             )
             preview_popup.setMask(full_region.subtracted(hole_region))
         except Exception:

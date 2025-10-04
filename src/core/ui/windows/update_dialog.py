@@ -36,9 +36,15 @@ from settings import APP_NAME, SCRIPT_PATH
 GITHUB_LATEST_RELEASE_URL = "https://api.github.com/repos/amnweb/yasb/releases/latest"
 USER_AGENT_HEADER = {"User-Agent": f"{APP_NAME} Updater"}
 
-_COMMIT_URL_PATTERN = re.compile(r"https://github\.com/[^/\s]+/[^/\s]+/commit/([0-9a-fA-F]{7,40})(?=[^0-9a-fA-F]|$)")
-_COMPARE_URL_PATTERN = re.compile(r"(?<![<\[(])(https://github\.com/[^/\s]+/[^/\s]+/compare/[^\s<>()]+)")
-_PULL_URL_PATTERN = re.compile(r"(?<![\[(])https://github\.com/[^/\s]+/[^/\s]+/pull/(\d+)")
+_COMMIT_URL_PATTERN = re.compile(
+    r"https://github\.com/[^/\s]+/[^/\s]+/commit/([0-9a-fA-F]{7,40})(?=[^0-9a-fA-F]|$)"
+)
+_COMPARE_URL_PATTERN = re.compile(
+    r"(?<![<\[(])(https://github\.com/[^/\s]+/[^/\s]+/compare/[^\s<>()]+)"
+)
+_PULL_URL_PATTERN = re.compile(
+    r"(?<![\[(])https://github\.com/[^/\s]+/[^/\s]+/pull/(\d+)"
+)
 
 _DOWNLOAD_READY_TEXT = "Download and Install"
 _DOWNLOADING_TEXT = "Downloading..."
@@ -50,7 +56,9 @@ _CANCEL_BUTTON_TEXT = "Cancel"
 def _strip_commit_links(changelog: str) -> str:
     if not changelog:
         return changelog
-    transformed = _COMMIT_URL_PATTERN.sub(lambda match: f"[[link]]({match.group(0)})", changelog)
+    transformed = _COMMIT_URL_PATTERN.sub(
+        lambda match: f"[[link]]({match.group(0)})", changelog
+    )
     transformed = _PULL_URL_PATTERN.sub(
         lambda match: f"[#{match.group(1)}]({match.group(0)})",
         transformed,
@@ -95,9 +103,13 @@ class ReleaseFetcher(QThread):
 
     def run(self):
         try:
-            request = urllib.request.Request(GITHUB_LATEST_RELEASE_URL, headers=USER_AGENT_HEADER)
+            request = urllib.request.Request(
+                GITHUB_LATEST_RELEASE_URL, headers=USER_AGENT_HEADER
+            )
             context = ssl.create_default_context(cafile=certifi.where())
-            with urllib.request.urlopen(request, context=context, timeout=15) as response:
+            with urllib.request.urlopen(
+                request, context=context, timeout=15
+            ) as response:
                 data = response.read()
             release_info = json.loads(data)
             latest_version = release_info.get("tag_name", "").lstrip("vV")
@@ -105,13 +117,24 @@ class ReleaseFetcher(QThread):
                 raise ValueError("Latest release tag is missing.")
 
             if not is_newer_version(latest_version, self._current_version):
-                self.up_to_date.emit(f"You already have the latest version ({self._current_version}).")
+                self.up_to_date.emit(
+                    f"You already have the latest version ({self._current_version})."
+                )
                 return
 
             assets = release_info.get("assets", [])
-            msi_asset = next((asset for asset in assets if asset.get("name", "").lower().endswith(".msi")), None)
+            msi_asset = next(
+                (
+                    asset
+                    for asset in assets
+                    if asset.get("name", "").lower().endswith(".msi")
+                ),
+                None,
+            )
             if not msi_asset:
-                raise ValueError("Latest release does not include a Windows installer (MSI).")
+                raise ValueError(
+                    "Latest release does not include a Windows installer (MSI)."
+                )
 
             info = ReleaseInfo(
                 version=latest_version,
@@ -122,11 +145,15 @@ class ReleaseFetcher(QThread):
             )
             self.update_available.emit(info)
         except urllib.error.HTTPError as http_error:
-            logging.error("GitHub responded with HTTP error during update check: %s", http_error)
+            logging.error(
+                "GitHub responded with HTTP error during update check: %s", http_error
+            )
             self.error.emit("GitHub returned an error while checking for updates.")
         except urllib.error.URLError as url_error:
             logging.warning("Network error during update check: %s", url_error)
-            self.error.emit("Couldn't reach GitHub. Check your internet connection and try again.")
+            self.error.emit(
+                "Couldn't reach GitHub. Check your internet connection and try again."
+            )
         except Exception as exc:
             logging.error("Unexpected error while checking for updates")
             self.error.emit(str(exc))
@@ -137,7 +164,13 @@ class DownloadWorker(QThread):
     finished = pyqtSignal(Path)
     error = pyqtSignal(str)
 
-    def __init__(self, download_url: str, output_path: Path, expected_size: Optional[int] = None, parent=None):
+    def __init__(
+        self,
+        download_url: str,
+        output_path: Path,
+        expected_size: Optional[int] = None,
+        parent=None,
+    ):
         super().__init__(parent)
         self._download_url = download_url
         self._output_path = output_path
@@ -146,11 +179,17 @@ class DownloadWorker(QThread):
     def run(self):
         try:
             self._output_path.parent.mkdir(parents=True, exist_ok=True)
-            request = urllib.request.Request(self._download_url, headers=USER_AGENT_HEADER)
+            request = urllib.request.Request(
+                self._download_url, headers=USER_AGENT_HEADER
+            )
             bytes_read = 0
             context = ssl.create_default_context(cafile=certifi.where())
-            with urllib.request.urlopen(request, context=context, timeout=30) as response:
-                total_size = self._expected_size or response.headers.get("Content-Length")
+            with urllib.request.urlopen(
+                request, context=context, timeout=30
+            ) as response:
+                total_size = self._expected_size or response.headers.get(
+                    "Content-Length"
+                )
                 if isinstance(total_size, str) and total_size.isdigit():
                     total_size = int(total_size)
                 elif not isinstance(total_size, int):
@@ -190,7 +229,9 @@ class DownloadWorker(QThread):
                     self._output_path.unlink()
                 except Exception:
                     pass
-            self.error.emit("Couldn't reach GitHub. Check your internet connection and try again.")
+            self.error.emit(
+                "Couldn't reach GitHub. Check your internet connection and try again."
+            )
         except Exception as exc:
             if isinstance(exc, IOError):
                 logging.warning("Download did not finish: %s", exc)
@@ -245,7 +286,9 @@ class UpdateDialog(QDialog):
         changelog_font = self.changelog_view.font()
         changelog_font.setPointSize(max(changelog_font.pointSize(), 10))
         self.changelog_view.setFont(changelog_font)
-        self.changelog_view.setStyleSheet("QTextBrowser { background-color: rgba(0,0,0,0); border: none; }")
+        self.changelog_view.setStyleSheet(
+            "QTextBrowser { background-color: rgba(0,0,0,0); border: none; }"
+        )
         self.changelog_view.document().setDefaultStyleSheet(
             """
             body, p, li {
@@ -286,7 +329,9 @@ class UpdateDialog(QDialog):
         self.status_label = QLabel("", self)
         self.status_label.setVisible(False)
         self.status_label.setStyleSheet("color: #a0d8ff; font-size: 11px;")
-        self.status_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        self.status_label.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
+        )
         button_row.addWidget(self.status_label)
         button_row.addStretch(1)
 
@@ -319,7 +364,9 @@ class UpdateDialog(QDialog):
             self.status_label.clear()
             self.status_label.setVisible(False)
 
-    def _set_idle_state(self, *, enabled: bool, status: str = "", error: bool = False) -> None:
+    def _set_idle_state(
+        self, *, enabled: bool, status: str = "", error: bool = False
+    ) -> None:
         self.download_button.setEnabled(enabled)
         self.download_button.setText(_DOWNLOAD_READY_TEXT)
         self.download_button.setDefault(enabled)
@@ -403,7 +450,9 @@ class UpdateDialog(QDialog):
         self.progress_bar.setVisible(True)
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(100)
-        expected_size = self._available_release.asset_size if self._available_release else None
+        expected_size = (
+            self._available_release.asset_size if self._available_release else None
+        )
         try:
             actual_size = path.stat().st_size
         except FileNotFoundError:
@@ -435,19 +484,28 @@ class UpdateDialog(QDialog):
         install_command = f'msiexec /i "{os.path.abspath(path)}" /passive /norestart'
         run_after_command = "yasbc start"
         combined_command = f"{install_command} && {run_after_command}"
-        subprocess.Popen(combined_command, shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
+        subprocess.Popen(
+            combined_command, shell=True, creationflags=subprocess.CREATE_NO_WINDOW
+        )
         exit_application("Exiting Application to start installer...")
         for proc in ["yasb.exe", "yasbc.exe", "yasb_themes.exe"]:
             if is_process_running(proc):
-                subprocess.run(["taskkill", "/f", "/im", proc], creationflags=subprocess.CREATE_NO_WINDOW)
+                subprocess.run(
+                    ["taskkill", "/f", "/im", proc],
+                    creationflags=subprocess.CREATE_NO_WINDOW,
+                )
 
     def _on_download_error(self, message: str) -> None:
         self._download_worker = None
         self.close_button.setEnabled(True)
         normalized_message = (message or "").strip().lower()
-        was_cancelled = self._cancel_requested or normalized_message == "download cancelled."
+        was_cancelled = (
+            self._cancel_requested or normalized_message == "download cancelled."
+        )
         details = message.splitlines()[0] if message else "Unknown error"
-        status_message = "Download cancelled." if was_cancelled else f"Download failed: {details}"
+        status_message = (
+            "Download cancelled." if was_cancelled else f"Download failed: {details}"
+        )
         self._set_idle_state(
             enabled=self._available_release is not None,
             status=status_message,
@@ -478,7 +536,9 @@ class UpdateDialog(QDialog):
         super().closeEvent(event)
 
     def _set_close_button_state(self, *, is_cancel: bool) -> None:
-        self.close_button.setText(_CANCEL_BUTTON_TEXT if is_cancel else _CLOSE_BUTTON_TEXT)
+        self.close_button.setText(
+            _CANCEL_BUTTON_TEXT if is_cancel else _CLOSE_BUTTON_TEXT
+        )
 
     def showEvent(self, event) -> None:
         self._apply_button_styles()

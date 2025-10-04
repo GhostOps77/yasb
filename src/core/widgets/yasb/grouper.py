@@ -37,7 +37,10 @@ class GrouperWidget(BaseWidget):
         self._widget_container_layout = QHBoxLayout()
         self._widget_container_layout.setSpacing(0)
         self._widget_container_layout.setContentsMargins(
-            self._padding["left"], self._padding["top"], self._padding["right"], self._padding["bottom"]
+            self._padding["left"],
+            self._padding["top"],
+            self._padding["right"],
+            self._padding["bottom"],
         )
 
         self._widget_container = QFrame()
@@ -65,15 +68,21 @@ class GrouperWidget(BaseWidget):
                         try:
                             child_widget.bar_id = self.bar_id
                             child_widget.monitor_hwnd = self.monitor_hwnd
-                            child_widget.parent_layout_type = getattr(self, "parent_layout_type", None)
+                            child_widget.parent_layout_type = getattr(
+                                self, "parent_layout_type", None
+                            )
                         except Exception:
                             pass
                         self._child_widgets.append(child_widget)
                         self._widget_container_layout.addWidget(child_widget)
                     else:
-                        logging.warning(f"GrouperWidget failed to create child widget '{widget_name}'")
+                        logging.warning(
+                            f"GrouperWidget failed to create child widget '{widget_name}'"
+                        )
                 except Exception as e:
-                    logging.error(f"GrouperWidget error creating child widget '{widget_name}': {e}")
+                    logging.error(
+                        f"GrouperWidget error creating child widget '{widget_name}': {e}"
+                    )
                 if self._hide_empty and child_widget:
                     try:
                         child_widget.installEventFilter(self)
@@ -98,7 +107,9 @@ class GrouperWidget(BaseWidget):
                 except Exception:
                     pass
         except Exception:
-            logging.error("GrouperWidget failed to propagate bar context to child widgets")
+            logging.error(
+                "GrouperWidget failed to propagate bar context to child widgets"
+            )
 
     def showEvent(self, event):
         self._propagate_bar_context()
@@ -108,7 +119,12 @@ class GrouperWidget(BaseWidget):
 
     def eventFilter(self, obj, event):
         if self._hide_empty and obj in self._child_widgets:
-            if event.type() in (QEvent.Type.Show, QEvent.Type.ShowToParent, QEvent.Type.Hide, QEvent.Type.HideToParent):
+            if event.type() in (
+                QEvent.Type.Show,
+                QEvent.Type.ShowToParent,
+                QEvent.Type.Hide,
+                QEvent.Type.HideToParent,
+            ):
                 try:
                     self._update_grouper_visibility()
                 except RuntimeError:
@@ -141,7 +157,9 @@ class GrouperWidget(BaseWidget):
             except RuntimeError:
                 pass
         except Exception:
-            logging.error("GrouperWidget failed to update visibility based on child widgets")
+            logging.error(
+                "GrouperWidget failed to update visibility based on child widgets"
+            )
 
     def _handle_child_destroyed(self, obj=None):
         try:

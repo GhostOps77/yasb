@@ -5,7 +5,11 @@ DEFAULTS = {
     "label_workspace_populated_btn": "{index}",
     "label_default_name": "",
     "label_float_override": "Override Active",
-    "toggle_workspace_layer": {"enabled": False, "tiling_label": "Tiling", "floating_label": "Floating"},
+    "toggle_workspace_layer": {
+        "enabled": False,
+        "tiling_label": "Tiling",
+        "floating_label": "Floating",
+    },
     "hide_if_offline": False,
     "label_zero_index": False,
     "hide_empty_workspaces": False,
@@ -26,40 +30,92 @@ DEFAULTS = {
 
 VALIDATION_SCHEMA = {
     "label_offline": {"type": "string", "default": DEFAULTS["label_offline"]},
-    "label_workspace_btn": {"type": "string", "default": DEFAULTS["label_workspace_btn"]},
-    "label_workspace_active_btn": {"type": "string", "default": DEFAULTS["label_workspace_active_btn"]},
-    "label_workspace_populated_btn": {"type": "string", "default": DEFAULTS["label_workspace_populated_btn"]},
+    "label_workspace_btn": {
+        "type": "string",
+        "default": DEFAULTS["label_workspace_btn"],
+    },
+    "label_workspace_active_btn": {
+        "type": "string",
+        "default": DEFAULTS["label_workspace_active_btn"],
+    },
+    "label_workspace_populated_btn": {
+        "type": "string",
+        "default": DEFAULTS["label_workspace_populated_btn"],
+    },
     "label_default_name": {"type": "string", "default": DEFAULTS["label_default_name"]},
-    "label_float_override": {"type": "string", "default": DEFAULTS["label_float_override"]},
+    "label_float_override": {
+        "type": "string",
+        "default": DEFAULTS["label_float_override"],
+    },
     "toggle_workspace_layer": {
         "type": "dict",
         "default": DEFAULTS["toggle_workspace_layer"],
         "schema": {
-            "enabled": {"type": "boolean", "default": DEFAULTS["toggle_workspace_layer"]["enabled"]},
-            "tiling_label": {"type": "string", "default": DEFAULTS["toggle_workspace_layer"]["tiling_label"]},
-            "floating_label": {"type": "string", "default": DEFAULTS["toggle_workspace_layer"]["floating_label"]},
+            "enabled": {
+                "type": "boolean",
+                "default": DEFAULTS["toggle_workspace_layer"]["enabled"],
+            },
+            "tiling_label": {
+                "type": "string",
+                "default": DEFAULTS["toggle_workspace_layer"]["tiling_label"],
+            },
+            "floating_label": {
+                "type": "string",
+                "default": DEFAULTS["toggle_workspace_layer"]["floating_label"],
+            },
         },
     },
     "hide_if_offline": {"type": "boolean", "default": DEFAULTS["hide_if_offline"]},
     "label_zero_index": {"type": "boolean", "default": DEFAULTS["label_zero_index"]},
-    "hide_empty_workspaces": {"type": "boolean", "default": DEFAULTS["hide_empty_workspaces"]},
+    "hide_empty_workspaces": {
+        "type": "boolean",
+        "default": DEFAULTS["hide_empty_workspaces"],
+    },
     "app_icons": {
         "type": "dict",
         "default": DEFAULTS["app_icons"],
         "schema": {
-            "enabled_populated": {"type": "boolean", "default": DEFAULTS["app_icons"]["enabled_populated"]},
-            "enabled_active": {"type": "boolean", "default": DEFAULTS["app_icons"]["enabled_active"]},
+            "enabled_populated": {
+                "type": "boolean",
+                "default": DEFAULTS["app_icons"]["enabled_populated"],
+            },
+            "enabled_active": {
+                "type": "boolean",
+                "default": DEFAULTS["app_icons"]["enabled_active"],
+            },
             "size": {"type": "integer", "default": DEFAULTS["app_icons"]["size"]},
-            "max_icons": {"type": "integer", "default": DEFAULTS["app_icons"]["max_icons"]},
-            "hide_label": {"type": "boolean", "default": DEFAULTS["app_icons"]["hide_label"]},
-            "hide_duplicates": {"type": "boolean", "default": DEFAULTS["app_icons"]["hide_duplicates"]},
-            "hide_floating": {"type": "boolean", "default": DEFAULTS["app_icons"]["hide_floating"]},
+            "max_icons": {
+                "type": "integer",
+                "default": DEFAULTS["app_icons"]["max_icons"],
+            },
+            "hide_label": {
+                "type": "boolean",
+                "default": DEFAULTS["app_icons"]["hide_label"],
+            },
+            "hide_duplicates": {
+                "type": "boolean",
+                "default": DEFAULTS["app_icons"]["hide_duplicates"],
+            },
+            "hide_floating": {
+                "type": "boolean",
+                "default": DEFAULTS["app_icons"]["hide_floating"],
+            },
         },
     },
     "animation": {"type": "boolean", "default": DEFAULTS["animation"]},
-    "enable_scroll_switching": {"type": "boolean", "default": DEFAULTS["enable_scroll_switching"]},
-    "reverse_scroll_direction": {"type": "boolean", "default": DEFAULTS["reverse_scroll_direction"]},
-    "container_padding": {"type": "dict", "default": DEFAULTS["container_padding"], "required": False},
+    "enable_scroll_switching": {
+        "type": "boolean",
+        "default": DEFAULTS["enable_scroll_switching"],
+    },
+    "reverse_scroll_direction": {
+        "type": "boolean",
+        "default": DEFAULTS["reverse_scroll_direction"],
+    },
+    "container_padding": {
+        "type": "dict",
+        "default": DEFAULTS["container_padding"],
+        "required": False,
+    },
     "btn_shadow": {
         "type": "dict",
         "required": False,

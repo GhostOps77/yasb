@@ -69,7 +69,10 @@ def build_button_styles() -> StyleSheetMap:
             }}
             """.strip()
 
-    return {variant: _build_style(variant_colors) for variant, variant_colors in tokens.items()}
+    return {
+        variant: _build_style(variant_colors)
+        for variant, variant_colors in tokens.items()
+    }
 
 
 def apply_button_style(

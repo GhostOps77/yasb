@@ -6,7 +6,14 @@ from ctypes import c_int as enum
 from ctypes.wintypes import BOOL, INT, LPCWSTR, WORD
 
 import comtypes
-from comtypes import CLSCTX_ALL, COMMETHOD, GUID, CoInitialize, COMObject, CoUninitialize
+from comtypes import (
+    CLSCTX_ALL,
+    COMMETHOD,
+    GUID,
+    CoInitialize,
+    COMObject,
+    CoUninitialize,
+)
 from pycaw.callbacks import MMNotificationClient
 from pycaw.pycaw import (
     AudioUtilities,
@@ -17,10 +24,23 @@ from pycaw.pycaw import (
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QWheelEvent
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QSlider, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSlider,
+    QVBoxLayout,
+    QWidget,
+)
 
 from core.utils.tooltip import set_tooltip
-from core.utils.utilities import PopupWidget, add_shadow, build_progress_widget, build_widget_label
+from core.utils.utilities import (
+    PopupWidget,
+    add_shadow,
+    build_progress_widget,
+    build_widget_label,
+)
 from core.utils.widgets.animation_manager import AnimationManager
 from core.validation.widgets.yasb.volume import VALIDATION_SCHEMA
 from core.widgets.base import BaseWidget
@@ -125,10 +145,18 @@ class IPolicyConfig(comtypes.IUnknown):
             (["in"], LPREFERENCE_TIME, "hnsDevicePeriod"),
         ),
         COMMETHOD(
-            [], HRESULT, "GetShareMode", (["in"], LPCWSTR, "pwstrDeviceId"), (["out"], PDeviceSharedMode, "pMode")
+            [],
+            HRESULT,
+            "GetShareMode",
+            (["in"], LPCWSTR, "pwstrDeviceId"),
+            (["out"], PDeviceSharedMode, "pMode"),
         ),
         COMMETHOD(
-            [], HRESULT, "SetShareMode", (["in"], LPCWSTR, "pwstrDeviceId"), (["in"], PDeviceSharedMode, "pMode")
+            [],
+            HRESULT,
+            "SetShareMode",
+            (["in"], LPCWSTR, "pwstrDeviceId"),
+            (["in"], PDeviceSharedMode, "pMode"),
         ),
         COMMETHOD(
             [],
@@ -146,8 +174,20 @@ class IPolicyConfig(comtypes.IUnknown):
             (["in"], PPROPERTYKEY, "key"),
             (["in"], PPROPVARIANT, "pValue"),
         ),
-        COMMETHOD([], HRESULT, "SetDefaultEndpoint", (["in"], LPCWSTR, "pwstrDeviceId"), (["in"], ERole, "ERole")),
-        COMMETHOD([], HRESULT, "SetEndpointVisibility", (["in"], LPCWSTR, "pwstrDeviceId"), (["in"], BOOL, "bVisible")),
+        COMMETHOD(
+            [],
+            HRESULT,
+            "SetDefaultEndpoint",
+            (["in"], LPCWSTR, "pwstrDeviceId"),
+            (["in"], ERole, "ERole"),
+        ),
+        COMMETHOD(
+            [],
+            HRESULT,
+            "SetEndpointVisibility",
+            (["in"], LPCWSTR, "pwstrDeviceId"),
+            (["in"], BOOL, "bVisible"),
+        ),
     )
 
 
@@ -229,7 +269,10 @@ class VolumeWidget(BaseWidget):
         self._widget_container_layout = QHBoxLayout()
         self._widget_container_layout.setSpacing(0)
         self._widget_container_layout.setContentsMargins(
-            self._padding["left"], self._padding["top"], self._padding["right"], self._padding["bottom"]
+            self._padding["left"],
+            self._padding["top"],
+            self._padding["right"],
+            self._padding["bottom"],
         )
         self._widget_container = QFrame()
         self._widget_container.setLayout(self._widget_container_layout)
@@ -237,7 +280,9 @@ class VolumeWidget(BaseWidget):
         add_shadow(self._widget_container, self._container_shadow)
         self.widget_layout.addWidget(self._widget_container)
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(
+            self, self._label_content, self._label_alt_content, self._label_shadow
+        )
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("update_label", self._update_label)
@@ -260,7 +305,9 @@ class VolumeWidget(BaseWidget):
 
     def _toggle_volume_menu(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+            AnimationManager.animate(
+                self, self._animation["type"], self._animation["duration"]
+            )
         self.show_volume_menu()
 
     def _on_slider_released(self):
@@ -284,7 +331,9 @@ class VolumeWidget(BaseWidget):
         comtypes.CoInitialize()
         try:
             deviceEnumerator = comtypes.CoCreateInstance(
-                CLSID_MMDeviceEnumerator, IMMDeviceEnumerator, comtypes.CLSCTX_INPROC_SERVER
+                CLSID_MMDeviceEnumerator,
+                IMMDeviceEnumerator,
+                comtypes.CLSCTX_INPROC_SERVER,
             )
 
             if deviceEnumerator is None:
@@ -334,7 +383,9 @@ class VolumeWidget(BaseWidget):
 
         try:
             logging.debug(f"Attempting PolicyConfig interface with device: {device_id}")
-            pc = comtypes.CoCreateInstance(CLSID_PolicyConfigClient, interface=IPolicyConfig, clsctx=CLSCTX_ALL)
+            pc = comtypes.CoCreateInstance(
+                CLSID_PolicyConfigClient, interface=IPolicyConfig, clsctx=CLSCTX_ALL
+            )
             # eConsole = 0, eMultimedia = 1, eCommunications = 2
             pc.SetDefaultEndpoint(device_id, 0)
             # Re-initialize volume interface for new device
@@ -426,7 +477,9 @@ class VolumeWidget(BaseWidget):
 
     def _toggle_label(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+            AnimationManager.animate(
+                self, self._animation["type"], self._animation["duration"]
+            )
         self._show_alt_label = not self._show_alt_label
         for widget in self._widgets:
             widget.setVisible(not self._show_alt_label)
@@ -436,55 +489,70 @@ class VolumeWidget(BaseWidget):
 
     def _update_label(self):
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
-        label_parts = re.split("(<span.*?>.*?</span>)", active_label_content)
-        label_parts = [part for part in label_parts if part]
-        widget_index = 0
+        active_widgets_len = len(active_widgets)
+        active_label_content = (
+            self._label_alt_content if self._show_alt_label else self._label_content
+        )
+
         try:
             self._initialize_volume_interface()
             mute_status = self.volume.GetMute()
             icon_volume = self._get_volume_icon()
             level_volume = (
-                self._mute_text if mute_status == 1 else f"{round(self.volume.GetMasterVolumeLevelScalar() * 100)}%"
+                self._mute_text
+                if mute_status == 1
+                else f"{round(self.volume.GetMasterVolumeLevelScalar() * 100)}%"
             )
         except Exception:
             mute_status, icon_volume, level_volume = None, "", "No Device"
 
-        label_options = {"{icon}": icon_volume, "{level}": level_volume}
+        active_label_content = active_label_content.format(
+            icon=icon_volume, level=level_volume
+        )
+        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
+        widget_index = 0
 
         if self._progress_bar["enabled"] and self.progress_widget:
             if self._widget_container_layout.indexOf(self.progress_widget) == -1:
                 self._widget_container_layout.insertWidget(
-                    0 if self._progress_bar["position"] == "left" else self._widget_container_layout.count(),
+                    (
+                        0
+                        if self._progress_bar["position"] == "left"
+                        else self._widget_container_layout.count()
+                    ),
                     self.progress_widget,
                 )
-            numeric_value = int(re.search(r"\d+", level_volume).group()) if re.search(r"\d+", level_volume) else 0
+            numeric_value = (
+                int(re.search(r"\d+", level_volume).group())
+                if re.search(r"\d+", level_volume)
+                else 0
+            )
             self.progress_widget.set_value(numeric_value)
 
         for part in label_parts:
+            if widget_index >= active_widgets_len:
+                break
+
             part = part.strip()
-            if part:
-                formatted_text = part
-                for option, value in label_options.items():
-                    formatted_text = formatted_text.replace(option, str(value))
-                if "<span" in part and "</span>" in part:
-                    if widget_index < len(active_widgets) and isinstance(active_widgets[widget_index], QLabel):
-                        active_widgets[widget_index].setText(formatted_text)
-                        self._set_muted_class(active_widgets[widget_index], mute_status == 1)
-                else:
-                    if widget_index < len(active_widgets) and isinstance(active_widgets[widget_index], QLabel):
-                        active_widgets[widget_index].setText(formatted_text)
-                        self._set_muted_class(active_widgets[widget_index], mute_status == 1)
-                widget_index += 1
+            if not part:
+                continue
+
+            if not isinstance(active_widgets[widget_index], QLabel):
+                continue
+
+            active_widgets[widget_index].setText(part)
+            widget_index += 1
 
     def _set_muted_class(self, widget, muted: bool):
         """Set or remove the 'muted' class on the widget."""
+
         current_class = widget.property("class") or ""
         classes = set(current_class.split())
         if muted:
             classes.add("muted")
         else:
             classes.discard("muted")
+
         widget.setProperty("class", " ".join(classes))
         widget.style().unpolish(widget)
         widget.style().polish(widget)
@@ -494,17 +562,17 @@ class VolumeWidget(BaseWidget):
         current_volume_level = round(self.volume.GetMasterVolumeLevelScalar() * 100)
         if self._tooltip:
             set_tooltip(self, f"Volume {current_volume_level}")
+
         if current_mute_status == 1:
-            volume_icon = self._volume_icons[0]
+            return self._volume_icons[0]
         elif 0 <= current_volume_level < 11:
-            volume_icon = self._volume_icons[1]
+            return self._volume_icons[1]
         elif 11 <= current_volume_level < 30:
-            volume_icon = self._volume_icons[2]
+            return self._volume_icons[2]
         elif 30 <= current_volume_level < 60:
-            volume_icon = self._volume_icons[3]
+            return self._volume_icons[3]
         else:
-            volume_icon = self._volume_icons[4]
-        return volume_icon
+            return self._volume_icons[4]
 
     def _increase_volume(self):
         if self.volume is None:
@@ -544,7 +612,9 @@ class VolumeWidget(BaseWidget):
 
     def toggle_mute(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+            AnimationManager.animate(
+                self, self._animation["type"], self._animation["duration"]
+            )
         if self.volume is None:
             logging.warning("Cannot toggle mute: No audio device connected.")
             return

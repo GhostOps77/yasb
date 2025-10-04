@@ -14,7 +14,11 @@ DEFAULTS = {
     "hide_on_break": False,
     "animation": {"enabled": True, "type": "fadeInOut", "duration": 200},
     "container_padding": {"top": 0, "left": 0, "bottom": 0, "right": 0},
-    "callbacks": {"on_left": "toggle_timer", "on_middle": "reset_timer", "on_right": "toggle_label"},
+    "callbacks": {
+        "on_left": "toggle_timer",
+        "on_middle": "reset_timer",
+        "on_right": "toggle_label",
+    },
     "icons": {
         "work": "\uf252",
         "break": "\uf253",
@@ -40,16 +44,43 @@ DEFAULTS = {
 VALIDATION_SCHEMA = {
     "label": {"type": "string", "default": DEFAULTS["label"]},
     "label_alt": {"type": "string", "default": DEFAULTS["label_alt"]},
-    "class_name": {"type": "string", "required": False, "default": DEFAULTS["class_name"]},
-    "work_duration": {"type": "integer", "min": 1, "default": DEFAULTS["work_duration"]},
-    "break_duration": {"type": "integer", "min": 1, "default": DEFAULTS["break_duration"]},
-    "long_break_duration": {"type": "integer", "min": 1, "default": DEFAULTS["long_break_duration"]},
-    "long_break_interval": {"type": "integer", "min": 1, "default": DEFAULTS["long_break_interval"]},
+    "class_name": {
+        "type": "string",
+        "required": False,
+        "default": DEFAULTS["class_name"],
+    },
+    "work_duration": {
+        "type": "integer",
+        "min": 1,
+        "default": DEFAULTS["work_duration"],
+    },
+    "break_duration": {
+        "type": "integer",
+        "min": 1,
+        "default": DEFAULTS["break_duration"],
+    },
+    "long_break_duration": {
+        "type": "integer",
+        "min": 1,
+        "default": DEFAULTS["long_break_duration"],
+    },
+    "long_break_interval": {
+        "type": "integer",
+        "min": 1,
+        "default": DEFAULTS["long_break_interval"],
+    },
     "auto_start_breaks": {"type": "boolean", "default": DEFAULTS["auto_start_breaks"]},
     "auto_start_work": {"type": "boolean", "default": DEFAULTS["auto_start_work"]},
-    "sound_notification": {"type": "boolean", "default": DEFAULTS["sound_notification"]},
+    "sound_notification": {
+        "type": "boolean",
+        "default": DEFAULTS["sound_notification"],
+    },
     "show_notification": {"type": "boolean", "default": DEFAULTS["show_notification"]},
-    "session_target": {"type": "integer", "min": 0, "default": DEFAULTS["session_target"]},
+    "session_target": {
+        "type": "integer",
+        "min": 0,
+        "default": DEFAULTS["session_target"],
+    },
     "hide_on_break": {"type": "boolean", "default": DEFAULTS["hide_on_break"]},
     "icons": {
         "type": "dict",
@@ -67,7 +98,10 @@ VALIDATION_SCHEMA = {
         "schema": {
             "enabled": {"type": "boolean", "default": DEFAULTS["animation"]["enabled"]},
             "type": {"type": "string", "default": DEFAULTS["animation"]["type"]},
-            "duration": {"type": "integer", "default": DEFAULTS["animation"]["duration"]},
+            "duration": {
+                "type": "integer",
+                "default": DEFAULTS["animation"]["duration"],
+            },
         },
         "default": DEFAULTS["animation"],
     },
@@ -76,9 +110,18 @@ VALIDATION_SCHEMA = {
         "required": False,
         "schema": {
             "top": {"type": "integer", "default": DEFAULTS["container_padding"]["top"]},
-            "left": {"type": "integer", "default": DEFAULTS["container_padding"]["left"]},
-            "bottom": {"type": "integer", "default": DEFAULTS["container_padding"]["bottom"]},
-            "right": {"type": "integer", "default": DEFAULTS["container_padding"]["right"]},
+            "left": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["left"],
+            },
+            "bottom": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["bottom"],
+            },
+            "right": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["right"],
+            },
         },
         "default": DEFAULTS["container_padding"],
     },
@@ -113,11 +156,18 @@ VALIDATION_SCHEMA = {
             "size": {"type": "integer", "default": 18, "min": 8, "max": 64},
             "thickness": {"type": "integer", "default": 3, "min": 1, "max": 10},
             "color": {
-                "anyof": [{"type": "string"}, {"type": "list", "schema": {"type": "string"}}],
+                "anyof": [
+                    {"type": "string"},
+                    {"type": "list", "schema": {"type": "string"}},
+                ],
                 "default": "#00C800",
             },
             "background_color": {"type": "string", "default": "#3C3C3C"},
-            "position": {"type": "string", "allowed": ["left", "right"], "default": "left"},
+            "position": {
+                "type": "string",
+                "allowed": ["left", "right"],
+                "default": "left",
+            },
             "animation": {
                 "type": "boolean",
                 "default": True,
@@ -135,7 +185,10 @@ VALIDATION_SCHEMA = {
                 "type": "string",
                 "default": DEFAULTS["callbacks"]["on_middle"],
             },
-            "on_right": {"type": "string", "default": DEFAULTS["callbacks"]["on_right"]},
+            "on_right": {
+                "type": "string",
+                "default": DEFAULTS["callbacks"]["on_right"],
+            },
         },
         "default": DEFAULTS["callbacks"],
     },
@@ -144,25 +197,49 @@ VALIDATION_SCHEMA = {
         "required": False,
         "schema": {
             "blur": {"type": "boolean", "default": DEFAULTS["menu"]["blur"]},
-            "round_corners": {"type": "boolean", "default": DEFAULTS["menu"]["round_corners"]},
+            "round_corners": {
+                "type": "boolean",
+                "default": DEFAULTS["menu"]["round_corners"],
+            },
             "round_corners_type": {
                 "type": "string",
                 "default": DEFAULTS["menu"]["round_corners_type"],
                 "allowed": ["normal", "small"],
             },
-            "border_color": {"type": "string", "default": DEFAULTS["menu"]["border_color"]},
+            "border_color": {
+                "type": "string",
+                "default": DEFAULTS["menu"]["border_color"],
+            },
             "alignment": {"type": "string", "default": DEFAULTS["menu"]["alignment"]},
             "direction": {"type": "string", "default": DEFAULTS["menu"]["direction"]},
-            "offset_top": {"type": "integer", "default": DEFAULTS["menu"]["offset_top"]},
-            "offset_left": {"type": "integer", "default": DEFAULTS["menu"]["offset_left"]},
-            "circle_background_color": {"type": "string", "default": DEFAULTS["menu"]["circle_background_color"]},
-            "circle_work_progress_color": {"type": "string", "default": DEFAULTS["menu"]["circle_work_progress_color"]},
+            "offset_top": {
+                "type": "integer",
+                "default": DEFAULTS["menu"]["offset_top"],
+            },
+            "offset_left": {
+                "type": "integer",
+                "default": DEFAULTS["menu"]["offset_left"],
+            },
+            "circle_background_color": {
+                "type": "string",
+                "default": DEFAULTS["menu"]["circle_background_color"],
+            },
+            "circle_work_progress_color": {
+                "type": "string",
+                "default": DEFAULTS["menu"]["circle_work_progress_color"],
+            },
             "circle_break_progress_color": {
                 "type": "string",
                 "default": DEFAULTS["menu"]["circle_break_progress_color"],
             },
-            "circle_thickness": {"type": "integer", "default": DEFAULTS["menu"]["circle_thickness"]},
-            "circle_size": {"type": "integer", "default": DEFAULTS["menu"]["circle_size"]},
+            "circle_thickness": {
+                "type": "integer",
+                "default": DEFAULTS["menu"]["circle_thickness"],
+            },
+            "circle_size": {
+                "type": "integer",
+                "default": DEFAULTS["menu"]["circle_size"],
+            },
         },
         "default": DEFAULTS["menu"],
     },

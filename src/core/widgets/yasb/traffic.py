@@ -2,7 +2,14 @@ import logging
 import re
 
 from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from core.utils.tooltip import set_tooltip
 from core.utils.utilities import PopupWidget, add_shadow, build_widget_label
@@ -63,12 +70,17 @@ class TrafficWidget(BaseWidget):
         TrafficDataManager.setup_global_data_storage()
 
         # Initialize session bytes sent and received
-        self.session_bytes_sent, self.session_bytes_recv = TrafficDataManager.initialize_interface(self._interface)
+        self.session_bytes_sent, self.session_bytes_recv = (
+            TrafficDataManager.initialize_interface(self._interface)
+        )
 
         self._widget_container_layout = QHBoxLayout()
         self._widget_container_layout.setSpacing(0)
         self._widget_container_layout.setContentsMargins(
-            self._padding["left"], self._padding["top"], self._padding["right"], self._padding["bottom"]
+            self._padding["left"],
+            self._padding["top"],
+            self._padding["right"],
+            self._padding["bottom"],
         )
 
         self._widget_container = QFrame()
@@ -78,29 +90,43 @@ class TrafficWidget(BaseWidget):
         add_shadow(self._widget_container, self._container_shadow)
 
         self.widget_layout.addWidget(self._widget_container)
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(
+            self, self._label_content, self._label_alt_content, self._label_shadow
+        )
 
         self._initialize_instance_counters()
         self._setup_callbacks_and_timers(update_interval, callbacks)
 
         # Initial data update
-        QTimer.singleShot(200, lambda: TrafficWidget._update_interface_data(self._interface))
+        QTimer.singleShot(
+            200, lambda: TrafficWidget._update_interface_data(self._interface)
+        )
 
     def _setup_callbacks_and_timers(self, update_interval, callbacks):
         """Setup callbacks, timers, and internet checker"""
 
         # Create interface-specific internet checker
         try:
-            self.internet_checker = InternetChecker(parent=self, interface=self._interface)
-            self.internet_checker.connection_changed.connect(self._on_connection_changed)
+            self.internet_checker = InternetChecker(
+                parent=self, interface=self._interface
+            )
+            self.internet_checker.connection_changed.connect(
+                self._on_connection_changed
+            )
 
             self._is_internet_connected = True
             if DEBUG:
-                logging.info(f"Internet checker initialized for interface {self._interface}")
+                logging.info(
+                    f"Internet checker initialized for interface {self._interface}"
+                )
 
         except Exception as e:
-            logging.error(f"Failed to initialize InternetChecker for interface {self._interface}: {e}")
-            self._is_internet_connected = False  # Default to disconnected if checker fails
+            logging.error(
+                f"Failed to initialize InternetChecker for interface {self._interface}: {e}"
+            )
+            self._is_internet_connected = (
+                False  # Default to disconnected if checker fails
+            )
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("update_label", self._update_label)
@@ -131,12 +157,16 @@ class TrafficWidget(BaseWidget):
 
         def get_initial_counters():
             try:
-                initial_io = TrafficDataManager.get_interface_io_counters(self._interface)
+                initial_io = TrafficDataManager.get_interface_io_counters(
+                    self._interface
+                )
                 if initial_io:
                     self.bytes_sent = initial_io.bytes_sent
                     self.bytes_recv = initial_io.bytes_recv
                 else:
-                    logging.warning(f"Could not get initial IO counters for interface {self._interface}")
+                    logging.warning(
+                        f"Could not get initial IO counters for interface {self._interface}"
+                    )
             except Exception as e:
                 logging.error(f"Error initializing instance counters: {e}")
 
@@ -233,72 +263,69 @@ class TrafficWidget(BaseWidget):
 
         # Update menu if visible
         if self._is_menu_visible():
-            net_data = (
-                shared_data["raw_upload_speed"],
-                shared_data["raw_download_speed"],
-                shared_data["today_uploaded"],
-                shared_data["today_downloaded"],
-                shared_data["session_uploaded"],
-                shared_data["session_downloaded"],
-                shared_data["alltime_uploaded"],
-                shared_data["alltime_downloaded"],
-                shared_data["session_duration"],
-            )
+            # net_data = (
+            #     shared_data["raw_upload_speed"],
+            #     shared_data["raw_download_speed"],
+            #     shared_data["today_uploaded"],
+            #     shared_data["today_downloaded"],
+            #     shared_data["session_uploaded"],
+            #     shared_data["session_downloaded"],
+            #     shared_data["alltime_uploaded"],
+            #     shared_data["alltime_downloaded"],
+            #     shared_data["session_duration"],
+            # )
+            net_data = shared_data
             self._update_menu_content(net_data)
 
     def _update_label_with_data(self, shared_data):
         """Update label with provided data"""
-        active_widgets = self._widgets_alt if self._show_alt_label else self._widgets  # type: ignore
-        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
 
-        label_parts = re.split("(<span.*?>.*?</span>)", active_label_content)
-        label_parts = [part for part in label_parts if part]
+        active_widgets = self._widgets_alt if self._show_alt_label else self._widgets  # type: ignore
+        active_widgets_len = len(active_widgets)
+        active_label_content = (
+            self._label_alt_content if self._show_alt_label else self._label_content
+        )
+
+        active_label_content = active_label_content.format_map(shared_data)
+        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
         widget_index = 0
 
-        label_options = [
-            ("{upload_speed}", shared_data["upload_speed"]),
-            ("{download_speed}", shared_data["download_speed"]),
-            ("{today_uploaded}", shared_data["today_uploaded"]),
-            ("{today_downloaded}", shared_data["today_downloaded"]),
-            ("{session_uploaded}", shared_data["session_uploaded"]),
-            ("{session_downloaded}", shared_data["session_downloaded"]),
-            ("{alltime_uploaded}", shared_data["alltime_uploaded"]),
-            ("{alltime_downloaded}", shared_data["alltime_downloaded"]),
-        ]
-
         for part in label_parts:
+            if widget_index >= active_widgets_len:
+                break
+
             part = part.strip()
-            for option, value in label_options:
-                part = part.replace(option, str(value))
+            if not part:
+                continue
 
-            if part and widget_index < len(active_widgets) and isinstance(active_widgets[widget_index], QLabel):
-                if "<span" in part and "</span>" in part:
-                    icon = re.sub(r"<span.*?>|</span>", "", part).strip()
-                    active_widgets[widget_index].setText(icon)
-                else:
-                    active_widgets[widget_index].setText(part)
+            if not isinstance(active_widgets[widget_index], QLabel):
+                continue
 
-                # Update CSS class based on internet connection status
-                current_class = active_widgets[widget_index].property("class") or ""
-                if not self._is_internet_connected:
-                    if "offline" not in current_class:
-                        new_class = f"{current_class} offline".strip()
-                        active_widgets[widget_index].setProperty("class", new_class)
-                else:
-                    # Remove offline class if connected
-                    if "offline" in current_class:
-                        new_class = current_class.replace("offline", "").strip()
-                        new_class = " ".join(new_class.split())
-                        active_widgets[widget_index].setProperty("class", new_class)
-                active_widgets[widget_index].setStyleSheet("")
+            if part.startswith("<span") and part.endswith("</span>"):
+                part = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
 
-                widget_index += 1
+            active_widgets[widget_index].setText(part)
+
+            # Update CSS class based on internet connection status
+            current_class = active_widgets[widget_index].property("class") or ""
+            if not self._is_internet_connected:
+                if "offline" not in current_class:
+                    new_class = f"{current_class} offline".strip()
+                    active_widgets[widget_index].setProperty("class", new_class)
+
+            elif "offline" in current_class:
+                # Remove offline class if connected
+                new_class = current_class.replace("offline", "").strip()
+                new_class = " ".join(new_class.split())
+                active_widgets[widget_index].setProperty("class", new_class)
+
+            active_widgets[widget_index].setStyleSheet("")
+            widget_index += 1
 
     def _on_connection_changed(self, is_connected: bool):
         """Handle internet connection status changes"""
 
         self._is_internet_connected = is_connected
-
         if self._hide_if_offline:
             current_visibility = self.isVisible()
             if current_visibility == is_connected:
@@ -312,12 +339,17 @@ class TrafficWidget(BaseWidget):
 
     def _update_internet_info_in_menu(self):
         """Update only the internet info in the menu"""
+
         if "internet-info" in self.menu_labels:
             try:
-                net_status = "connected" if self._is_internet_connected else "disconnected"
+                net_status = (
+                    "connected" if self._is_internet_connected else "disconnected"
+                )
                 status_text = f"Internet {net_status.capitalize()}"
                 self.menu_labels["internet-info"].setText(status_text)
-                self.menu_labels["internet-info"].setProperty("class", f"internet-info {net_status}")
+                self.menu_labels["internet-info"].setProperty(
+                    "class", f"internet-info {net_status}"
+                )
                 self.menu_labels["internet-info"].setStyleSheet("")
             except (RuntimeError, AttributeError):
                 pass
@@ -325,11 +357,13 @@ class TrafficWidget(BaseWidget):
     def _toggle_label(self):
         if self._animation["enabled"]:
             AnimationManager.animate(self, self._animation["type"], self._animation["duration"])  # type: ignore
+
         self._show_alt_label = not self._show_alt_label
         for widget in self._widgets:  # type: ignore
             widget.setVisible(not self._show_alt_label)
         for widget in self._widgets_alt:  # type: ignore
             widget.setVisible(self._show_alt_label)
+
         # Force update with current shared data
         if self._interface in TrafficWidget._shared_data:
             self._update_from_shared_data(TrafficWidget._shared_data[self._interface])
@@ -388,7 +422,9 @@ class TrafficWidget(BaseWidget):
             column_layout.addWidget(speed_unit)
 
             placeholder = QLabel(placeholder_text)
-            placeholder.setProperty("class", f"speed-placeholder {label_prefix}-placeholder")
+            placeholder.setProperty(
+                "class", f"speed-placeholder {label_prefix}-placeholder"
+            )
             placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
             column_layout.addWidget(placeholder)
 
@@ -403,7 +439,9 @@ class TrafficWidget(BaseWidget):
 
         header_label = QLabel("Network Traffic")
         header_label.setProperty("class", "title")
-        header_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        header_label.setAlignment(
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        )
         header_layout.addWidget(header_label)
 
         header_layout.addStretch()
@@ -429,7 +467,9 @@ class TrafficWidget(BaseWidget):
         speed_columns_layout.setSpacing(0)
 
         # Download column
-        download_column, download_value, download_unit = create_speed_column("download-speed", "Download")
+        download_column, download_value, download_unit = create_speed_column(
+            "download-speed", "Download"
+        )
         speed_columns_layout.addWidget(download_column)
 
         # Add separator between columns
@@ -438,7 +478,9 @@ class TrafficWidget(BaseWidget):
         speed_columns_layout.addWidget(separator)
 
         # Upload column
-        upload_column, upload_value, upload_unit = create_speed_column("upload-speed", "Upload")
+        upload_column, upload_value, upload_unit = create_speed_column(
+            "upload-speed", "Upload"
+        )
         speed_columns_layout.addWidget(upload_column)
 
         # Add columns to speed section
@@ -456,7 +498,11 @@ class TrafficWidget(BaseWidget):
 
         # Create other sections (updated titles and classes)
         other_sections = [
-            ("Session Total", "session", ["session-upload", "session-download", "session-duration"]),
+            (
+                "Session Total",
+                "session",
+                ["session-upload", "session-download", "session-duration"],
+            ),
             ("Today's Total", "today", ["today-upload", "today-download"]),
             ("All-Time Total", "alltime", ["alltime-upload", "alltime-download"]),
         ]
@@ -493,14 +539,20 @@ class TrafficWidget(BaseWidget):
             layout.addWidget(container)
 
         if self._menu["show_interface_name"]:
-            interface_label = QLabel(f"Network Interface: {self._interface.capitalize()}")
+            interface_label = QLabel(
+                f"Network Interface: {self._interface.capitalize()}"
+            )
             interface_label.setProperty("class", "interface-info")
             interface_label.setWordWrap(True)
             interface_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             layout.addWidget(interface_label)
 
         if self._menu["show_internet_info"]:
-            status_text = "Internet Connected" if self._is_internet_connected else "Internet Disconnected"
+            status_text = (
+                "Internet Connected"
+                if self._is_internet_connected
+                else "Internet Disconnected"
+            )
             internet_info = QLabel(status_text)
             internet_info.setProperty("class", "internet-info")
             internet_info.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -511,87 +563,98 @@ class TrafficWidget(BaseWidget):
         self._menu_widget.setLayout(layout)
         self._menu_widget.adjustSize()
         self._menu_widget.setPosition(
-            self._menu["alignment"], self._menu["direction"], self._menu["offset_left"], self._menu["offset_top"]
+            self._menu["alignment"],
+            self._menu["direction"],
+            self._menu["offset_left"],
+            self._menu["offset_top"],
         )
         self._menu_widget.show()
         self._update_menu_content()
 
-    def _update_menu_content(self, data=None):
+    def _update_menu_content(self, data: dict | None = None):
         """Update the content of the popup menu with fresh data"""
-        if self._is_menu_visible():
-            try:
-                if data is None:
-                    if (
-                        self._interface in TrafficWidget._shared_data
-                        and TrafficWidget._shared_data[self._interface] is not None
-                    ):
-                        shared_data = TrafficWidget._shared_data[self._interface]
-                        data = (
-                            shared_data["raw_upload_speed"],
-                            shared_data["raw_download_speed"],
-                            shared_data["today_uploaded"],
-                            shared_data["today_downloaded"],
-                            shared_data["session_uploaded"],
-                            shared_data["session_downloaded"],
-                            shared_data["alltime_uploaded"],
-                            shared_data["alltime_downloaded"],
-                            shared_data["session_duration"],
-                        )
-                    else:
-                        data = ("0", "0", "< 1 MB", "< 1 MB", "< 1 MB", "< 1 MB", "< 1 MB", "< 1 MB", "just now")
+        if not self._is_menu_visible():
+            return
 
-                (
-                    raw_upload_speed,
-                    raw_download_speed,
-                    today_uploaded,
-                    today_downloaded,
-                    session_uploaded,
-                    session_downloaded,
-                    alltime_uploaded,
-                    alltime_downloaded,
-                    session_duration,
-                ) = data
+        try:
+            if data is None:
+                if (
+                    self._interface in TrafficWidget._shared_data
+                    and TrafficWidget._shared_data[self._interface] is not None
+                ):
+                    data = TrafficWidget._shared_data[self._interface]
+                else:
+                    data = {
+                        "raw_upload_speed": "0",
+                        "raw_download_speed": "0",
+                        "today_uploaded": "< 1 MB",
+                        "today_downloaded": "< 1 MB",
+                        "session_uploaded": "< 1 MB",
+                        "session_downloaded": "< 1 MB",
+                        "alltime_uploaded": "< 1 MB",
+                        "alltime_downloaded": "< 1 MB",
+                        "session_duration": "just now",
+                    }
+            # (
+            #     raw_upload_speed,
+            #     raw_download_speed,
+            #     today_uploaded,
+            #     today_downloaded,
+            #     session_uploaded,
+            #     session_downloaded,
+            #     alltime_uploaded,
+            #     alltime_downloaded,
+            #     session_duration,
+            # ) = data
 
-                # Helper function to split speed and unit
-                def split_speed_unit(speed_str):
-                    parts = speed_str.strip().split()
-                    if len(parts) >= 2:
-                        return parts[0], parts[1]  # value, unit
-                    return speed_str, ""
+            # Helper function to split speed and unit
+            def split_speed_unit(speed_str):
+                parts = speed_str.strip().split()
+                if len(parts) >= 2:
+                    return parts[0], parts[1]  # value, unit
+                return speed_str, ""
 
-                # Update speed columns
-                upload_value, upload_unit_text = split_speed_unit(raw_upload_speed)
-                download_value, download_unit_text = split_speed_unit(raw_download_speed)
+            # Update speed columns
+            upload_value, upload_unit_text = split_speed_unit(data['raw_upload_speed'])
+            download_value, download_unit_text = split_speed_unit(data['raw_download_speed'])
 
-                self.menu_labels["upload-speed-value"].setText(upload_value)
-                self.menu_labels["upload-speed-unit"].setText(upload_unit_text)
-                self.menu_labels["download-speed-value"].setText(download_value)
-                self.menu_labels["download-speed-unit"].setText(download_unit_text)
+            self.menu_labels["upload-speed-value"].setText(upload_value)
+            self.menu_labels["upload-speed-unit"].setText(upload_unit_text)
+            self.menu_labels["download-speed-value"].setText(download_value)
+            self.menu_labels["download-speed-unit"].setText(download_unit_text)
 
-                # Update other sections
-                label_updates = {
-                    "session-upload": ("Uploaded:", session_uploaded),
-                    "session-download": ("Downloaded:", session_downloaded),
-                    "session-duration": ("Duration:", session_duration),
-                    "today-upload": ("Uploaded:", today_uploaded),
-                    "today-download": ("Downloaded:", today_downloaded),
-                    "alltime-upload": ("Uploaded:", alltime_uploaded),
-                    "alltime-download": ("Downloaded:", alltime_downloaded),
-                }
+            # Update other sections
+            # label_updates = {
+            #     "session-upload": ("Uploaded:", session_uploaded),
+            #     "session-download": ("Downloaded:", session_downloaded),
+            #     "session-duration": ("Duration:", session_duration),
+            #     "today-upload": ("Uploaded:", today_uploaded),
+            #     "today-download": ("Downloaded:", today_downloaded),
+            #     "alltime-upload": ("Uploaded:", alltime_uploaded),
+            #     "alltime-download": ("Downloaded:", alltime_downloaded),
+            # }
+            label_values_to_be_inserted = (
+                "session_uploaded", "session_downloaded", "session_duration", 
+                "today_uploaded", "today_downloaded", "alltime_uploaded", 
+                "alltime_downloaded", 
+            )
 
-                for class_name, (text, value) in label_updates.items():
-                    text_key = f"{class_name}-text"
-                    value_key = f"{class_name}-value"
+            for label_name in label_values_to_be_inserted:
+                text = label_name.rsplit('_', 1)[-1] + ':'
+                class_name = label_name.removesuffix('ed').replace('_', '-')
 
-                    self.menu_labels[text_key].setText(text.strip())
-                    self.menu_labels[value_key].setText(value.strip())
+                text_key = f"{class_name}-text"
+                value_key = f"{class_name}-value"
 
-                self._update_internet_info_in_menu()
+                self.menu_labels[text_key].setText(text.strip())
+                self.menu_labels[value_key].setText(data[label_name].strip())
 
-            except RuntimeError:
-                pass
-            except Exception as e:
-                logging.error(f"Error updating menu content: {e}")
+            self._update_internet_info_in_menu()
+
+        except RuntimeError:
+            pass
+        except Exception as e:
+            logging.error(f"Error updating menu content: {e}")
 
     def _reset_traffic_data(self):
         """Reset all traffic data to zero"""

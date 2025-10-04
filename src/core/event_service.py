@@ -53,7 +53,9 @@ class EventService(QObject):
                     event_signal.emit(*args)
                 except Exception:
                     if DEBUG:
-                        logging.debug(f"Failed to emit signal {event_signal.__str__()}. Removing link to {event_type}.")
+                        logging.debug(
+                            f"Failed to emit signal {event_signal.__str__()}. Removing link to {event_type}."
+                        )
                     with self._mutex:
                         if event_signal in event_signals:
                             event_signals.remove(event_signal)

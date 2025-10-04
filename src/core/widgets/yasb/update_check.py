@@ -43,7 +43,8 @@ class UpdateWorker(QThread):
         if update_type == "winget":
             for update, name in zip(updates, names):
                 if not any(
-                    excluded in update["id"].lower() or excluded in update["name"].lower()
+                    excluded in update["id"].lower()
+                    or excluded in update["name"].lower()
                     for excluded in valid_excludes
                 ):
                     filtered_names.append(name)
@@ -66,8 +67,12 @@ class UpdateWorker(QThread):
                 update_searcher = update_session.CreateUpdateSearcher()
                 search_result = update_searcher.Search("IsInstalled=0")
                 update_names = [update.Title for update in search_result.Updates]
-                count, filtered_names = self.filter_updates(search_result.Updates, update_names, self.update_type)
-                self.windows_update_signal.emit({"count": count, "names": filtered_names})
+                count, filtered_names = self.filter_updates(
+                    search_result.Updates, update_names, self.update_type
+                )
+                self.windows_update_signal.emit(
+                    {"count": count, "names": filtered_names}
+                )
 
             elif self.update_type == "winget":
                 WINGET_COLUMN_HEADERS = {
@@ -132,7 +137,9 @@ class UpdateWorker(QThread):
                 # Skip if language is not supported
                 if fl < 0 or detected_language not in WINGET_COLUMN_HEADERS:
                     if DEBUG:
-                        logging.warning("Could not identify header row in any supported language. Skipping processing.")
+                        logging.warning(
+                            "Could not identify header row in any supported language. Skipping processing."
+                        )
                     self.winget_update_signal.emit({"count": 0, "names": []})
                     return
 
@@ -189,7 +196,13 @@ class UpdateWorker(QThread):
                 count, filtered_names, filtered_app_ids = self.filter_updates(
                     upgrade_list, update_names, self.update_type
                 )
-                self.winget_update_signal.emit({"count": count, "names": filtered_names, "app_ids": filtered_app_ids})
+                self.winget_update_signal.emit(
+                    {
+                        "count": count,
+                        "names": filtered_names,
+                        "app_ids": filtered_app_ids,
+                    }
+                )
 
         except Exception as e:
             logging.error(f"Error in {self.update_type} worker: {e}")
@@ -230,9 +243,13 @@ class UpdateManager:
         if update_type not in self._workers:
             worker = UpdateWorker(update_type, exclude_list)
             if update_type == "windows":
-                worker.windows_update_signal.connect(lambda x: self.notify_subscribers("windows_update", x))
+                worker.windows_update_signal.connect(
+                    lambda x: self.notify_subscribers("windows_update", x)
+                )
             else:
-                worker.winget_update_signal.connect(lambda x: self.notify_subscribers("winget_update", x))
+                worker.winget_update_signal.connect(
+                    lambda x: self.notify_subscribers("winget_update", x)
+                )
             self._workers[update_type] = worker
             worker.start()
 
@@ -245,7 +262,9 @@ class UpdateManager:
         if label_type == "windows":
             subprocess.Popen("start ms-settings:windowsupdate", shell=True)
         elif label_type == "winget":
-            powershell_path = shutil.which("pwsh") or shutil.which("powershell") or "powershell.exe"
+            powershell_path = (
+                shutil.which("pwsh") or shutil.which("powershell") or "powershell.exe"
+            )
             # Use stored app_ids
             if self._winget_app_ids:
                 count = len(self._winget_app_ids)
@@ -271,9 +290,13 @@ class UpdateManager:
         # Get correct exclude list based on type
         exclude_list = []
         for subscriber in self._subscribers:
-            if label_type == "windows" and hasattr(subscriber, "_windows_update_exclude"):
+            if label_type == "windows" and hasattr(
+                subscriber, "_windows_update_exclude"
+            ):
                 exclude_list.extend(subscriber._windows_update_exclude)
-            elif label_type == "winget" and hasattr(subscriber, "_winget_update_exclude"):
+            elif label_type == "winget" and hasattr(
+                subscriber, "_winget_update_exclude"
+            ):
                 exclude_list.extend(subscriber._winget_update_exclude)
 
         # Hide the container first
@@ -314,7 +337,9 @@ class UpdateCheckWidget(BaseWidget):
         self.windows_update_data = 0
         self.winget_update_data = 0
 
-        self._create_dynamically_label(self._winget_update_label, self._windows_update_label)
+        self._create_dynamically_label(
+            self._winget_update_label, self._windows_update_label
+        )
 
         self._update_manager = UpdateManager()
         self._update_manager.register_subscriber(self)
@@ -359,10 +384,10 @@ class UpdateCheckWidget(BaseWidget):
                 part = part.strip()
                 if not part:
                     continue
-                if "<span" in part and "</span>" in part:
+                if part.startswith("<span") and part.endswith("</span>"):
                     class_match = re.search(r'class=(["\'])([^"\']+?)\1', part)
                     class_result = class_match.group(2) if class_match else "icon"
-                    icon = re.sub(r"<span.*?>|</span>", "", part).strip()
+                    icon = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
                     label = QLabel(icon)
                     label.setProperty("class", class_result)
                 else:
@@ -376,9 +401,13 @@ class UpdateCheckWidget(BaseWidget):
             return container, widgets
 
         if self._winget_update_enabled:
-            self._winget_container, self._widget_widget = process_content(self._winget_update_label, "winget")
+            self._winget_container, self._widget_widget = process_content(
+                self._winget_update_label, "winget"
+            )
         if self._window_update_enabled:
-            self._windows_container, self._widget_windows = process_content(self._windows_update_label, "windows")
+            self._windows_container, self._widget_windows = process_content(
+                self._windows_update_label, "windows"
+            )
 
     def _update_label(self, widget_type, data, names):
         if widget_type == "winget":
@@ -392,27 +421,39 @@ class UpdateCheckWidget(BaseWidget):
         else:
             return
 
-        label_parts = re.split(r"(<span.*?>.*?</span>)", active_label_content)
-        label_parts = [part for part in label_parts if part]
-        widget_index = 0
         if data == 0:
             container.hide()
             return
+
         container.show()
+
+        active_widgets_len = len(active_widgets)
+        label_parts = re.split(r"(<span.*?>.*?</span>)", active_label_content)
+        widget_index = 0
+
         for part in label_parts:
+            if widget_index >= active_widgets_len:
+                break
+
             part = part.strip()
-            if part and widget_index < len(active_widgets) and isinstance(active_widgets[widget_index], QLabel):
-                if "<span" in part and "</span>" in part:
-                    icon = re.sub(r"<span.*?>|</span>", "", part).strip()
-                    active_widgets[widget_index].setText(icon)
-                else:
-                    formatted_text = part.format(count=data)
-                    active_widgets[widget_index].setText(formatted_text)
-                active_widgets[widget_index].setCursor(Qt.CursorShape.PointingHandCursor)
-                widget_index += 1
-        if widget_type == "windows" and self._windows_update_tooltip:
-            set_tooltip(container, "\n".join(names))
-        elif widget_type == "winget" and self._winget_update_tooltip:
+            if not part:
+                continue
+
+            if not isinstance(active_widgets[widget_index], QLabel):
+                continue
+
+            if part.startswith("<span") and part.endswith("</span>"):
+                icon = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
+                active_widgets[widget_index].setText(icon)
+            else:
+                formatted_text = part.format(count=data)
+                active_widgets[widget_index].setText(formatted_text)
+            active_widgets[widget_index].setCursor(Qt.CursorShape.PointingHandCursor)
+            widget_index += 1
+
+        if (widget_type == "windows" and self._windows_update_tooltip) or (
+            widget_type == "winget" and self._winget_update_tooltip
+        ):
             set_tooltip(container, "\n".join(names))
 
     def handle_mouse_events(self, label_type):

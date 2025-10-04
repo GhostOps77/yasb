@@ -24,7 +24,12 @@ def get_all_kinds():
     Get all notification kinds, including toast, tile, badge, and proto.
     In the future, this function can be modified to return a different set of notification kinds.
     """
-    return NotificationKinds.toast | NotificationKinds.tile | NotificationKinds.badge | NotificationKinds.proto
+    return (
+        NotificationKinds.toast
+        | NotificationKinds.tile
+        | NotificationKinds.badge
+        | NotificationKinds.proto
+    )
 
 
 class WindowsNotificationEventListener(QThread):
@@ -38,7 +43,9 @@ class WindowsNotificationEventListener(QThread):
         self.loop = asyncio.new_event_loop()
 
         self.clear_notifications.connect(self._clear_notifications)
-        self.event_service.register_event("WindowsNotificationClear", self.clear_notifications)
+        self.event_service.register_event(
+            "WindowsNotificationClear", self.clear_notifications
+        )
 
     def _clear_notifications(self):
         asyncio.run_coroutine_threadsafe(self.clear_all_notifications(), self.loop)
@@ -59,13 +66,20 @@ class WindowsNotificationEventListener(QThread):
             if access_result == management.UserNotificationListenerAccessStatus.ALLOWED:
                 while self.running:
                     current_count = await self.update_count(listener)
-                    if current_count is not None and current_count != self.total_notifications:
+                    if (
+                        current_count is not None
+                        and current_count != self.total_notifications
+                    ):
                         self.total_notifications = current_count
-                        self.event_service.emit_event("WindowsNotificationUpdate", self.total_notifications)
+                        self.event_service.emit_event(
+                            "WindowsNotificationUpdate", self.total_notifications
+                        )
 
                     await asyncio.sleep(2)
             else:
-                logging.warning(f"Access denied to notifications, access status: {access_result}")
+                logging.warning(
+                    f"Access denied to notifications, access status: {access_result}"
+                )
         except Exception as e:
             logging.error(f"Error in notification listener: {e}")
             await asyncio.sleep(10)
@@ -81,7 +95,9 @@ class WindowsNotificationEventListener(QThread):
                 # Call without await since it might not be an async method
                 listener.remove_notification(n.id)
             self.total_notifications = 0
-            self.event_service.emit_event("WindowsNotificationUpdate", self.total_notifications)
+            self.event_service.emit_event(
+                "WindowsNotificationUpdate", self.total_notifications
+            )
         except Exception as e:
             logging.error(f"Error clearing notifications: {e}")
 
@@ -96,7 +112,9 @@ class WindowsNotificationEventListener(QThread):
             for task in pending:
                 task.cancel()
             if pending:
-                self.loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+                self.loop.run_until_complete(
+                    asyncio.gather(*pending, return_exceptions=True)
+                )
             self.loop.close()
 
     def stop(self):

@@ -17,7 +17,9 @@ class KomorebiClient:
             cls._instance = super(KomorebiClient, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self, komorebic_path: str = "komorebic.exe", timeout_secs: float = 0.5):
+    def __init__(
+        self, komorebic_path: str = "komorebic.exe", timeout_secs: float = 0.5
+    ):
         if hasattr(self, "_komorebi_initialized"):
             return
         self._komorebi_initialized = True
@@ -39,7 +41,9 @@ class KomorebiClient:
             )
             return json.loads(output)
         except subprocess.TimeoutExpired:
-            logging.error(f"Komorebi state query timed out in {self._timeout_secs} seconds")
+            logging.error(
+                f"Komorebi state query timed out in {self._timeout_secs} seconds"
+            )
         except (json.JSONDecodeError, subprocess.CalledProcessError, FileNotFoundError):
             return None
 
@@ -52,9 +56,14 @@ class KomorebiClient:
                 return add_index(screen, i)
 
     def get_workspaces(self, screen: dict) -> list:
-        return [add_index(workspace, i) for i, workspace in enumerate(screen["workspaces"]["elements"])]
+        return [
+            add_index(workspace, i)
+            for i, workspace in enumerate(screen["workspaces"]["elements"])
+        ]
 
-    def get_workspace_by_index(self, screen: dict, workspace_index: int) -> Optional[dict]:
+    def get_workspace_by_index(
+        self, screen: dict, workspace_index: int
+    ) -> Optional[dict]:
         try:
             return self.get_workspaces(screen)[workspace_index]
         except IndexError:
@@ -63,7 +72,9 @@ class KomorebiClient:
     def get_focused_workspace(self, screen: dict) -> Optional[dict]:
         try:
             focused_workspace_index = screen["workspaces"]["focused"]
-            focused_workspace = self.get_workspace_by_index(screen, focused_workspace_index)
+            focused_workspace = self.get_workspace_by_index(
+                screen, focused_workspace_index
+            )
             focused_workspace["index"] = focused_workspace_index
             return focused_workspace
         except (KeyError, TypeError):
@@ -86,17 +97,23 @@ class KomorebiClient:
 
         return False
 
-    def get_workspace_by_window_hwnd(self, workspaces: list[Optional[dict]], window_hwnd: int) -> Optional[dict]:
+    def get_workspace_by_window_hwnd(
+        self, workspaces: list[Optional[dict]], window_hwnd: int
+    ) -> Optional[dict]:
         for i, workspace in enumerate(workspaces):
             for floating_window in self.get_floating_windows(workspace):
                 if floating_window["hwnd"] == window_hwnd:
                     return add_index(workspace, i)
 
-            if ("containers" not in workspace) or ("elements" not in workspace["containers"]):
+            if ("containers" not in workspace) or (
+                "elements" not in workspace["containers"]
+            ):
                 continue
 
             for container in workspace["containers"]["elements"]:
-                if ("windows" not in container) or ("elements" not in container["windows"]):
+                if ("windows" not in container) or (
+                    "elements" not in container["windows"]
+                ):
                     continue
 
                 for managed_window in container["windows"]["elements"]:
@@ -104,15 +121,27 @@ class KomorebiClient:
                         return add_index(workspace, i)
 
     def activate_workspace(self, m_idx: int, ws_idx: int, wait: bool = False) -> None:
-        args = [self._komorebic_path, "focus-monitor-workspace", str(m_idx), str(ws_idx)]
+        args = [
+            self._komorebic_path,
+            "focus-monitor-workspace",
+            str(m_idx),
+            str(ws_idx),
+        ]
         if wait:
             try:
-                subprocess.run(args, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, shell=True)
+                subprocess.run(
+                    args, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, shell=True
+                )
             except (subprocess.SubprocessError, FileNotFoundError):
                 logging.exception("Failed to activate komorebi workspace")
         else:
             try:
-                subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
+                subprocess.Popen(
+                    args,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    shell=True,
+                )
             except (subprocess.SubprocessError, FileNotFoundError):
                 logging.exception("Failed to activate komorebi workspace (spawn)")
 
@@ -152,13 +181,21 @@ class KomorebiClient:
     def change_layout(self, m_idx: int, ws_idx: int, layout: str) -> None:
         try:
             subprocess.Popen(
-                [self._komorebic_path, "workspace-layout", str(m_idx), str(ws_idx), layout],
+                [
+                    self._komorebic_path,
+                    "workspace-layout",
+                    str(m_idx),
+                    str(ws_idx),
+                    layout,
+                ],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 shell=True,
             )
         except (subprocess.SubprocessError, FileNotFoundError):
-            logging.exception(f"Failed to change layout of currently active workspace to {layout}")
+            logging.exception(
+                f"Failed to change layout of currently active workspace to {layout}"
+            )
 
     def flip_layout(self, direction: str) -> None:
         try:
@@ -182,26 +219,43 @@ class KomorebiClient:
 
     def toggle(self, toggle_type: str, wait: bool = False) -> None:
         try:
-            command = (
-                f'"{self._komorebic_path}" focus-monitor-at-cursor && "{self._komorebic_path}" toggle-{toggle_type}'
-            )
+            command = f'"{self._komorebic_path}" focus-monitor-at-cursor && "{self._komorebic_path}" toggle-{toggle_type}'
             if wait:
-                subprocess.run(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, check=True)
+                subprocess.run(
+                    command,
+                    shell=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.PIPE,
+                    check=True,
+                )
             else:
-                subprocess.Popen(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.Popen(
+                    command,
+                    shell=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
         except (subprocess.SubprocessError, FileNotFoundError):
-            logging.exception(f"Failed to toggle {toggle_type} for currently active workspace")
+            logging.exception(
+                f"Failed to toggle {toggle_type} for currently active workspace"
+            )
 
     def wait_until_subscribed_to_pipe(self, pipe_name: str):
         proc = subprocess.Popen(
-            [self._komorebic_path, "subscribe", pipe_name], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            [self._komorebic_path, "subscribe", pipe_name],
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
         _stdout, stderr = proc.communicate()
 
         return stderr, proc
 
     def get_containers(self, workspace: dict, get_monocle: bool = True) -> list:
-        containers = [add_index(container, i) for i, container in enumerate(workspace["containers"]["elements"])]
+        containers = [
+            add_index(container, i)
+            for i, container in enumerate(workspace["containers"]["elements"])
+        ]
         monocle_container = self.get_monocle_container(workspace)
         if get_monocle and monocle_container:
             containers.append(monocle_container)
@@ -214,20 +268,26 @@ class KomorebiClient:
         except (KeyError, TypeError):
             return None
 
-    def get_container_by_index(self, workspace: dict, container_index: int) -> Optional[dict]:
+    def get_container_by_index(
+        self, workspace: dict, container_index: int
+    ) -> Optional[dict]:
         try:
             return self.get_containers(workspace)[container_index]
         except IndexError:
             return None
 
-    def get_focused_container(self, workspace: dict, get_monocle: bool = True) -> Optional[dict]:
+    def get_focused_container(
+        self, workspace: dict, get_monocle: bool = True
+    ) -> Optional[dict]:
         if get_monocle:
             monocle_container = self.get_monocle_container(workspace)
             if monocle_container:
                 return monocle_container
         try:
             focused_container_index = workspace["containers"]["focused"]
-            focused_container = self.get_container_by_index(workspace, focused_container_index)
+            focused_container = self.get_container_by_index(
+                workspace, focused_container_index
+            )
             focused_container["index"] = focused_container_index
             return focused_container
         except (KeyError, TypeError):

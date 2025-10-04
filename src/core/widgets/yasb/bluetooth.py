@@ -24,7 +24,9 @@ def get_bluetooth_api():
     possible_paths = [
         "BluetoothAPIs.dll",
         os.path.join(os.environ["SystemRoot"], "System32", "BluetoothAPIs.dll"),
-        os.path.join(os.environ["SystemRoot"], "SysWOW64", "BluetoothAPIs.dll"),  # For 32-bit Python on 64-bit Windows
+        os.path.join(
+            os.environ["SystemRoot"], "SysWOW64", "BluetoothAPIs.dll"
+        ),  # For 32-bit Python on 64-bit Windows
     ]
 
     for path in possible_paths:
@@ -99,7 +101,9 @@ class BluetoothThread(QThread):
         self.status_signal.emit(status)
 
     def is_bluetooth_enabled(self):
-        find_radio_params = BLUETOOTH_FIND_RADIO_PARAMS(dwSize=ctypes.sizeof(BLUETOOTH_FIND_RADIO_PARAMS))
+        find_radio_params = BLUETOOTH_FIND_RADIO_PARAMS(
+            dwSize=ctypes.sizeof(BLUETOOTH_FIND_RADIO_PARAMS)
+        )
         radio_handle = wintypes.HANDLE()
         find_first_radio = self.bt_api.BluetoothFindFirstRadio
         find_first_radio.argtypes = [
@@ -107,7 +111,9 @@ class BluetoothThread(QThread):
             ctypes.POINTER(wintypes.HANDLE),
         ]
         find_first_radio.restype = wintypes.HANDLE  # Correct restype for a handle
-        radio_finder = find_first_radio(ctypes.byref(find_radio_params), ctypes.byref(radio_handle))
+        radio_finder = find_first_radio(
+            ctypes.byref(find_radio_params), ctypes.byref(radio_handle)
+        )
         if radio_finder and radio_finder != wintypes.HANDLE(0):
             # Define argtypes and restype for BluetoothFindRadioClose
             self.bt_api.BluetoothFindRadioClose.argtypes = [wintypes.HANDLE]
@@ -121,7 +127,9 @@ class BluetoothThread(QThread):
 
     def get_bluetooth_devices(self):
         devices = []
-        find_radio_params = BLUETOOTH_FIND_RADIO_PARAMS(dwSize=ctypes.sizeof(BLUETOOTH_FIND_RADIO_PARAMS))
+        find_radio_params = BLUETOOTH_FIND_RADIO_PARAMS(
+            dwSize=ctypes.sizeof(BLUETOOTH_FIND_RADIO_PARAMS)
+        )
         radio_handle = wintypes.HANDLE()
         find_first_radio = self.bt_api.BluetoothFindFirstRadio
         find_first_radio.argtypes = [
@@ -129,7 +137,9 @@ class BluetoothThread(QThread):
             ctypes.POINTER(wintypes.HANDLE),
         ]
         find_first_radio.restype = wintypes.HANDLE
-        radio_finder = find_first_radio(ctypes.byref(find_radio_params), ctypes.byref(radio_handle))
+        radio_finder = find_first_radio(
+            ctypes.byref(find_radio_params), ctypes.byref(radio_handle)
+        )
         if not radio_finder or radio_finder == wintypes.HANDLE(0):
             return devices
         try:
@@ -152,12 +162,19 @@ class BluetoothThread(QThread):
                     ctypes.POINTER(BLUETOOTH_DEVICE_INFO),
                 ]
                 find_first_device.restype = wintypes.HANDLE
-                device_finder = find_first_device(ctypes.byref(device_search_params), ctypes.byref(device_info))
+                device_finder = find_first_device(
+                    ctypes.byref(device_search_params), ctypes.byref(device_info)
+                )
                 if not device_finder or device_finder == wintypes.HANDLE(0):
                     break
                 try:
                     while True:
-                        address = ":".join(["%02X" % ((device_info.Address >> (8 * i)) & 0xFF) for i in range(6)][::-1])
+                        address = ":".join(
+                            [
+                                "%02X" % ((device_info.Address >> (8 * i)) & 0xFF)
+                                for i in range(6)
+                            ][::-1]
+                        )
                         devices.append(
                             {
                                 "name": device_info.szName,
@@ -193,19 +210,21 @@ class BluetoothThread(QThread):
         return devices
 
     def get_bluetooth_status(self):
-        if self.is_bluetooth_enabled():
-            devices = self.get_bluetooth_devices()
-            if devices:
-                # Only show devices that are both connected AND authenticated (paired)
-                connected_devices = [
-                    device["name"]
-                    for device in devices
-                    if device["connected"] and device["authenticated"]  # Add authenticated check
-                ]
-                if connected_devices:
-                    return f"Connected to: {', '.join(connected_devices)}"
-            return "Bluetooth is on, but no paired devices connected."
-        return "Bluetooth is disabled."
+        if not self.is_bluetooth_enabled():
+            return "Bluetooth is disabled."
+
+        devices = self.get_bluetooth_devices()
+        if devices:
+            # Only show devices that are both connected AND authenticated (paired)
+            connected_devices = [
+                device["name"]
+                for device in devices
+                if device["connected"]
+                and device["authenticated"]  # Add authenticated check
+            ]
+            if connected_devices:
+                return f"Connected to: {', '.join(connected_devices)}"
+        return "Bluetooth is on, but no paired devices connected."
 
 
 class BluetoothWidget(BaseWidget):
@@ -257,7 +276,10 @@ class BluetoothWidget(BaseWidget):
         self._widget_container_layout = QHBoxLayout()
         self._widget_container_layout.setSpacing(0)
         self._widget_container_layout.setContentsMargins(
-            self._padding["left"], self._padding["top"], self._padding["right"], self._padding["bottom"]
+            self._padding["left"],
+            self._padding["top"],
+            self._padding["right"],
+            self._padding["bottom"],
         )
         self._widget_container = QFrame()
         self._widget_container.setLayout(self._widget_container_layout)
@@ -265,7 +287,9 @@ class BluetoothWidget(BaseWidget):
         add_shadow(self._widget_container, self._container_shadow)
         self.widget_layout.addWidget(self._widget_container)
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(
+            self, self._label_content, self._label_alt_content, self._label_shadow
+        )
 
         self.register_callback("toggle_label", self._toggle_label)
 
@@ -299,7 +323,9 @@ class BluetoothWidget(BaseWidget):
 
     def _toggle_label(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+            AnimationManager.animate(
+                self, self._animation["type"], self._animation["duration"]
+            )
         self._show_alt_label = not self._show_alt_label
         for widget in self._widgets:
             widget.setVisible(not self._show_alt_label)
@@ -309,23 +335,29 @@ class BluetoothWidget(BaseWidget):
 
     def _update_label(self, icon, connected_devices=None):
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
-        label_parts = re.split("(<span.*?>.*?</span>)", active_label_content)
-        label_parts = [part for part in label_parts if part]
+        active_widgets_len = len(active_widgets)
+        active_label_content = (
+            self._label_alt_content if self._show_alt_label else self._label_content
+        )
         widget_index = 0
 
         if connected_devices:
             if self._device_aliases:
                 connected_devices = [
                     next(
-                        (alias["alias"] for alias in self._device_aliases if alias["name"].strip() == device.strip()),
+                        (
+                            alias["alias"]
+                            for alias in self._device_aliases
+                            if alias["name"].strip() == device.strip()
+                        ),
                         device,
                     )
                     for device in connected_devices
                 ]
             device_names = self._label_devices_separator.join(connected_devices)
             tooltip_text = (
-                "Connected devices\n" + "\n".join(f"• {name}" for name in connected_devices)
+                "Connected devices\n"
+                + "\n".join(f"• {name}" for name in connected_devices)
                 if connected_devices
                 else "No devices connected"
             )
@@ -333,27 +365,36 @@ class BluetoothWidget(BaseWidget):
             device_names = self._label_no_device
             tooltip_text = self._label_no_device
 
-        label_options = {
-            "{icon}": icon,
-            "{device_name}": device_names,
-            "{device_count}": len(connected_devices) if connected_devices else 0,
-        }
+        active_label_content = active_label_content.format(
+            icon=icon, device_name=device_names, device_count=len(connected_devices)
+        )
+        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
 
         for part in label_parts:
             part = part.strip()
-            if part:
-                formatted_text = part
-                for option, value in label_options.items():
-                    formatted_text = formatted_text.replace(option, str(value))
-                if "<span" in part and "</span>" in part:
-                    if widget_index < len(active_widgets) and isinstance(active_widgets[widget_index], QLabel):
-                        active_widgets[widget_index].setText(formatted_text)
-                else:
-                    if self._max_length and len(formatted_text) > self._max_length:
-                        formatted_text = formatted_text[: self._max_length] + self._max_length_ellipsis
-                    if widget_index < len(active_widgets) and isinstance(active_widgets[widget_index], QLabel):
-                        active_widgets[widget_index].setText(formatted_text)
-                widget_index += 1
+            if not part:
+                continue
+
+            if widget_index >= active_widgets_len or not isinstance(
+                active_widgets[widget_index], QLabel
+            ):
+                continue
+
+            if part.startswith("<span") and part.endswith("</span>"):
+                active_widgets[widget_index].setText(part)
+            elif self._max_length and len(part) > self._max_length:
+                part = part[: self._max_length] + self._max_length_ellipsis
+
+            # if part.startswith("<span") and part.endswith("</span>"):
+            #     if widget_index < active_widgets_len and isinstance(active_widgets[widget_index], QLabel):
+            #         active_widgets[widget_index].setText(part)
+            # else:
+            #     if self._max_length and len(part) > self._max_length:
+            #         part = part[: self._max_length] + self._max_length_ellipsis
+            #     if widget_index < active_widgets_len and isinstance(active_widgets[widget_index], QLabel):
+            #         active_widgets[widget_index].setText(part)
+
+            widget_index += 1
 
         if self._tooltip:
             set_tooltip(self._widget_container, tooltip_text)
@@ -371,7 +412,9 @@ class BluetoothWidget(BaseWidget):
             connected_devices = None
         elif "Connected to" in self.current_status:
             bluetooth_icon = self._icons["bluetooth_connected"]
-            connected_devices = self.current_status.replace("Connected to: ", "").split(", ")
+            connected_devices = self.current_status.replace("Connected to: ", "").split(
+                ", "
+            )
         else:
             bluetooth_icon = self._icons["bluetooth_on"]
             connected_devices = None

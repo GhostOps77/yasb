@@ -34,8 +34,16 @@ DEFAULTS = {
 VALIDATION_SCHEMA = {
     "label": {"type": "string", "default": DEFAULTS["label"]},
     "label_alt": {"type": "string", "default": DEFAULTS["label_alt"]},
-    "class_name": {"type": "string", "required": False, "default": DEFAULTS["class_name"]},
-    "interface": {"type": "string", "required": False, "default": DEFAULTS["interface"]},
+    "class_name": {
+        "type": "string",
+        "required": False,
+        "default": DEFAULTS["class_name"],
+    },
+    "interface": {
+        "type": "string",
+        "required": False,
+        "default": DEFAULTS["interface"],
+    },
     "update_interval": {
         "type": "integer",
         "default": DEFAULTS["update_interval"],
@@ -47,7 +55,12 @@ VALIDATION_SCHEMA = {
         "required": False,
         "default": DEFAULTS["hide_if_offline"],
     },
-    "max_label_length": {"type": "integer", "required": False, "default": DEFAULTS["max_label_length"], "min": 0},
+    "max_label_length": {
+        "type": "integer",
+        "required": False,
+        "default": DEFAULTS["max_label_length"],
+        "min": 0,
+    },
     "max_label_length_align": {
         "type": "string",
         "required": False,
@@ -69,8 +82,14 @@ VALIDATION_SCHEMA = {
         "type": "dict",
         "required": False,
         "schema": {
-            "min_upload": {"type": "integer", "default": DEFAULTS["speed_threshold"]["min_upload"]},
-            "min_download": {"type": "integer", "default": DEFAULTS["speed_threshold"]["min_download"]},
+            "min_upload": {
+                "type": "integer",
+                "default": DEFAULTS["speed_threshold"]["min_upload"],
+            },
+            "min_download": {
+                "type": "integer",
+                "default": DEFAULTS["speed_threshold"]["min_download"],
+            },
         },
         "default": DEFAULTS["speed_threshold"],
     },
@@ -79,15 +98,36 @@ VALIDATION_SCHEMA = {
         "required": False,
         "schema": {
             "blur": {"type": "boolean", "default": DEFAULTS["menu"]["blur"]},
-            "round_corners": {"type": "boolean", "default": DEFAULTS["menu"]["round_corners"]},
-            "round_corners_type": {"type": "string", "default": DEFAULTS["menu"]["round_corners_type"]},
-            "border_color": {"type": "string", "default": DEFAULTS["menu"]["border_color"]},
+            "round_corners": {
+                "type": "boolean",
+                "default": DEFAULTS["menu"]["round_corners"],
+            },
+            "round_corners_type": {
+                "type": "string",
+                "default": DEFAULTS["menu"]["round_corners_type"],
+            },
+            "border_color": {
+                "type": "string",
+                "default": DEFAULTS["menu"]["border_color"],
+            },
             "alignment": {"type": "string", "default": DEFAULTS["menu"]["alignment"]},
             "direction": {"type": "string", "default": DEFAULTS["menu"]["direction"]},
-            "offset_top": {"type": "integer", "default": DEFAULTS["menu"]["offset_top"]},
-            "offset_left": {"type": "integer", "default": DEFAULTS["menu"]["offset_left"]},
-            "show_interface_name": {"type": "boolean", "default": DEFAULTS["menu"]["show_interface_name"]},
-            "show_internet_info": {"type": "boolean", "default": DEFAULTS["menu"]["show_internet_info"]},
+            "offset_top": {
+                "type": "integer",
+                "default": DEFAULTS["menu"]["offset_top"],
+            },
+            "offset_left": {
+                "type": "integer",
+                "default": DEFAULTS["menu"]["offset_left"],
+            },
+            "show_interface_name": {
+                "type": "boolean",
+                "default": DEFAULTS["menu"]["show_interface_name"],
+            },
+            "show_internet_info": {
+                "type": "boolean",
+                "default": DEFAULTS["menu"]["show_internet_info"],
+            },
         },
         "default": DEFAULTS["menu"],
     },
@@ -97,7 +137,10 @@ VALIDATION_SCHEMA = {
         "schema": {
             "enabled": {"type": "boolean", "default": DEFAULTS["animation"]["enabled"]},
             "type": {"type": "string", "default": DEFAULTS["animation"]["type"]},
-            "duration": {"type": "integer", "default": DEFAULTS["animation"]["duration"]},
+            "duration": {
+                "type": "integer",
+                "default": DEFAULTS["animation"]["duration"],
+            },
         },
         "default": DEFAULTS["animation"],
     },
@@ -106,9 +149,18 @@ VALIDATION_SCHEMA = {
         "required": False,
         "schema": {
             "top": {"type": "integer", "default": DEFAULTS["container_padding"]["top"]},
-            "left": {"type": "integer", "default": DEFAULTS["container_padding"]["left"]},
-            "bottom": {"type": "integer", "default": DEFAULTS["container_padding"]["bottom"]},
-            "right": {"type": "integer", "default": DEFAULTS["container_padding"]["right"]},
+            "left": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["left"],
+            },
+            "bottom": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["bottom"],
+            },
+            "right": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["right"],
+            },
         },
         "default": DEFAULTS["container_padding"],
     },

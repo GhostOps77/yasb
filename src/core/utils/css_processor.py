@@ -59,12 +59,16 @@ class CSSProcessor:
 
     def _process_imports(self, css: str) -> str:
         # Handle @import url("..."); and @import "...";
-        import_pattern = re.compile(r'@import\s+(?:url\((["\']?)([^)]+?)\1\)|(["\'])(.+?)\3)\s*;', re.IGNORECASE)
+        import_pattern = re.compile(
+            r'@import\s+(?:url\((["\']?)([^)]+?)\1\)|(["\'])(.+?)\3)\s*;', re.IGNORECASE
+        )
 
         def import_replacer(match):
             path = match.group(2) or match.group(4)
             import_path = path.strip("'\"")
-            full_import_path = os.path.normpath(os.path.join(self.base_path, import_path))
+            full_import_path = os.path.normpath(
+                os.path.join(self.base_path, import_path)
+            )
             if full_import_path in self.imported_files:
                 logging.warning(f"Circular import detected: {full_import_path}")
                 return ""
@@ -93,7 +97,7 @@ class CSSProcessor:
         # Resolve variables recursively
         resolved_vars = root_vars.copy()
         max_iterations = 10  # Make sure we never get stuck in a loop.
-        for iteration in range(max_iterations):
+        for _ in range(max_iterations):
             changed = False
 
             for var_name, var_value in resolved_vars.items():
@@ -176,20 +180,33 @@ class CSSProcessor:
         font_families = set()
         font_status = {}
 
-        matches = re.findall(r"font-family\s*:\s*([^;}\n]+)\s*[;}]+", css, flags=re.IGNORECASE)
+        matches = re.findall(
+            r"font-family\s*:\s*([^;}\n]+)\s*[;}]+", css, flags=re.IGNORECASE
+        )
         for match in matches:
             fonts = [f.strip(" '\"\t\r\n") for f in match.split(",")]
             for font in fonts:
                 if font:
                     font_families.add(font)
-                    font_status[font] = font.lower() in generic_families or font.lower() in available_fonts
+                    font_status[font] = (
+                        font.lower() in generic_families
+                        or font.lower() in available_fonts
+                    )
 
-        missing_fonts = [font for font, installed in font_status.items() if not installed]
+        missing_fonts = [
+            font for font, installed in font_status.items() if not installed
+        ]
         if missing_fonts:
             details = [
-                f'<a href="https://www.nerdfonts.com/font-downloads">{font}</a>'
-                if ("nerd font" in font.lower() or font.lower().endswith(" nf") or font.lower().endswith(" nfp"))
-                else font
+                (
+                    f'<a href="https://www.nerdfonts.com/font-downloads">{font}</a>'
+                    if (
+                        "nerd font" in font.lower()
+                        or font.lower().endswith(" nf")
+                        or font.lower().endswith(" nfp")
+                    )
+                    else font
+                )
                 for font in missing_fonts
             ]
             if self._show_font_warning(details):
@@ -224,7 +241,8 @@ class CSSProcessor:
             "some icons or symbols may not be visible or may not display correctly."
         )
         msg_box.setInformativeText(
-            "Please install the missing fonts.<br>" + "<br>".join(f"<strong>{font}</strong>" for font in details)
+            "Please install the missing fonts.<br>"
+            + "<br>".join(f"<strong>{font}</strong>" for font in details)
         )
         msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
         msg_box.setTextFormat(Qt.TextFormat.RichText)

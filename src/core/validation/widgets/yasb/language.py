@@ -17,21 +17,37 @@ DEFAULTS = {
         "layout_icon": "\uf11c",
         "show_layout_icon": True,
     },
-    "callbacks": {"on_left": "toggle_label", "on_middle": "do_nothing", "on_right": "do_nothing"},
+    "callbacks": {
+        "on_left": "toggle_label",
+        "on_middle": "do_nothing",
+        "on_right": "do_nothing",
+    },
 }
 
 VALIDATION_SCHEMA = {
     "label": {"type": "string", "default": DEFAULTS["label"]},
     "label_alt": {"type": "string", "default": DEFAULTS["label_alt"]},
-    "update_interval": {"type": "integer", "default": DEFAULTS["update_interval"], "min": 1, "max": 3600},
-    "class_name": {"type": "string", "required": False, "default": DEFAULTS["class_name"]},
+    "update_interval": {
+        "type": "integer",
+        "default": DEFAULTS["update_interval"],
+        "min": 1,
+        "max": 3600,
+    },
+    "class_name": {
+        "type": "string",
+        "required": False,
+        "default": DEFAULTS["class_name"],
+    },
     "animation": {
         "type": "dict",
         "required": False,
         "schema": {
             "enabled": {"type": "boolean", "default": DEFAULTS["animation"]["enabled"]},
             "type": {"type": "string", "default": DEFAULTS["animation"]["type"]},
-            "duration": {"type": "integer", "default": DEFAULTS["animation"]["duration"]},
+            "duration": {
+                "type": "integer",
+                "default": DEFAULTS["animation"]["duration"],
+            },
         },
         "default": DEFAULTS["animation"],
     },
@@ -40,9 +56,18 @@ VALIDATION_SCHEMA = {
         "required": False,
         "schema": {
             "top": {"type": "integer", "default": DEFAULTS["container_padding"]["top"]},
-            "left": {"type": "integer", "default": DEFAULTS["container_padding"]["left"]},
-            "bottom": {"type": "integer", "default": DEFAULTS["container_padding"]["bottom"]},
-            "right": {"type": "integer", "default": DEFAULTS["container_padding"]["right"]},
+            "left": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["left"],
+            },
+            "bottom": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["bottom"],
+            },
+            "right": {
+                "type": "integer",
+                "default": DEFAULTS["container_padding"]["right"],
+            },
         },
         "default": DEFAULTS["container_padding"],
     },
@@ -73,15 +98,42 @@ VALIDATION_SCHEMA = {
         "required": False,
         "schema": {
             "blur": {"type": "boolean", "default": DEFAULTS["language_menu"]["blur"]},
-            "round_corners": {"type": "boolean", "default": DEFAULTS["language_menu"]["round_corners"]},
-            "round_corners_type": {"type": "string", "default": DEFAULTS["language_menu"]["round_corners_type"]},
-            "border_color": {"type": "string", "default": DEFAULTS["language_menu"]["border_color"]},
-            "alignment": {"type": "string", "default": DEFAULTS["language_menu"]["alignment"]},
-            "direction": {"type": "string", "default": DEFAULTS["language_menu"]["direction"]},
-            "offset_top": {"type": "integer", "default": DEFAULTS["language_menu"]["offset_top"]},
-            "offset_left": {"type": "integer", "default": DEFAULTS["language_menu"]["offset_left"]},
-            "layout_icon": {"type": "string", "default": DEFAULTS["language_menu"]["layout_icon"]},
-            "show_layout_icon": {"type": "boolean", "default": DEFAULTS["language_menu"]["show_layout_icon"]},
+            "round_corners": {
+                "type": "boolean",
+                "default": DEFAULTS["language_menu"]["round_corners"],
+            },
+            "round_corners_type": {
+                "type": "string",
+                "default": DEFAULTS["language_menu"]["round_corners_type"],
+            },
+            "border_color": {
+                "type": "string",
+                "default": DEFAULTS["language_menu"]["border_color"],
+            },
+            "alignment": {
+                "type": "string",
+                "default": DEFAULTS["language_menu"]["alignment"],
+            },
+            "direction": {
+                "type": "string",
+                "default": DEFAULTS["language_menu"]["direction"],
+            },
+            "offset_top": {
+                "type": "integer",
+                "default": DEFAULTS["language_menu"]["offset_top"],
+            },
+            "offset_left": {
+                "type": "integer",
+                "default": DEFAULTS["language_menu"]["offset_left"],
+            },
+            "layout_icon": {
+                "type": "string",
+                "default": DEFAULTS["language_menu"]["layout_icon"],
+            },
+            "show_layout_icon": {
+                "type": "boolean",
+                "default": DEFAULTS["language_menu"]["show_layout_icon"],
+            },
         },
         "default": DEFAULTS["language_menu"],
     },

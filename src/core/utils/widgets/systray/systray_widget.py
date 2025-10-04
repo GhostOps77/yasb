@@ -88,7 +88,9 @@ class IconWidget(QPushButton):
     def update_scaled_pixmap(self):
         """Pre-compute the scaled pixmap."""
         if self.data is not None and self.data.icon_image is not None:
-            self.scaled_pixmap = self.data.icon_image.scaled(16, 16, Qt.AspectRatioMode.KeepAspectRatio)
+            self.scaled_pixmap = self.data.icon_image.scaled(
+                16, 16, Qt.AspectRatioMode.KeepAspectRatio
+            )
         else:
             self.scaled_pixmap = None
 
@@ -112,7 +114,10 @@ class IconWidget(QPushButton):
             return super().mouseMoveEvent(a0)
 
         # Only start drag if left mouse button is pressed and moved more than 10 pixels
-        if self.lmb_pressed and (a0.pos() - self.last_cursor_pos).manhattanLength() > 10:
+        if (
+            self.lmb_pressed
+            and (a0.pos() - self.last_cursor_pos).manhattanLength() > 10
+        ):
             drag = QDrag(self)
             if self.scaled_pixmap is not None:
                 drag.setPixmap(self.scaled_pixmap)
@@ -132,7 +137,10 @@ class IconWidget(QPushButton):
             return super().mouseReleaseEvent(e)
         self.lmb_pressed = False
         btn = e.button()
-        if btn == Qt.MouseButton.LeftButton and (self.last_cursor_pos - e.pos()).manhattanLength() > 8:
+        if (
+            btn == Qt.MouseButton.LeftButton
+            and (self.last_cursor_pos - e.pos()).manhattanLength() > 8
+        ):
             return super().mouseReleaseEvent(e)
         if btn == Qt.MouseButton.LeftButton:
             self.send_action(WM_LBUTTONDOWN)
@@ -303,7 +311,10 @@ class DropWidget(QFrame):
         # If the button is already in this layout
         if source.parent() == self:
             # If it would be placed at the same index or right after itself, do nothing
-            if insert_index == button_current_index or insert_index == button_current_index + 1:
+            if (
+                insert_index == button_current_index
+                or insert_index == button_current_index + 1
+            ):
                 self.hide_drop_indicator()
                 a0.acceptProposedAction()
                 self.drag_ended.emit()

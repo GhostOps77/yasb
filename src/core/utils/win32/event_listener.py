@@ -19,7 +19,16 @@ class SystemEventListener(QThread):
     def __str__(self):
         return "Win32 System Event Listener"
 
-    def _event_handler(self, _win_event_hook, event, hwnd, _id_object, _id_child, _event_thread, _event_time) -> None:
+    def _event_handler(
+        self,
+        _win_event_hook,
+        event,
+        hwnd,
+        _id_object,
+        _id_child,
+        _event_thread,
+        _event_time,
+    ) -> None:
         if event in WinEvent:
             event_type = WinEvent._value2member_map_[event]
             try:
@@ -43,7 +52,9 @@ class SystemEventListener(QThread):
         foreground_window_hwnd = GetForegroundWindow()
 
         if foreground_window_hwnd:
-            self._event_service.emit_event(foreground_event, foreground_window_hwnd, foreground_event)
+            self._event_service.emit_event(
+                foreground_event, foreground_window_hwnd, foreground_event
+            )
 
     def run(self):
         self._hook = self._build_event_hook()

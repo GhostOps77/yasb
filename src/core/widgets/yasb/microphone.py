@@ -18,7 +18,12 @@ from PyQt6.QtGui import QWheelEvent
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QSlider, QVBoxLayout
 
 from core.utils.tooltip import set_tooltip
-from core.utils.utilities import PopupWidget, add_shadow, build_progress_widget, build_widget_label
+from core.utils.utilities import (
+    PopupWidget,
+    add_shadow,
+    build_progress_widget,
+    build_widget_label,
+)
 from core.utils.widgets.animation_manager import AnimationManager
 from core.validation.widgets.yasb.microphone import VALIDATION_SCHEMA
 from core.widgets.base import BaseWidget
@@ -93,7 +98,10 @@ class MicrophoneWidget(BaseWidget):
         self._widget_container_layout = QHBoxLayout()
         self._widget_container_layout.setSpacing(0)
         self._widget_container_layout.setContentsMargins(
-            self._padding["left"], self._padding["top"], self._padding["right"], self._padding["bottom"]
+            self._padding["left"],
+            self._padding["top"],
+            self._padding["right"],
+            self._padding["bottom"],
         )
         self._widget_container = QFrame()
         self._widget_container.setLayout(self._widget_container_layout)
@@ -101,7 +109,9 @@ class MicrophoneWidget(BaseWidget):
         add_shadow(self._widget_container, self._container_shadow)
         self.widget_layout.addWidget(self._widget_container)
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(
+            self, self._label_content, self._label_alt_content, self._label_shadow
+        )
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("toggle_mute", self.toggle_mute)
@@ -123,7 +133,9 @@ class MicrophoneWidget(BaseWidget):
 
     def _toggle_label(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+            AnimationManager.animate(
+                self, self._animation["type"], self._animation["duration"]
+            )
         self._show_alt_label = not self._show_alt_label
         for widget in self._widgets:
             widget.setVisible(not self._show_alt_label)
@@ -135,47 +147,65 @@ class MicrophoneWidget(BaseWidget):
         if self.audio_endpoint:
             if self.isHidden() and not self._initializing:
                 self.show()
+
+            try:
+                self._initialize_microphone_interface()
+                mute_status = self.audio_endpoint.GetMute()
+                mic_level = round(
+                    self.audio_endpoint.GetMasterVolumeLevelScalar() * 100
+                )
+                min_icon = self._get_mic_icon()
+                min_level = self._mute_text if mute_status == 1 else f"{mic_level}%"
+            except Exception:
+                min_icon = min_level = "N/A"
+
         else:
+            mute_status = mic_level = None
+            min_icon = min_level = "N/A"
             self.hide()
+
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
-        label_parts = re.split("(<span.*?>.*?</span>)", active_label_content)
-        label_parts = [part for part in label_parts if part]
+        active_widgets_len = len(active_widgets)
+        active_label_content = (
+            self._label_alt_content if self._show_alt_label else self._label_content
+        )
+        active_label_content = active_label_content.format(
+            icon=min_icon, level=min_level
+        )
+
+        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
         widget_index = 0
-        try:
-            self._initialize_microphone_interface()
-            mute_status = self.audio_endpoint.GetMute() if self.audio_endpoint else None
-            mic_level = round(self.audio_endpoint.GetMasterVolumeLevelScalar() * 100) if self.audio_endpoint else None
-            min_icon = self._get_mic_icon()
-            min_level = self._mute_text if mute_status == 1 else f"{mic_level}%" if self.audio_endpoint else "N/A"
-        except Exception:
-            min_icon, min_level = "N/A", "N/A"
-        label_options = {"{icon}": min_icon, "{level}": min_level}
 
         if self._progress_bar["enabled"] and self.progress_widget:
             if self._widget_container_layout.indexOf(self.progress_widget) == -1:
                 self._widget_container_layout.insertWidget(
-                    0 if self._progress_bar["position"] == "left" else self._widget_container_layout.count(),
+                    (
+                        0
+                        if self._progress_bar["position"] == "left"
+                        else self._widget_container_layout.count()
+                    ),
                     self.progress_widget,
                 )
-            numeric_value = int(re.search(r"\d+", min_level).group()) if re.search(r"\d+", min_level) else 0
+            numeric_value = (
+                int(re.search(r"\d+", min_level).group())
+                if re.search(r"\d+", min_level)
+                else 0
+            )
             self.progress_widget.set_value(numeric_value)
 
         for part in label_parts:
             part = part.strip()
-            if part:
-                formatted_text = part
-                for option, value in label_options.items():
-                    formatted_text = formatted_text.replace(option, str(value))
-                if "<span" in part and "</span>" in part:
-                    if widget_index < len(active_widgets) and isinstance(active_widgets[widget_index], QLabel):
-                        active_widgets[widget_index].setText(formatted_text)
-                        self._set_muted_class(active_widgets[widget_index], mute_status == 1)
-                else:
-                    if widget_index < len(active_widgets) and isinstance(active_widgets[widget_index], QLabel):
-                        active_widgets[widget_index].setText(formatted_text)
-                        self._set_muted_class(active_widgets[widget_index], mute_status == 1)
-                widget_index += 1
+            if not part:
+                continue
+
+            if widget_index >= active_widgets_len or not isinstance(
+                active_widgets[widget_index], QLabel
+            ):
+                continue
+
+            active_widgets[widget_index].setText(part)
+            self._set_muted_class(active_widgets[widget_index], mute_status == 1)
+            widget_index += 1
 
     def _initialize_microphone_interface(self):
         CoInitialize()
@@ -221,7 +251,9 @@ class MicrophoneWidget(BaseWidget):
 
     def toggle_mute(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+            AnimationManager.animate(
+                self, self._animation["type"], self._animation["duration"]
+            )
         if self.audio_endpoint:
             current_mute_status = self.audio_endpoint.GetMute()
             self.audio_endpoint.SetMute(not current_mute_status, None)
@@ -269,12 +301,16 @@ class MicrophoneWidget(BaseWidget):
         self.volume_slider.setProperty("class", "microphone-slider")
         self.volume_slider.setMinimum(0)
         self.volume_slider.setMaximum(100)
+
         try:
             if self.audio_endpoint:
-                current_volume = round(self.audio_endpoint.GetMasterVolumeLevelScalar() * 100)
+                current_volume = round(
+                    self.audio_endpoint.GetMasterVolumeLevelScalar() * 100
+                )
                 self.volume_slider.setValue(current_volume)
         except Exception:
             self.volume_slider.setValue(0)
+
         self.volume_slider.valueChanged.connect(self._on_slider_value_changed)
         layout.addWidget(self.volume_slider)
 

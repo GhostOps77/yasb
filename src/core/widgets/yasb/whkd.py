@@ -57,7 +57,8 @@ class KeybindsDialog(QDialog):
         # Scroll area for keybind rows
         self.scroll_area = QScrollArea()
         self.scroll_area.setObjectName("whkd_scroll_area")
-        self.scroll_area.setStyleSheet("""
+        self.scroll_area.setStyleSheet(
+            """
             QScrollArea#whkd_scroll_area {
                 border: 0;
                 background-color: transparent;
@@ -95,14 +96,17 @@ class KeybindsDialog(QDialog):
             QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
                 background: none;
             }
-        """)
+        """
+        )
         self.scroll_area.setWidgetResizable(True)
 
         self.main_layout.addWidget(self.scroll_area)
 
         self.container = QWidget()
         self.container.setObjectName("whkd_container_area")
-        self.container.setStyleSheet("QWidget#whkd_container_area{background-color: transparent;border:none;}")
+        self.container.setStyleSheet(
+            "QWidget#whkd_container_area{background-color: transparent;border:none;}"
+        )
         self.container_layout = QVBoxLayout(self.container)
         self.container_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.scroll_area.setWidget(self.container)
@@ -133,7 +137,9 @@ class KeybindsDialog(QDialog):
                 min_width = max(min_width, row_width + 50)
 
                 # If this is a keybind row with buttons and command, check their widths too
-                if isinstance(item.widget(), QWidget) and hasattr(item.widget(), "layout"):
+                if isinstance(item.widget(), QWidget) and hasattr(
+                    item.widget(), "layout"
+                ):
                     row_layout = item.widget().layout()
                     if row_layout:
                         width_sum = 0
@@ -202,7 +208,9 @@ class KeybindsDialog(QDialog):
                         btn.setProperty("class", "keybind-button")
                     btn.setFixedHeight(28)
                     btn.setMinimumWidth(28)
-                    btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+                    btn.setSizePolicy(
+                        QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
+                    )
                     buttons_layout.addWidget(btn)
                     btn.style().unpolish(btn)
                     btn.style().polish(btn)
@@ -222,13 +230,16 @@ class KeybindsDialog(QDialog):
                                 keys
                                 and next_keys
                                 and (
-                                    keys[-1].lower() in no_plus_modifiers and next_keys[0].lower() in no_plus_modifiers
+                                    keys[-1].lower() in no_plus_modifiers
+                                    and next_keys[0].lower() in no_plus_modifiers
                                 )
                             ):
                                 plus_btn = QPushButton("+")
                                 plus_btn.setEnabled(False)
                                 plus_btn.setProperty("class", "plus-separator")
-                                plus_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+                                plus_btn.setSizePolicy(
+                                    QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
+                                )
                                 buttons_layout.addWidget(plus_btn)
                 else:
                     keys = [k.strip() for k in keybind.split("+")]
@@ -277,7 +288,10 @@ class WhkdWidget(BaseWidget):
         self._widget_container_layout = QHBoxLayout()
         self._widget_container_layout.setSpacing(0)
         self._widget_container_layout.setContentsMargins(
-            self._padding["left"], self._padding["top"], self._padding["right"], self._padding["bottom"]
+            self._padding["left"],
+            self._padding["top"],
+            self._padding["right"],
+            self._padding["bottom"],
         )
         # Initialize container
         self._widget_container = QFrame()
@@ -296,7 +310,9 @@ class WhkdWidget(BaseWidget):
 
     def _open_popup(self):
         if self._animation.get("enabled"):
-            AnimationManager.animate(self, self._animation.get("type"), self._animation.get("duration"))
+            AnimationManager.animate(
+                self, self._animation.get("type"), self._animation.get("duration")
+            )
 
         # Determine config file location
         whkd_config_home = os.getenv("WHKD_CONFIG_HOME")
@@ -324,7 +340,9 @@ class WhkdWidget(BaseWidget):
             return
 
         content = self._process_file(raw_lines)
-        dialog = KeybindsDialog(content, file_path, self._animation, self._special_keys, self)
+        dialog = KeybindsDialog(
+            content, file_path, self._animation, self._special_keys, self
+        )
         dialog.exec()
 
     def _process_file(self, lines):

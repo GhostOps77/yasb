@@ -7,7 +7,9 @@ APP_NAME_FULL = "Yet Another Status Bar"
 APP_BAR_TITLE = "YasbBar"
 APP_ID = "YASB.YetAnotherStatusBar"
 SCRIPT_PATH = (
-    os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else os.path.dirname(os.path.abspath(__file__))
+    os.path.dirname(sys.executable)
+    if getattr(sys, "frozen", False)
+    else os.path.dirname(os.path.abspath(__file__))
 )
 GITHUB_URL = "https://github.com/amnweb/yasb"
 GITHUB_THEME_URL = "https://github.com/amnweb/yasb-themes"

@@ -65,7 +65,10 @@ class NotesWidget(BaseWidget):
         self._widget_container_layout = QHBoxLayout()
         self._widget_container_layout.setSpacing(0)
         self._widget_container_layout.setContentsMargins(
-            self._padding["left"], self._padding["top"], self._padding["right"], self._padding["bottom"]
+            self._padding["left"],
+            self._padding["top"],
+            self._padding["right"],
+            self._padding["bottom"],
         )
 
         # Initialize container widget
@@ -75,7 +78,9 @@ class NotesWidget(BaseWidget):
         add_shadow(self._widget_container, self._container_shadow)
         self.widget_layout.addWidget(self._widget_container)
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(
+            self, self._label_content, self._label_alt_content, self._label_shadow
+        )
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("toggle_menu", self._toggle_menu)
@@ -104,7 +109,9 @@ class NotesWidget(BaseWidget):
 
     def _toggle_label(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+            AnimationManager.animate(
+                self, self._animation["type"], self._animation["duration"]
+            )
 
         self._show_alt_label = not self._show_alt_label
 
@@ -118,30 +125,39 @@ class NotesWidget(BaseWidget):
 
     def _toggle_menu(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+            AnimationManager.animate(
+                self, self._animation["type"], self._animation["duration"]
+            )
         self._show_menu()
 
     def _update_label(self):
-        active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
-
-        label_parts = re.split("(<span.*?>.*?</span>)", active_label_content)
-        label_parts = [part for part in label_parts if part]
-
         notes_count = len(self._notes)
 
-        for widget_index, part in enumerate(label_parts):
-            if widget_index >= len(active_widgets) or not isinstance(active_widgets[widget_index], QLabel):
+        active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+        active_widgets_len = len(active_widgets)
+        active_label_content = (
+            self._label_alt_content if self._show_alt_label else self._label_content
+        )
+        active_label_content = active_label_content.format(count=notes_count)
+
+        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
+        widget_index = 0
+
+        for part in label_parts:
+            if widget_index >= active_widgets_len:
+                break
+
+            part = part.strip()
+            if not part:
                 continue
 
-            current_widget = active_widgets[widget_index]
+            if not isinstance(active_widgets[widget_index], QLabel):
+                continue
 
-            if "<span" in part and "</span>" in part:
-                icon = re.sub(r"<span.*?>|</span>", "", part).strip()
-                current_widget.setText(icon)
-            else:
-                formatted_text = part.format(count=notes_count)
-                current_widget.setText(formatted_text)
+            if part.startswith("<span") and part.endswith("</span>"):
+                part = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
+
+            active_widgets[widget_index].setText(part)
             widget_index += 1
 
     def _show_menu(self):
@@ -204,13 +220,15 @@ class NotesWidget(BaseWidget):
 
         # Style the scrollbar
         scroll_area.setViewportMargins(0, 0, -4, 0)
-        scroll_area.setStyleSheet("""
+        scroll_area.setStyleSheet(
+            """
             QScrollBar:vertical { border: none; background:transparent; width: 4px; }
             QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: transparent; }
             QScrollBar::handle:vertical { background: rgba(255, 255, 255, 0.2); min-height: 10px; border-radius: 2px; }
             QScrollBar::handle:vertical:hover { background: rgba(255, 255, 255, 0.35); }
             QScrollBar::sub-line:vertical, QScrollBar::add-line:vertical { height: 0px; }
-        """)
+        """
+        )
 
         # Create scroll widget and layout
         scroll_widget = QWidget()
@@ -253,14 +271,19 @@ class NotesWidget(BaseWidget):
         if not note_text:
             return
 
-        note_data = {"title": note_text, "timestamp": datetime.datetime.now().isoformat()}
+        note_data = {
+            "title": note_text,
+            "timestamp": datetime.datetime.now().isoformat(),
+        }
 
         if self._editing_note:
             # Update existing note
-            for i, existing_note in enumerate(self._notes):
-                if existing_note == self._editing_note:
-                    self._notes[i] = note_data
-                    break
+            try:
+                existing_note_idx = self._notes.index(self._editing_note)
+                self._notes[existing_note_idx] = note_data
+            except ValueError:
+                pass
+
             self._editing_note = None  # Reset edit mode
             self.add_button.setText("Add Note")
             self.cancel_button.hide()
@@ -301,7 +324,10 @@ class NotesWidget(BaseWidget):
         # Title
         display_title = re.sub(r"[\n\t\r]+", "", note["title"])
         if len(display_title) > self._menu_config["max_title_size"]:
-            display_title = display_title[: (self._menu_config["max_title_size"] - 3)] + "..."
+            display_title = (
+                display_title[: self._menu_config["max_title_size"] - 3] + "..."
+            )
+
         title_label = QLabel(display_title)
         title_label.setProperty("class", "title")
         title_label.setWordWrap(True)
@@ -322,14 +348,18 @@ class NotesWidget(BaseWidget):
         container_layout.addWidget(text_container)
 
         # Spacer to push buttons to the right
-        container_layout.addItem(QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
+        container_layout.addItem(
+            QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        )
 
         # Create vertical layout for the buttons
         buttons_container = QWidget()
         buttons_layout = QVBoxLayout(buttons_container)
         buttons_layout.setContentsMargins(0, 0, 0, 0)
         buttons_layout.setSpacing(5)  # Space between buttons
-        buttons_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)  # Center the buttons vertically
+        buttons_layout.setAlignment(
+            Qt.AlignmentFlag.AlignCenter
+        )  # Center the buttons vertically
 
         # Copy button on top
         copy_button = QPushButton(self._icons["copy"])
@@ -347,7 +377,9 @@ class NotesWidget(BaseWidget):
         container_layout.addWidget(buttons_container)
 
         # Edit on click
-        container.mousePressEvent = lambda e: self._edit_note(note) if e.button() == Qt.MouseButton.LeftButton else None
+        container.mousePressEvent = lambda e: (
+            self._edit_note(note) if e.button() == Qt.MouseButton.LeftButton else None
+        )
 
         # Add container to vertical layout
         layout.addWidget(container)
@@ -367,14 +399,16 @@ class NotesWidget(BaseWidget):
 
     def _delete_note(self, note):
         """Delete a note"""
-        if note in self._notes:
-            self._notes.remove(note)
-            self._save_notes()
-            NotesWidget.update_all()  # Update all widget instances
+        if note not in self._notes:
+            return
 
-            if hasattr(self, "_menu"):
-                self._menu.hide()
-                self._show_menu()
+        self._notes.remove(note)
+        self._save_notes()
+        NotesWidget.update_all()  # Update all widget instances
+
+        if hasattr(self, "_menu"):
+            self._menu.hide()
+            self._show_menu()
 
     def _cancel_editing(self):
         """Cancel editing mode"""
@@ -396,8 +430,10 @@ class NotesWidget(BaseWidget):
             if os.path.exists(self._notes_file):
                 if DEBUG:
                     logging.debug(f"Loading notes from {self._notes_file}")
+
                 with open(self._notes_file, "r", encoding="utf-8") as f:
                     return list(json.load(f))
+
         except Exception as e:
             logging.error(f"Error loading notes: {e}")
 
@@ -408,8 +444,10 @@ class NotesWidget(BaseWidget):
         try:
             if DEBUG:
                 logging.debug(f"Saving notes to {self._notes_file}")
+
             with open(self._notes_file, "w", encoding="utf-8") as f:
                 json.dump(self._notes, f, indent=2, ensure_ascii=False)
+
         except Exception as e:
             logging.error(f"Error saving notes: {e}")
 
@@ -428,6 +466,7 @@ class NoteTextEdit(QTextEdit):
             parent = self.parent()
             while parent and not hasattr(parent, "_add_note_from_input"):
                 parent = parent.parent()
+
             if parent:
                 parent._add_note_from_input()
             event.accept()
