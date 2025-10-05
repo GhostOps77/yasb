@@ -17,7 +17,7 @@ BUILD_VERSION = "1.8.3"
 CLI_VERSION = "1.1.2"
 RELEASE_CHANNEL = "stable"
 # Development Settings
-DEBUG = False
+DEBUG = True
 # Configuration Settings
 DEFAULT_CONFIG_DIRECTORY = os.getenv("YASB_CONFIG_HOME", ".config\\yasb")
 DEFAULT_STYLES_FILENAME = "styles.css"

@@ -159,3 +159,6 @@ winrt-windows-ui-notifications-management==3.2.1
     # via yasb (pyproject.toml)
 wmi==1.5.1
     # via screen-brightness-control
+pre-commit
+ruff
+cx_Freeze==7.2.10

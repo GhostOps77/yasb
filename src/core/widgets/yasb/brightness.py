@@ -178,7 +178,6 @@ class BrightnessWidget(BaseWidget):
         active_label_content = (
             self._label_alt_content if self._show_alt_label else self._label_content
         )
-        widget_index = 0
         try:
             percent = self.get_brightness()
             if percent is None:
@@ -210,15 +209,17 @@ class BrightnessWidget(BaseWidget):
             self.progress_widget.set_value(percent)
 
         active_widgets_len = len(active_widgets)
+        widget_index = 0
 
         for part in label_parts:
+            if widget_index >= active_widgets_len:
+                break
+
             part = part.strip()
             if not part:
                 continue
 
-            if widget_index >= active_widgets_len or not isinstance(
-                active_widgets[widget_index], QLabel
-            ):
+            if not isinstance(active_widgets[widget_index], QLabel):
                 continue
 
             active_widgets[widget_index].setText(part)

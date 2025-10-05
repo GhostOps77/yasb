@@ -87,6 +87,7 @@ class CustomWidget(BaseWidget):
         self._padding = container_padding
         self._label_shadow = label_shadow
         self._container_shadow = container_shadow
+
         # Construct container
         self._widget_container_layout = QHBoxLayout()
         self._widget_container_layout.setSpacing(0)
@@ -142,6 +143,7 @@ class CustomWidget(BaseWidget):
         def process_content(content, is_alt=False):
             label_parts = re.split(r"(<span[^>]*?>.*?</span>)", content)
             widgets = []
+
             for part in label_parts:
                 part = part.strip()
                 if not part:
@@ -153,6 +155,7 @@ class CustomWidget(BaseWidget):
                     icon = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
                     label = QLabel(icon)
                     label.setProperty("class", class_result)
+
                 else:
                     label = QLabel(part)
                     label.setProperty("class", "label alt" if is_alt else "label")

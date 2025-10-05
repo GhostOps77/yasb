@@ -126,6 +126,7 @@ def build_widget_label(
             part = part.strip()
             if not part:
                 continue
+
             if part.startswith("<span") and part.endswith("</span>"):
                 class_name = re.search(r'class=(["\'])([^"\']+?)\1', part)
                 class_result = class_name.group(2) if class_name else "icon"
@@ -135,6 +136,7 @@ def build_widget_label(
             else:
                 label = QLabel(part)
                 label.setProperty("class", "label alt" if is_alt else "label")
+
             label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             label.setCursor(Qt.CursorShape.PointingHandCursor)
             if content_shadow:

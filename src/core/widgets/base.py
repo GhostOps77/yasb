@@ -1,5 +1,5 @@
 import logging
-import re
+import shlex
 import subprocess
 from typing import Callable, Union
 
@@ -72,11 +72,7 @@ class BaseWidget(QWidget):
 
     def _run_callback(self, callback_str: Union[str, list]):
         if " " in callback_str:
-            callback_args = list(
-                map(lambda x: x.strip('"'), re.findall(r'".+?"|[^ ]+', callback_str))
-            )
-            callback_type = callback_args[0]
-            callback_args = callback_args[1:]
+            callback_type, *callback_args = shlex.split(callback_str)
         else:
             callback_type = callback_str
             callback_args = []
