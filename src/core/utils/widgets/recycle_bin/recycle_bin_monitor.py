@@ -58,9 +58,7 @@ class RecycleBinMonitor(QObject):
             return  # Prevent multiple starts
 
         self._active = True
-        self._monitoring_thread = threading.Thread(
-            target=self._monitor_recycle_bin, daemon=True
-        )
+        self._monitoring_thread = threading.Thread(target=self._monitor_recycle_bin, daemon=True)
         self._monitoring_thread.start()
 
         # Get initial info
@@ -167,9 +165,7 @@ class RecycleBinMonitor(QObject):
         """Open the recycle bin in Explorer"""
         try:
             shell32 = ctypes.windll.shell32
-            result = shell32.ShellExecuteW(
-                None, "open", "shell:RecycleBinFolder", None, None, 1
-            )
+            result = shell32.ShellExecuteW(None, "open", "shell:RecycleBinFolder", None, None, 1)
 
             if result <= 32:  # Error codes are <= 32
                 logging.error(f"Failed to open recycle bin: {result}")
@@ -246,9 +242,7 @@ class RecycleBinMonitor(QObject):
             )
 
             if dir_handle == -1:
-                logging.error(
-                    f"Failed to open directory handle for {recycle_bin_path}: {ctypes.WinError()}"
-                )
+                logging.error(f"Failed to open directory handle for {recycle_bin_path}: {ctypes.WinError()}")
                 return
 
             try:
@@ -256,21 +250,15 @@ class RecycleBinMonitor(QObject):
                 change_handle = kernel32.FindFirstChangeNotificationW(
                     recycle_bin_path,
                     True,  # Watch subdirectories
-                    FILE_NOTIFY_CHANGE_FILE_NAME
-                    | FILE_NOTIFY_CHANGE_DIR_NAME
-                    | FILE_NOTIFY_CHANGE_SIZE,
+                    FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_SIZE,
                 )
 
                 if change_handle == -1:
-                    logging.error(
-                        f"Failed to set up change notification for {recycle_bin_path}: {ctypes.WinError()}"
-                    )
+                    logging.error(f"Failed to set up change notification for {recycle_bin_path}: {ctypes.WinError()}")
                     return
 
                 try:
-                    wait_handles = (wintypes.HANDLE * 2)(
-                        change_handle, self._stop_event
-                    )
+                    wait_handles = (wintypes.HANDLE * 2)(change_handle, self._stop_event)
                     if DEBUG:
                         logging.debug(f"Monitoring {recycle_bin_path} for changes...")
                     while self._active:
@@ -283,9 +271,7 @@ class RecycleBinMonitor(QObject):
                             INFINITE,  # Wait indefinitely, no timeout
                         )
 
-                        if (
-                            not self._active or result == WAIT_OBJECT_0 + 1
-                        ):  # Stop event was signaled
+                        if not self._active or result == WAIT_OBJECT_0 + 1:  # Stop event was signaled
                             break
 
                         if result == WAIT_OBJECT_0:  # Change notification was signaled
@@ -294,10 +280,8 @@ class RecycleBinMonitor(QObject):
                             if bin_info:
                                 # Only emit signal if the info has changed
                                 if (
-                                    bin_info["size_bytes"]
-                                    != self._last_info["size_bytes"]
-                                    or bin_info["num_items"]
-                                    != self._last_info["num_items"]
+                                    bin_info["size_bytes"] != self._last_info["size_bytes"]
+                                    or bin_info["num_items"] != self._last_info["num_items"]
                                 ):
                                     # Use the throttled emission instead of direct emit
                                     self._emit_update(bin_info)
@@ -310,9 +294,7 @@ class RecycleBinMonitor(QObject):
                                 break
                         else:
                             # Error occurred
-                            logging.error(
-                                f"Error waiting for change notification: {ctypes.WinError()}"
-                            )
+                            logging.error(f"Error waiting for change notification: {ctypes.WinError()}")
                             break
                 finally:
                     # Clean up notification handle
@@ -326,9 +308,7 @@ class RecycleBinMonitor(QObject):
         # Monitor all drive recycle bins in parallel
         monitor_threads = []
         for drive in get_all_drives():
-            thread = threading.Thread(
-                target=monitor_drive_recycle_bin, args=(drive,), daemon=True
-            )
+            thread = threading.Thread(target=monitor_drive_recycle_bin, args=(drive,), daemon=True)
             thread.start()
             monitor_threads.append(thread)
 

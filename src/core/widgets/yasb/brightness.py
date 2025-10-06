@@ -69,12 +69,8 @@ class BrightnessWidget(BaseWidget):
         self._auto_light = auto_light
         self._auto_light_icon = auto_light_icon
         self._auto_light_night_level = auto_light_night_level
-        self._auto_light_night_start = datetime.strptime(
-            auto_light_night_start_time, "%H:%M"
-        ).time()
-        self._auto_light_night_end = datetime.strptime(
-            auto_light_night_end_time, "%H:%M"
-        ).time()
+        self._auto_light_night_start = datetime.strptime(auto_light_night_start_time, "%H:%M").time()
+        self._auto_light_night_end = datetime.strptime(auto_light_night_end_time, "%H:%M").time()
         self._auto_light_day_level = auto_light_day_level
         self._step = scroll_step
         self._current_mode = None
@@ -100,9 +96,7 @@ class BrightnessWidget(BaseWidget):
         add_shadow(self._widget_container, self._container_shadow)
         self.widget_layout.addWidget(self._widget_container)
 
-        build_widget_label(
-            self, self._label_content, self._label_alt_content, self._label_shadow
-        )
+        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("toggle_level_next", self._toggle_level_next)
@@ -128,9 +122,7 @@ class BrightnessWidget(BaseWidget):
 
     def _toggle_label(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
         self._show_alt_label = not self._show_alt_label
         for widget in self._widgets:
             widget.setVisible(not self._show_alt_label)
@@ -168,16 +160,12 @@ class BrightnessWidget(BaseWidget):
 
     def _toggle_brightness_menu(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
         self.show_brightness_menu()
 
     def _update_label(self):
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_label_content = (
-            self._label_alt_content if self._show_alt_label else self._label_content
-        )
+        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         try:
             percent = self.get_brightness()
             if percent is None:
@@ -199,11 +187,7 @@ class BrightnessWidget(BaseWidget):
         if self._progress_bar["enabled"] and self.progress_widget:
             if self._widget_container_layout.indexOf(self.progress_widget) == -1:
                 self._widget_container_layout.insertWidget(
-                    (
-                        0
-                        if self._progress_bar["position"] == "left"
-                        else self._widget_container_layout.count()
-                    ),
+                    (0 if self._progress_bar["position"] == "left" else self._widget_container_layout.count()),
                     self.progress_widget,
                 )
             self.progress_widget.set_value(percent)
@@ -262,9 +246,7 @@ class BrightnessWidget(BaseWidget):
             pass
 
         # Connect slider value change to brightness control
-        self.brightness_slider.valueChanged.connect(
-            self._on_slider_value_changed_if_not_dragging
-        )
+        self.brightness_slider.valueChanged.connect(self._on_slider_value_changed_if_not_dragging)
         self.brightness_slider.sliderReleased.connect(
             lambda: self._on_slider_value_changed(self.brightness_slider.value())
         )
@@ -399,29 +381,18 @@ class BrightnessWidget(BaseWidget):
             return
         # Handle midnight crossing
         if self._auto_light_night_start <= self._auto_light_night_end:
-            is_night = (
-                self._auto_light_night_start
-                <= current_time
-                <= self._auto_light_night_end
-            )
+            is_night = self._auto_light_night_start <= current_time <= self._auto_light_night_end
         else:
-            is_night = (
-                current_time >= self._auto_light_night_start
-                or current_time <= self._auto_light_night_end
-            )
+            is_night = current_time >= self._auto_light_night_start or current_time <= self._auto_light_night_end
 
         new_mode = "night" if is_night else "day"
         # Only set brightness if mode changed
         if new_mode != self._current_mode:
             self._current_mode = new_mode
             if is_night:
-                self.set_brightness(
-                    self._auto_light_night_level, monitor_info["device_id"]
-                )
+                self.set_brightness(self._auto_light_night_level, monitor_info["device_id"])
             else:
-                self.set_brightness(
-                    self._auto_light_day_level, monitor_info["device_id"]
-                )
+                self.set_brightness(self._auto_light_day_level, monitor_info["device_id"])
 
     def check_brightness(self):
         brightness = self.get_brightness()

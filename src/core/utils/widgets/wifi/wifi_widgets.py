@@ -58,11 +58,7 @@ class ClickableLabel(QLabel):
 
     @clickable.setter
     def clickable(self, value: bool):
-        self.setCursor(
-            QCursor(Qt.CursorShape.PointingHandCursor)
-            if value
-            else QCursor(Qt.CursorShape.ArrowCursor)
-        )
+        self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor) if value else QCursor(Qt.CursorShape.ArrowCursor))
         self._clickable = value
 
     @override
@@ -97,9 +93,7 @@ class WifiItem(QFrame):
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setSpacing(0)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
-        self.main_layout.setAlignment(
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
-        )
+        self.main_layout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
 
         self.wifi_details_container = QFrame(self)
         self.wifi_details_container.setContentsMargins(0, 0, 0, 0)
@@ -126,17 +120,13 @@ class WifiItem(QFrame):
 
         self.status_label = QLabel(self)
         self.status_label.setProperty("class", "status")
-        self.status_label.setAlignment(
-            Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignRight
-        )
+        self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignRight)
         self.status_label.setContentsMargins(0, 0, 0, 0)
         self.status_label.setText("N/A")
 
         self.wifi_strength = QLabel(self)
         self.wifi_strength.setProperty("class", "strength")
-        self.wifi_strength.setAlignment(
-            Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignRight
-        )
+        self.wifi_strength.setAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignRight)
         self.wifi_strength.setContentsMargins(0, 0, 0, 0)
         self.wifi_strength.setText("N/A")
 
@@ -159,24 +149,18 @@ class WifiItem(QFrame):
         self.ssid_field = QLineEdit(self)
         self.ssid_field.setPlaceholderText("SSID")
         self.ssid_field.setProperty("class", "password")
-        self.ssid_field.returnPressed.connect(
-            self._manage_connection_click
-        )  # pyright: ignore[reportUnknownMemberType]
+        self.ssid_field.returnPressed.connect(self._manage_connection_click)  # pyright: ignore[reportUnknownMemberType]
 
         self.password_field = QLineEdit(self)
         self.password_field.setPlaceholderText("Password")
         self.password_field.setProperty("class", "password")
-        self.password_field.returnPressed.connect(
-            self._manage_connection_click
-        )  # pyright: ignore[reportUnknownMemberType]
+        self.password_field.returnPressed.connect(self._manage_connection_click)  # pyright: ignore[reportUnknownMemberType]
         self.password_field.setEchoMode(QLineEdit.EchoMode.Password)
 
         self.connect_button = QPushButton(self)
         self.connect_button.setProperty("class", "connect")
         self.connect_button.setText("Connect")
-        self.connect_button.clicked.connect(
-            self._manage_connection_click
-        )  # pyright: ignore[reportUnknownMemberType]
+        self.connect_button.clicked.connect(self._manage_connection_click)  # pyright: ignore[reportUnknownMemberType]
 
         self.wifi_controls_container_layout.addWidget(self.ssid_field)
         self.wifi_controls_container_layout.addWidget(self.password_field)
@@ -190,16 +174,12 @@ class WifiItem(QFrame):
     def show_context_menu(self, pos: QPoint):
         menu = QMenu(self)
         menu.setProperty("class", "context-menu")
-        menu.aboutToShow.connect(
-            lambda: qmenu_rounded_corners(menu)
-        )  # pyright: ignore[reportUnknownMemberType]
+        menu.aboutToShow.connect(lambda: qmenu_rounded_corners(menu))  # pyright: ignore[reportUnknownMemberType]
 
         # Auto-connect checkbox
         self.auto_connect_checkbox = QCheckBox("Auto-connect")
         self.auto_connect_checkbox.setChecked(self.data.auto_connect)
-        self.auto_connect_checkbox.clicked.connect(
-            self._toggle_auto_connect
-        )  # pyright: ignore[reportUnknownMemberType]
+        self.auto_connect_checkbox.clicked.connect(self._toggle_auto_connect)  # pyright: ignore[reportUnknownMemberType]
         self.auto_connect_checkbox.setProperty("class", "checkbox")
 
         # Container with hover effects
@@ -209,9 +189,7 @@ class WifiItem(QFrame):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.auto_connect_checkbox)
-        container.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
-        )
+        container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
 
         class ClickToggleFilter(QObject):
             """Event filter to toggle the checkbox on click"""
@@ -222,10 +200,7 @@ class WifiItem(QFrame):
 
             def eventFilter(self, a0: QObject | None, a1: QEvent | None) -> bool:
                 if isinstance(a1, QMouseEvent):
-                    if (
-                        a1.type() == QEvent.Type.MouseButtonPress
-                        and a1.button() == Qt.MouseButton.LeftButton
-                    ):
+                    if a1.type() == QEvent.Type.MouseButtonPress and a1.button() == Qt.MouseButton.LeftButton:
                         if is_valid_qobject(self.checkbox):
                             self.checkbox.toggle()
                         return True
@@ -242,9 +217,7 @@ class WifiItem(QFrame):
         forget_button_widget = menu.addAction("Forget Network")  # type: ignore
         if forget_button_widget:
             forget_button_widget.setEnabled(self.data.profile_exists)
-            forget_button_widget.triggered.connect(
-                lambda: (self.forget_pressed.emit(self.data), menu.close())
-            )  # pyright: ignore[reportUnknownMemberType]
+            forget_button_widget.triggered.connect(lambda: (self.forget_pressed.emit(self.data), menu.close()))  # pyright: ignore[reportUnknownMemberType]
 
         menu.exec(self.mapToGlobal(pos))  # pyright: ignore[reportUnknownMemberType]
 
@@ -289,9 +262,7 @@ class WifiItem(QFrame):
         if self.state & WifiState.CONNECTED:
             self.disconnect_pressed.emit(self.data)
         else:
-            self.connect_pressed.emit(
-                self.data, self.password_field.text(), self.ssid_field.text()
-            )
+            self.connect_pressed.emit(self.data, self.password_field.text(), self.ssid_field.text())
 
     def update_state(self, set_active: bool | None = None):
         if set_active is not None:
@@ -300,14 +271,10 @@ class WifiItem(QFrame):
         self.wifi_controls_container.setVisible(self._active)
         if self._active:
             # Update the connect button text and password field visibility
-            requires_pass = bool(not self.state & WifiState.CONNECTED) and bool(
-                self.state & WifiState.SECURED
-            )
+            requires_pass = bool(not self.state & WifiState.CONNECTED) and bool(self.state & WifiState.SECURED)
             known_profile = self.data.profile_exists
             self.password_field.setVisible(requires_pass and not known_profile)
-            self.connect_button.setText(
-                "Disconnect" if self.state & WifiState.CONNECTED else "Connect"
-            )
+            self.connect_button.setText("Disconnect" if self.state & WifiState.CONNECTED else "Connect")
         # Update the status label
         if self.state == WifiState.CONNECTED:
             self.status_label.setText("Connected")
@@ -370,21 +337,11 @@ class WifiList(QScrollArea):
         self._items: dict[str, WifiItem] = {}
 
     def add_item(self, item: WifiItem):
-        item.clicked.connect(
-            lambda: self._on_item_clicked(item)
-        )  # pyright: ignore[reportUnknownMemberType]
-        item.disconnect_pressed.connect(
-            self.disconnect_pressed.emit
-        )  # pyright: ignore[reportUnknownMemberType]
-        item.connect_pressed.connect(
-            self.connect_pressed.emit
-        )  # pyright: ignore[reportUnknownMemberType]
-        item.forget_pressed.connect(
-            self.forget_pressed.emit
-        )  # pyright: ignore[reportUnknownMemberType]
-        item.auto_connect_toggled.connect(
-            self.auto_connect_toggled.emit
-        )  # pyright: ignore[reportUnknownMemberType]
+        item.clicked.connect(lambda: self._on_item_clicked(item))  # pyright: ignore[reportUnknownMemberType]
+        item.disconnect_pressed.connect(self.disconnect_pressed.emit)  # pyright: ignore[reportUnknownMemberType]
+        item.connect_pressed.connect(self.connect_pressed.emit)  # pyright: ignore[reportUnknownMemberType]
+        item.forget_pressed.connect(self.forget_pressed.emit)  # pyright: ignore[reportUnknownMemberType]
+        item.auto_connect_toggled.connect(self.auto_connect_toggled.emit)  # pyright: ignore[reportUnknownMemberType]
 
         item.setParent(self)
         self._main_layout.insertWidget(self._main_layout.count() - 1, item)
@@ -411,9 +368,7 @@ class WifiList(QScrollArea):
         return self._items.get(ssid)
 
     def sort_items(self):
-        items_list = sorted(
-            self._items.items(), key=lambda item: item[1].data.quality, reverse=True
-        )
+        items_list = sorted(self._items.items(), key=lambda item: item[1].data.quality, reverse=True)
         # Find the current connection if exists and move it to the top
         for item in items_list:
             if item[1].data.state & WifiState.CONNECTED:
@@ -472,12 +427,8 @@ class WifiMenu(QWidget):
         self._parent = parent
         self.menu_config = menu_config
         self.wifi_manager = WiFiManager(self)
-        self.wifi_manager.wifi_scan_completed.connect(
-            self._on_wifi_scan_completed
-        )  # pyright: ignore[reportUnknownMemberType]
-        self.wifi_manager.wifi_disconnected.connect(
-            self._on_wifi_disconnected
-        )  # pyright: ignore[reportUnknownMemberType]
+        self.wifi_manager.wifi_scan_completed.connect(self._on_wifi_scan_completed)  # pyright: ignore[reportUnknownMemberType]
+        self.wifi_manager.wifi_disconnected.connect(self._on_wifi_disconnected)  # pyright: ignore[reportUnknownMemberType]
 
         self.wifi_connection_worker: WiFiConnectWorker | None = None
         self.wifi_disconnect_worker: WifiDisconnectWorker | None = None
@@ -486,9 +437,7 @@ class WifiMenu(QWidget):
 
         self.list_update_timer = QTimer(self)
         self.list_update_timer.setSingleShot(True)
-        self.list_update_timer.timeout.connect(
-            self._update_wifi_items_list
-        )  # pyright: ignore[reportUnknownMemberType]
+        self.list_update_timer.timeout.connect(self._update_wifi_items_list)  # pyright: ignore[reportUnknownMemberType]
 
         self.error_connection = None
 
@@ -521,18 +470,10 @@ class WifiMenu(QWidget):
         self.error_message.setHidden(True)
 
         self.menu_wifi_list = WifiList(self.popup_window)
-        self.menu_wifi_list.disconnect_pressed.connect(
-            self._disconnect
-        )  # pyright: ignore[reportUnknownMemberType]
-        self.menu_wifi_list.connect_pressed.connect(
-            self._connect
-        )  # pyright: ignore[reportUnknownMemberType]
-        self.menu_wifi_list.forget_pressed.connect(
-            self._forget_network
-        )  # pyright: ignore[reportUnknownMemberType]
-        self.menu_wifi_list.auto_connect_toggled.connect(
-            self._on_auto_connect_toggled
-        )  # pyright: ignore[reportUnknownMemberType]
+        self.menu_wifi_list.disconnect_pressed.connect(self._disconnect)  # pyright: ignore[reportUnknownMemberType]
+        self.menu_wifi_list.connect_pressed.connect(self._connect)  # pyright: ignore[reportUnknownMemberType]
+        self.menu_wifi_list.forget_pressed.connect(self._forget_network)  # pyright: ignore[reportUnknownMemberType]
+        self.menu_wifi_list.auto_connect_toggled.connect(self._on_auto_connect_toggled)  # pyright: ignore[reportUnknownMemberType]
 
         footer_container = QFrame(self.popup_window)
         footer_container.setProperty("class", "footer")
@@ -545,17 +486,13 @@ class WifiMenu(QWidget):
         more_settings_button.setProperty("class", "settings-button")
         more_settings_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
-        more_settings_button.clicked.connect(
-            partial(self._run_and_hide, "ms-settings:network-wifi")
-        )  # pyright: ignore[reportUnknownMemberType]
+        more_settings_button.clicked.connect(partial(self._run_and_hide, "ms-settings:network-wifi"))  # pyright: ignore[reportUnknownMemberType]
 
         refresh_icon = QPushButton(self.popup_window)
         refresh_icon.setText("\ue72c")
         refresh_icon.setProperty("class", "refresh-icon")
         refresh_icon.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        refresh_icon.clicked.connect(
-            self._scan_wifi
-        )  # pyright: ignore[reportUnknownMemberType]
+        refresh_icon.clicked.connect(self._scan_wifi)  # pyright: ignore[reportUnknownMemberType]
 
         footer_layout.addWidget(more_settings_button)
         footer_layout.addStretch()
@@ -575,9 +512,7 @@ class WifiMenu(QWidget):
             offset_top=self.menu_config["offset_top"],
         )
 
-        self.popup_window.destroyed.connect(
-            self._on_wifi_menu_deleted
-        )  # pyright: ignore[reportUnknownMemberType]
+        self.popup_window.destroyed.connect(self._on_wifi_menu_deleted)  # pyright: ignore[reportUnknownMemberType]
         self.wifi_manager.wifi_updates_enabled = True
         self._update_wifi_items_list()
         self._scan_wifi()
@@ -597,9 +532,7 @@ class WifiMenu(QWidget):
             self.error_message.setText(message)
             self.error_message.setVisible(True)
             self.menu_progress_bar.setVisible(False)
-            QTimer.singleShot(
-                4000, hide_error_message
-            )  # pyright: ignore[reportUnknownMemberType]
+            QTimer.singleShot(4000, hide_error_message)  # pyright: ignore[reportUnknownMemberType]
 
     @pyqtSlot()
     def _on_wifi_menu_deleted(self):
@@ -609,42 +542,29 @@ class WifiMenu(QWidget):
     @pyqtSlot(NetworkInfo, str, str)
     def _connect(self, network: NetworkInfo, password: str, ssid: str = ""):
         """Connect to the currently selected network"""
-        if (
-            is_valid_qobject(self.wifi_connection_worker)
-            and self.wifi_connection_worker.isRunning()
-        ):
+        if is_valid_qobject(self.wifi_connection_worker) and self.wifi_connection_worker.isRunning():
             logger.debug("Already connecting to a network")
             return
         logger.debug("Connecting to wifi network...")
         if network.ssid == "<Hidden Network>":
-            self.wifi_connection_worker = WiFiConnectWorker(
-                network, ssid, password, True
-            )
+            self.wifi_connection_worker = WiFiConnectWorker(network, ssid, password, True)
         else:
-            self.wifi_connection_worker = WiFiConnectWorker(
-                network, network.ssid, password, False
-            )
-        self.wifi_connection_worker.result.connect(
-            self._on_connection_attempt_completed
-        )  # pyright: ignore[reportUnknownMemberType]
+            self.wifi_connection_worker = WiFiConnectWorker(network, network.ssid, password, False)
+        self.wifi_connection_worker.result.connect(self._on_connection_attempt_completed)  # pyright: ignore[reportUnknownMemberType]
         self.wifi_connection_worker.start()
         if not is_valid_qobject(self.popup_window):
             return
         self.menu_progress_bar.setVisible(True)
 
     @pyqtSlot(WiFiConnectionStatus, str, NetworkInfo)
-    def _on_connection_attempt_completed(
-        self, result: WiFiConnectionStatus, profile_name: str, network: NetworkInfo
-    ):
+    def _on_connection_attempt_completed(self, result: WiFiConnectionStatus, profile_name: str, network: NetworkInfo):
         if result != WiFiConnectionStatus.SUCCESS:
             if result == WiFiConnectionStatus.INVALID_CREDENTIAL:
                 self.show_errror_message_briefly("Invalid password")
             elif result == WiFiConnectionStatus.NETWORK_NOT_AVAILABLE:
                 self.show_errror_message_briefly("Network not available")
             else:
-                logger.error(
-                    f"Connection failed to wifi network. Reason: {result.name}"
-                )
+                logger.error(f"Connection failed to wifi network. Reason: {result.name}")
             return
 
         logger.debug("Connection completed to wifi network")
@@ -668,10 +588,7 @@ class WifiMenu(QWidget):
 
     def _disconnect(self, network: NetworkInfo):
         """Disconnect from the currently connected network"""
-        if (
-            is_valid_qobject(self.wifi_disconnect_worker)
-            and self.wifi_disconnect_worker.isRunning()
-        ):
+        if is_valid_qobject(self.wifi_disconnect_worker) and self.wifi_disconnect_worker.isRunning():
             logger.debug("Already disconnecting from a network")
 
         logger.debug("Disconnecting from wifi network")
@@ -679,9 +596,7 @@ class WifiMenu(QWidget):
         self.wifi_disconnect_worker.start()
         # Update the cache
         if WifiMenu._networks_cache.get(network.ssid):
-            WifiMenu._networks_cache[network.ssid] = replace(
-                network, state=network.state & ~WifiState.CONNECTED
-            )
+            WifiMenu._networks_cache[network.ssid] = replace(network, state=network.state & ~WifiState.CONNECTED)
 
     @pyqtSlot(str)
     def _on_wifi_disconnected(self, profile_name: str):
@@ -695,9 +610,7 @@ class WifiMenu(QWidget):
 
         if is_valid_qobject(self.popup_window):
             if item := self.menu_wifi_list.get_item(profile_name):
-                item.data = replace(
-                    item.data, state=item.data.state & ~WifiState.CONNECTED
-                )
+                item.data = replace(item.data, state=item.data.state & ~WifiState.CONNECTED)
 
     @pyqtSlot(NetworkInfo)
     def _forget_network(self, network: NetworkInfo):
@@ -731,17 +644,13 @@ class WifiMenu(QWidget):
             self.menu_progress_bar.setVisible(True)
 
     @pyqtSlot(ScanResultStatus, list)
-    def _on_wifi_scan_completed(
-        self, result: ScanResultStatus, networks: list[NetworkInfo]
-    ):
+    def _on_wifi_scan_completed(self, result: ScanResultStatus, networks: list[NetworkInfo]):
         """Handle the WiFi scan is completed event"""
         # Check if location services are enabled
         if is_valid_qobject(self.popup_window):
             if result != ScanResultStatus.SUCCESS:
                 if result == ScanResultStatus.ACCESS_DENIED:
-                    self.error_message.setText(
-                        "Error: Location services are disabled..."
-                    )
+                    self.error_message.setText("Error: Location services are disabled...")
                     self.error_message.clickable = True
                     if self.error_connection:
                         self.error_message.disconnect(self.error_connection)
@@ -782,9 +691,7 @@ class WifiMenu(QWidget):
                 auto_connect=network.auto_connect,
             )
         current_connection = self.wifi_manager.get_current_connection()
-        active_connection = (
-            current_connection and current_connection.ssid == network.ssid
-        )
+        active_connection = current_connection and current_connection.ssid == network.ssid
         if active_connection:
             self.wifi_disconnect_worker = WifiDisconnectWorker()
             self.wifi_disconnect_worker.start()
@@ -792,12 +699,8 @@ class WifiMenu(QWidget):
         self.wifi_manager.change_auto_connect(network.ssid, network.auto_connect)
 
         if active_connection:
-            self.wifi_connection_worker = WiFiConnectWorker(
-                network, network.ssid, "", False
-            )
-            self.wifi_connection_worker.result.connect(
-                self._on_connection_attempt_completed
-            )  # pyright: ignore[reportUnknownMemberType]
+            self.wifi_connection_worker = WiFiConnectWorker(network, network.ssid, "", False)
+            self.wifi_connection_worker.result.connect(self._on_connection_attempt_completed)  # pyright: ignore[reportUnknownMemberType]
             self.wifi_connection_worker.start()
 
     @pyqtSlot()
@@ -837,9 +740,7 @@ class WifiMenu(QWidget):
         # Re-sort items
         self.menu_wifi_list.sort_items()
         # Focus the first active item
-        active_items = [
-            item for item in self.menu_wifi_list.get_items().values() if item.active
-        ]
+        active_items = [item for item in self.menu_wifi_list.get_items().values() if item.active]
         if not active_items:
             return
         password_field = active_items[0].password_field

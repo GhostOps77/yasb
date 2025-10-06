@@ -43,13 +43,9 @@ def DwmSetWindowAttribute(hwnd: int, attribute: int, in_ptr: LPVOID, size: int) 
     return _dwmapi.DwmSetWindowAttribute(hwnd, attribute, in_ptr, size)
 
 
-def DwmRegisterThumbnail(
-    hwnd_destination: int, hwnd_source: int, thumbnail_handle_ptr
-) -> int:
+def DwmRegisterThumbnail(hwnd_destination: int, hwnd_source: int, thumbnail_handle_ptr) -> int:
     """Register a thumbnail relationship between two windows."""
-    return _dwmapi.DwmRegisterThumbnail(
-        hwnd_destination, hwnd_source, thumbnail_handle_ptr
-    )
+    return _dwmapi.DwmRegisterThumbnail(hwnd_destination, hwnd_source, thumbnail_handle_ptr)
 
 
 def DwmUnregisterThumbnail(thumbnail_handle: HANDLE) -> int:

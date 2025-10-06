@@ -80,9 +80,7 @@ def set_dark_mode(hwnd):
     data = WINDOWCOMPOSITIONATTRIBDATA()
     data.Attribute = 26  # WCA_USEDARKMODECOLORS
     data.SizeOfData = ctypes.sizeof(ctypes.c_int)
-    data.Data = ctypes.cast(
-        ctypes.pointer(ctypes.c_int(1)), ctypes.POINTER(ctypes.c_int)
-    )
+    data.Data = ctypes.cast(ctypes.pointer(ctypes.c_int(1)), ctypes.POINTER(ctypes.c_int))
 
     result = _SCA(hwnd, ctypes.byref(data))
     if result == 0:
@@ -130,9 +128,7 @@ def Blur(
     hwnd = int(hwnd)
     try:
         if Acrylic:
-            set_accent_policy(
-                hwnd, ACCENT_ENABLE_ACRYLICBLURBEHIND, HEXtoRGBAint("#ff000000"), 2
-            )
+            set_accent_policy(hwnd, ACCENT_ENABLE_ACRYLICBLURBEHIND, HEXtoRGBAint("#ff000000"), 2)
         else:
             set_accent_policy(hwnd, ACCENT_ENABLE_BLURBEHIND)
 

@@ -65,16 +65,10 @@ class CustomWidget(BaseWidget):
         label_shadow: dict = None,
         container_shadow: dict = None,
     ):
-        super().__init__(
-            exec_options["run_interval"], class_name=f"custom-widget {class_name}"
-        )
+        super().__init__(exec_options["run_interval"], class_name=f"custom-widget {class_name}")
         self._label_max_length = label_max_length
         self._exec_data = None
-        self._exec_cmd = (
-            exec_options["run_cmd"].split(" ")
-            if exec_options.get("run_cmd", False)
-            else None
-        )
+        self._exec_cmd = exec_options["run_cmd"].split(" ") if exec_options.get("run_cmd", False) else None
         self._exec_return_type = exec_options["return_format"]
         self._exec_shell = exec_options["use_shell"]
         self._exec_encoding = exec_options["encoding"]
@@ -121,17 +115,12 @@ class CustomWidget(BaseWidget):
             self.start_timer()
 
     def _set_cursor(self, label):
-        if any(
-            cb != "do_nothing"
-            for cb in [self.callback_left, self.callback_right, self.callback_middle]
-        ):
+        if any(cb != "do_nothing" for cb in [self.callback_left, self.callback_right, self.callback_middle]):
             label.setCursor(Qt.CursorShape.PointingHandCursor)
 
     def _toggle_label(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
         self._show_alt_label = not self._show_alt_label
         for widget in self._widgets:
             widget.setVisible(not self._show_alt_label)
@@ -185,9 +174,7 @@ class CustomWidget(BaseWidget):
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
         active_widgets_len = len(active_widgets)
 
-        active_label_content = (
-            self._label_alt_content if self._show_alt_label else self._label_content
-        )
+        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         active_label_content = active_label_content.format(data=self._exec_data)
 
         label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
@@ -256,6 +243,4 @@ class CustomWidget(BaseWidget):
         if cmd in function_map:
             function_map[cmd]()
         else:
-            subprocess.Popen(
-                [cmd, *cmd_args], shell=self._exec_shell, encoding=self._exec_encoding
-            )
+            subprocess.Popen([cmd, *cmd_args], shell=self._exec_shell, encoding=self._exec_encoding)

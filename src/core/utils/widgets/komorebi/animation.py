@@ -119,9 +119,7 @@ class KomorebiAnimation:
     ) -> None:
         QTimer.singleShot(
             0,
-            lambda: KomorebiAnimation.animate_width(
-                widget, width_duration, easing, start_width=start_width
-            ),
+            lambda: KomorebiAnimation.animate_width(widget, width_duration, easing, start_width=start_width),
         )
 
     @staticmethod
@@ -142,6 +140,4 @@ class KomorebiAnimation:
             current_visual_width = None
 
         widget.update_and_redraw(new_status, lock_width=True)
-        KomorebiAnimation._animate_width_next_tick(
-            widget, width_duration, easing, start_width=current_visual_width
-        )
+        KomorebiAnimation._animate_width_next_tick(widget, width_duration, easing, start_width=current_visual_width)

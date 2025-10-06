@@ -9,7 +9,7 @@ from core.event_enums import Event
 from settings import DEBUG
 
 
-@functools.lru_cache()
+@functools.cache
 class EventService(QObject):
     def __init__(self) -> None:
         super().__init__()
@@ -53,9 +53,7 @@ class EventService(QObject):
                     event_signal.emit(*args)
                 except Exception:
                     if DEBUG:
-                        logging.debug(
-                            f"Failed to emit signal {event_signal.__str__()}. Removing link to {event_type}."
-                        )
+                        logging.debug(f"Failed to emit signal {event_signal.__str__()}. Removing link to {event_type}.")
                     with self._mutex:
                         if event_signal in event_signals:
                             event_signals.remove(event_signal)

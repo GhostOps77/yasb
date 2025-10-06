@@ -88,15 +88,11 @@ class IPropertyStoreVtbl(ctypes.Structure):
         ),
         (
             "GetValue",
-            WINFUNCTYPE(
-                ctypes.c_long, c_void_p, POINTER(PROPERTYKEY), POINTER(PROPVARIANT)
-            ),
+            WINFUNCTYPE(ctypes.c_long, c_void_p, POINTER(PROPERTYKEY), POINTER(PROPVARIANT)),
         ),
         (
             "SetValue",
-            WINFUNCTYPE(
-                ctypes.c_long, c_void_p, POINTER(PROPERTYKEY), POINTER(PROPVARIANT)
-            ),
+            WINFUNCTYPE(ctypes.c_long, c_void_p, POINTER(PROPERTYKEY), POINTER(PROPVARIANT)),
         ),
         ("Commit", WINFUNCTYPE(ctypes.c_long, c_void_p)),
     ]
@@ -176,16 +172,12 @@ def get_aumid_for_window(hwnd: int) -> str | None:
 
     # 1) Window property store
     store_ptr = c_void_p()
-    hr = SHGetPropertyStoreForWindow(
-        wt.HWND(hwnd), byref(IID_IPropertyStore), byref(store_ptr)
-    )
+    hr = SHGetPropertyStoreForWindow(wt.HWND(hwnd), byref(IID_IPropertyStore), byref(store_ptr))
     if hr == 0 and store_ptr.value:
         store = ctypes.cast(store_ptr, POINTER(IPropertyStore))
         pv = PROPVARIANT()
         try:
-            hr = store.contents.lpVtbl.contents.GetValue(
-                store, byref(PKEY_AppUserModel_ID), byref(pv)
-            )
+            hr = store.contents.lpVtbl.contents.GetValue(store, byref(PKEY_AppUserModel_ID), byref(pv))
             if hr == 0 and pv.vt == VT_LPWSTR and pv.pwszVal:
                 return ctypes.wstring_at(pv.pwszVal)
         finally:
@@ -237,9 +229,7 @@ class IShellItemImageFactoryVtbl(ctypes.Structure):
         ("Release", WINFUNCTYPE(ctypes.c_ulong, c_void_p)),
         (
             "GetImage",
-            WINFUNCTYPE(
-                ctypes.c_long, c_void_p, SIZE, ctypes.c_int, POINTER(wt.HBITMAP)
-            ),
+            WINFUNCTYPE(ctypes.c_long, c_void_p, SIZE, ctypes.c_int, POINTER(wt.HBITMAP)),
         ),
     ]
 
@@ -318,9 +308,7 @@ def get_icon_for_aumid(aumid: str, size: int = 48) -> Image.Image | None:
     _ensure_com_initialized()
     path = f"shell:AppsFolder\\{aumid}"
     ppv = c_void_p()
-    hr = SHCreateItemFromParsingName(
-        path, None, byref(IID_IShellItemImageFactory), byref(ppv)
-    )
+    hr = SHCreateItemFromParsingName(path, None, byref(IID_IShellItemImageFactory), byref(ppv))
     if hr != 0 or not ppv.value:
         return None
 

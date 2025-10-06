@@ -410,12 +410,8 @@ def SendMessageTimeout(
         tmp = c_ulong()
         from ctypes import byref as _byref  # local import to avoid polluting namespace
 
-        return user32.SendMessageTimeoutW(
-            hwnd, msg, wParam, lParam, fuFlags, uTimeout, _byref(tmp)
-        )
-    return user32.SendMessageTimeoutW(
-        hwnd, msg, wParam, lParam, fuFlags, uTimeout, lpdwResult
-    )
+        return user32.SendMessageTimeoutW(hwnd, msg, wParam, lParam, fuFlags, uTimeout, _byref(tmp))
+    return user32.SendMessageTimeoutW(hwnd, msg, wParam, lParam, fuFlags, uTimeout, lpdwResult)
 
 
 def EndTask(hwnd: int, fShutDown: bool, fForce: bool) -> bool:
@@ -432,6 +428,4 @@ def SendMessageTimeoutW(
     lpdwResult,
 ) -> int:
     """Direct wrapper with the wide-character entrypoint name for robustness."""
-    return user32.SendMessageTimeoutW(
-        hwnd, msg, wParam, lParam, fuFlags, uTimeout, lpdwResult
-    )
+    return user32.SendMessageTimeoutW(hwnd, msg, wParam, lParam, fuFlags, uTimeout, lpdwResult)

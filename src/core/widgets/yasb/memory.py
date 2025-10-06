@@ -65,9 +65,7 @@ class MemoryWidget(BaseWidget):
         # Add the container to the main widget layout
         self.widget_layout.addWidget(self._widget_container)
 
-        build_widget_label(
-            self, self._label_content, self._label_alt_content, self._label_shadow
-        )
+        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
 
         self.register_callback("toggle_label", self._toggle_label)
 
@@ -128,15 +126,11 @@ class MemoryWidget(BaseWidget):
         """Update label using shared memory data."""
 
         _round = lambda value: round(value) if self._hide_decimal else value
-        _naturalsize = lambda value: naturalsize(
-            value, True, True, "%.0f" if self._hide_decimal else "%.1f"
-        )
+        _naturalsize = lambda value: naturalsize(value, True, True, "%.0f" if self._hide_decimal else "%.1f")
 
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
         active_widgets_len = len(active_widgets)
-        active_label_content = (
-            self._label_alt_content if self._show_alt_label else self._label_content
-        )
+        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
         widget_index = 0
 
@@ -156,11 +150,7 @@ class MemoryWidget(BaseWidget):
         if self._progress_bar["enabled"] and self.progress_widget:
             if self._widget_container_layout.indexOf(self.progress_widget) == -1:
                 self._widget_container_layout.insertWidget(
-                    (
-                        0
-                        if self._progress_bar["position"] == "left"
-                        else self._widget_container_layout.count()
-                    ),
+                    (0 if self._progress_bar["position"] == "left" else self._widget_container_layout.count()),
                     self.progress_widget,
                 )
             self.progress_widget.set_value(virtual_mem.percent)
@@ -170,9 +160,7 @@ class MemoryWidget(BaseWidget):
             if not part:
                 continue
 
-            if widget_index >= active_widgets_len or not isinstance(
-                active_widgets[widget_index], QLabel
-            ):
+            if widget_index >= active_widgets_len or not isinstance(active_widgets[widget_index], QLabel):
                 continue
 
             if part.startswith("<span") and part.endswith("</span>"):
@@ -191,9 +179,7 @@ class MemoryWidget(BaseWidget):
 
     def _toggle_label(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
         self._show_alt_label = not self._show_alt_label
         for widget in self._widgets:
             widget.setVisible(not self._show_alt_label)
@@ -204,17 +190,9 @@ class MemoryWidget(BaseWidget):
     def _get_virtual_memory_threshold(self, virtual_memory_percent) -> str:
         if virtual_memory_percent <= self._memory_thresholds["low"]:
             return "low"
-        elif (
-            self._memory_thresholds["low"]
-            < virtual_memory_percent
-            <= self._memory_thresholds["medium"]
-        ):
+        elif self._memory_thresholds["low"] < virtual_memory_percent <= self._memory_thresholds["medium"]:
             return "medium"
-        elif (
-            self._memory_thresholds["medium"]
-            < virtual_memory_percent
-            <= self._memory_thresholds["high"]
-        ):
+        elif self._memory_thresholds["medium"] < virtual_memory_percent <= self._memory_thresholds["high"]:
             return "high"
         elif self._memory_thresholds["high"] < virtual_memory_percent:
             return "critical"
@@ -222,8 +200,6 @@ class MemoryWidget(BaseWidget):
     def _get_histogram_bar(self, num, num_min, num_max):
         if num_max == num_min:
             return self._histogram_icons[0]
-        bar_index = int(
-            (num - num_min) / (num_max - num_min) * (len(self._histogram_icons) - 1)
-        )
+        bar_index = int((num - num_min) / (num_max - num_min) * (len(self._histogram_icons) - 1))
         bar_index = min(max(bar_index, 0), len(self._histogram_icons) - 1)
         return self._histogram_icons[bar_index]

@@ -1,18 +1,32 @@
 import logging
 import os
-import re
 from dataclasses import dataclass
 from typing import Literal, TypedDict
 
-from PyQt6.QtCore import QObject, Qt, QTimer, pyqtSignal
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel
+from PyQt6.QtCore import QObject, QTimer, pyqtSignal
+from PyQt6.QtWidgets import QFrame, QHBoxLayout
 from watchdog.events import DirCreatedEvent, FileCreatedEvent, PatternMatchingEventHandler
 from watchdog.observers import Observer
 
+import settings
+from core.utils.utilities import iterate_label_as_parts
 from core.validation.widgets.yasb.file_watcher import VALIDATION_SCHEMA
 from core.widgets.base import BaseWidget
 
 logger = logging.getLogger("filewatcher_widget")
+logger.setLevel(logging.INFO)
+
+
+class FsEventLabels(TypedDict):
+    created: str
+    modified: str
+    deleted: str
+    moved: str
+
+
+class LabelTypes(TypedDict):
+    file: FsEventLabels
+    folder: FsEventLabels
 
 
 class ListenPaths(TypedDict):
@@ -22,6 +36,7 @@ class ListenPaths(TypedDict):
     ignore_directories: bool
     read_file_contents: bool
     read_max_bytes: int
+    labels: LabelTypes
 
 
 @dataclass(slots=True)
@@ -38,16 +53,16 @@ class FileEntity:
     def from_path(
         cls, path: str, read_file_contents: bool = False, read_max_bytes: int = 65536
     ):
-        is_file = os.path.isfile(path)
-        content = ""
-
-        if read_file_contents and is_file:
+        if read_file_contents:
             try:
-                with open(path, "r", encoding="utf-8", errors="ignore") as f:
+                with open(path, encoding="utf-8", errors="ignore") as f:
                     content = f.read(read_max_bytes)
             except Exception:
                 content = ""
+        else:
+            content = ""
 
+        is_file = os.path.isfile(path)
         return cls(
             path=path,
             type="file" if is_file else "folder",
@@ -75,45 +90,54 @@ class WatchDogHandler(PatternMatchingEventHandler):
         ignore_directories: bool,
         read_file_contents: bool,
         read_max_bytes: int,
+        labels: LabelTypes,
     ):
         super().__init__(
             patterns=patterns,
             ignore_patterns=ignore_patterns,
             ignore_directories=ignore_directories,
-            case_sensitive=True
+            case_sensitive=True,
         )
         self.emitter = emitter
+        self.labels = labels
         self.read_file_contents = read_file_contents
         self.read_max_bytes = read_max_bytes
 
-    def on_created(self, event):
-        logger.debug(f'Created {event.src_path}')
-        print(f'Created {event.src_path}')
-        self._emit("created", event)
+    def on_any_event(self, event: DirCreatedEvent | FileCreatedEvent):
+        self._emit(event)
 
-    def on_modified(self, event):
-        logger.debug(f'Modified {event.src_path}')
-        self._emit("modified", event)
+    # def on_created(self, event):
+    #     logger.debug(f"Created {event.src_path}")
+    #     print(f"Created {event.src_path}")
 
-    def on_deleted(self, event):
-        logger.debug(f'Deleted {event.src_path}')
-        self._emit("deleted", event)
+    # def on_modified(self, event):
+    #     logger.debug(f"Modified {event.src_path}")
+    #     self._emit("modified", event)
 
-    def on_moved(self, event):
-        dest_path = getattr(event, "dest_path", event.src_path)
-        logger.debug(f'Moved {event.src_path} -> {dest_path}')
-        self._emit("moved", event)
+    # def on_deleted(self, event):
+    #     logger.debug(f"Deleted {event.src_path}")
+    #     self._emit("deleted", event)
 
-    def _emit(self, action: str, event: DirCreatedEvent | FileCreatedEvent):
+    # def on_moved(self, event):
+    #     dest_path = getattr(event, "dest_path", event.src_path)
+    #     logger.debug(f"Moved {event.src_path} -> {dest_path}")
+    #     self._emit("moved", event)
+
+    def _emit(self, event: DirCreatedEvent | FileCreatedEvent):
         src_path = event.src_path
         dest_path = getattr(event, "dest_path", None)
+        action = event.event_type
 
-        src_entity = FileEntity.from_path(
-            src_path, self.read_file_contents, self.read_max_bytes
-        )
+        if settings.DEBUG:
+            log_msg = f"{action.title()} {event.src_path}"
+            log_msg += f" -> {event.dest_path or ''}"
+            logger.debug(log_msg)
+
+        src_entity = FileEntity.from_path(src_path, self.read_file_contents, self.read_max_bytes)
         dest_entity = FileEntity.from_path(dest_path) if dest_path is not None else None
         event_obj = FileEventObject(action, src_entity, dest_entity)
-        self.emitter.event_occurred.emit(event_obj)
+        label_content = self.labels[src_entity.type][action].format(data=event_obj)
+        self.emitter.event_occurred.emit(label_content)
 
 
 class FileWatcherWidget(BaseWidget):
@@ -124,27 +148,12 @@ class FileWatcherWidget(BaseWidget):
         listen_paths: list[ListenPaths],
         label_max_length: int,
         clear_labels_after_interval: int,
-        labels: dict[str, dict[str, str]],
         container_padding: dict[str, int] | None = None,
     ):
-        # if common_patterns:
-        #     config_path = get_config_path()
-        #     raise_info_alert(
-        #         title="Failed to load recently updated config file.",
-        #         msg=f"The file '{config_path}' contains validation error(s) and has not been loaded.",
-        #         informative_msg="For more information, click 'Show Details'.",
-        #         additional_details=
-        #             "The yasb.file_watcher.FileWatcher widget received common pattern values " \
-        #             "in the 'patterns' and 'ignore_patterns' options." \
-        #             '\n -'.join(common_patterns)
-        #     )
-        #     return
-
         super().__init__(class_name="file-watcher")
 
         self.listen_paths = listen_paths
         self._padding = container_padding
-        self._event_based_labels = labels
 
         self._label_content = ""
         self.label_max_length = label_max_length
@@ -188,36 +197,43 @@ class FileWatcherWidget(BaseWidget):
         self._start_observer()
 
     def _start_observer(self):
+        def expand_path(path: str) -> str:
+            return os.path.expanduser(os.path.expandvars(path.strip()))
+
         def remove_duplicate_paths(paths: list[str]):
-            return list({
-                os.path.expanduser(os.path.expandvars(s.strip()))
-                for s in paths
-            })
+            paths[:] = {p2 for p in  paths if (p2 := expand_path(p))}
+
 
         for path in self.listen_paths:
-            path['directory'] = os.path.expanduser(
-                os.path.expandvars(path['directory'].strip())
-            )
+            if path["patterns"] is None:
+                path["patterns"] = ['*'] if path["ignore_directories"] else ['**']
+            else:
+                remove_duplicate_paths(path["patterns"])
+
+            if path["ignore_patterns"]:
+                remove_duplicate_paths(path["ignore_patterns"])
 
             handler = WatchDogHandler(
                 self._emitter,
-                remove_duplicate_paths(path['patterns']),
-                remove_duplicate_paths(path['ignore_patterns']),
-                path['ignore_directories'],
-                path['read_file_contents'],
-                path['read_max_bytes'],
+                path["patterns"],
+                path["ignore_patterns"],
+                path["ignore_directories"],
+                path["read_file_contents"],
+                path["read_max_bytes"],
             )
 
             self._observer.schedule(
-                handler, path['directory'], recursive=not path['ignore_directories']
+                handler,
+                expand_path(path["directory"]),
+                recursive=not path["ignore_directories"]
             )
 
         self._observer.start()
-        logger.info('FileWatcher: Observer started and running')
+        logger.info("FileWatcher: Observer started and running")
 
     def _stop_observer(self):
         """Stop observer and cleanup (called by YASB shutdown)"""
-        logger.info('FileWidget: Stopping File watcher...')
+        logger.info("FileWidget: Stopping File watcher...")
         try:
             if self._observer.is_alive():
                 self._observer.stop()
@@ -226,8 +242,8 @@ class FileWatcherWidget(BaseWidget):
         except Exception:
             pass
 
-    def _on_event_main_thread(self, payload: FileEventObject):
-        label_content = self._event_based_labels[payload.src.type].get(payload.action, "")
+    def _on_event_main_thread(self, label_content: str):
+        # label_content = self._event_based_labels[label_content.src.type].get(label_content.action, "")
         if not label_content:
             self.setVisible(False)
             return
@@ -235,58 +251,63 @@ class FileWatcherWidget(BaseWidget):
         if self.isHidden():
             self.setVisible(True)
 
-        self._queue_label_update(label_content.format(data=payload))
+        self._queue_label_update(label_content)
         if self._clear_labels_after_interval is not None:
             self._fadeout_timer.start()  # reset timer on every event
 
     def _clear_labels(self):
         for lbl in self._widgets:
-            lbl.clear()         # clears text
-            lbl.hide()          # or fade out if you want
+            lbl.clear()  # clears text
+            lbl.hide()  # or fade out if you want
 
     def _update_label(self, content: str):
-        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", content)
-        active_widget = self._widgets
-        active_widget_len = len(active_widget)
-        widgets_index = 0
+        for _ in iterate_label_as_parts(
+            self._widget_container_layout, self._widgets, content, 'label'
+        ):
+            pass
 
-        for part in label_parts:
-            part = part.strip()
-            if not part:
-                continue
+        # label_parts = re.split(r"(<span[^>]*?>.*?</span>)", content)
+        # active_widget = self._widgets
+        # active_widget_len = len(active_widget)
+        # widgets_index = 0
 
-            class_result = 'icon'
-            if part.startswith("<span") and part.endswith("</span>"):
-                class_name = re.search(r'class=(["\'])([^"\']+?)\1', part)
-                if class_name:
-                    class_result = class_name.group(2)
-                part = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
+        # for part in label_parts:
+        #     part = part.strip()
+        #     if not part:
+        #         continue
 
-            if widgets_index < active_widget_len:
-                label = active_widget[widgets_index]
-                label.setText(part)
-                label.setProperty("class", class_result)
-                # label.style().unpolish(label)
-                # label.style().polish(label)
-                if label.isHidden():
-                    label.setVisible(True)
-                widgets_index += 1
-            else:
-                label = QLabel(part)
-                label.setProperty("class", class_result)
-                label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                self._widget_container_layout.addWidget(label)
-                active_widget.append(label)
+        #     class_result = "icon"
+        #     if part.startswith("<span") and part.endswith("</span>"):
+        #         class_name = re.search(r'class=(["\'])([^"\']+?)\1', part)
+        #         if class_name:
+        #             class_result += ' ' + class_name.group(2)
+        #         part = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
 
-        for i in range(widgets_index, active_widget_len):
-            active_widget[i].setVisible(False)
+        #     if widgets_index < active_widget_len:
+        #         label = active_widget[widgets_index]
+        #         label.setText(part)
+        #         label.setProperty("class", class_result)
+        #         # label.style().unpolish(label)
+        #         # label.style().polish(label)
+        #         if label.isHidden():
+        #             label.setVisible(True)
+        #         widgets_index += 1
+        #     else:
+        #         label = QLabel(part)
+        #         label.setProperty("class", class_result)
+        #         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        #         self._widget_container_layout.addWidget(label)
+        #         active_widget.append(label)
 
+        # for i in range(widgets_index, active_widget_len):
+        #     active_widget[i].setVisible(False)
 
     def _queue_label_update(self, text: str):
         """
         Debounce rapid events: schedule a small timer; keep last label.
         """
-        logger.debug(f'FileWidget: Updating pending label content to {text}')
+        logger.debug(f"FileWidget: Updating pending label content to {text}")
+
         self._pending_label_content = text
         if not self._debounce_timer.isActive():
             self._debounce_timer.start()

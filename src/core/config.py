@@ -6,7 +6,6 @@ import sys
 from os import makedirs, path
 from pathlib import Path
 from sys import argv, exit
-from typing import Union
 from xml.dom import SyntaxErr
 
 from cerberus import Validator, schema
@@ -18,24 +17,12 @@ from core.utils.alert_dialog import raise_info_alert
 from core.utils.css_processor import CSSProcessor
 from core.validation.config import CONFIG_SCHEMA
 
-SRC_CONFIGURATION_DIR = (
-    os.path.dirname(sys.executable)
-    if getattr(sys, "frozen", False)
-    else os.path.dirname(argv[0])
-)
+SRC_CONFIGURATION_DIR = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else os.path.dirname(argv[0])
 HOME_CONFIGURATION_DIR = path.join(Path.home(), settings.DEFAULT_CONFIG_DIRECTORY)
-HOME_STYLES_PATH = path.normpath(
-    path.join(HOME_CONFIGURATION_DIR, settings.DEFAULT_STYLES_FILENAME)
-)
-HOME_CONFIG_PATH = path.normpath(
-    path.join(HOME_CONFIGURATION_DIR, settings.DEFAULT_CONFIG_FILENAME)
-)
-DEFAULT_STYLES_PATH = path.normpath(
-    path.join(SRC_CONFIGURATION_DIR, settings.DEFAULT_STYLES_FILENAME)
-)
-DEFAULT_CONFIG_PATH = path.normpath(
-    path.join(SRC_CONFIGURATION_DIR, settings.DEFAULT_CONFIG_FILENAME)
-)
+HOME_STYLES_PATH = path.normpath(path.join(HOME_CONFIGURATION_DIR, settings.DEFAULT_STYLES_FILENAME))
+HOME_CONFIG_PATH = path.normpath(path.join(HOME_CONFIGURATION_DIR, settings.DEFAULT_CONFIG_FILENAME))
+DEFAULT_STYLES_PATH = path.normpath(path.join(SRC_CONFIGURATION_DIR, settings.DEFAULT_STYLES_FILENAME))
+DEFAULT_CONFIG_PATH = path.normpath(path.join(SRC_CONFIGURATION_DIR, settings.DEFAULT_CONFIG_FILENAME))
 GITHUB_ISSUES_URL = f"{settings.GITHUB_URL}/issues"
 
 
@@ -61,9 +48,7 @@ def get_config_dir() -> str:
             makedirs(HOME_CONFIGURATION_DIR)
             return HOME_CONFIGURATION_DIR
         except OSError:
-            logging.error(
-                f"Failed to create configuration directory at {HOME_CONFIGURATION_DIR}."
-            )
+            logging.error(f"Failed to create configuration directory at {HOME_CONFIGURATION_DIR}.")
             return SRC_CONFIGURATION_DIR
 
 
@@ -119,7 +104,7 @@ def parse_env(obj):
     return obj
 
 
-def get_config(show_error_dialog=False) -> Union[dict, None]:
+def get_config(show_error_dialog=False) -> dict | None:
     config_path = get_config_path()
 
     try:
@@ -130,9 +115,7 @@ def get_config(show_error_dialog=False) -> Union[dict, None]:
             return parse_env(yaml_validator.normalized(config))
         else:
             pretty_errors = dump(yaml_validator.errors)
-            logging.error(
-                f"The config file '{config_path}' contains validation errors. Please fix:\n{pretty_errors}"
-            )
+            logging.error(f"The config file '{config_path}' contains validation errors. Please fix:\n{pretty_errors}")
             if show_error_dialog:
                 raise_info_alert(
                     title="Failed to load recently updated config file.",
@@ -141,18 +124,14 @@ def get_config(show_error_dialog=False) -> Union[dict, None]:
                     additional_details=pretty_errors,
                 )
     except ParserError as e:
-        logging.error(
-            f"The file '{config_path}' contains Parser Error(s). Please fix:\n{str(e)}"
-        )
+        logging.error(f"The file '{config_path}' contains Parser Error(s). Please fix:\n{str(e)}")
     except FileNotFoundError:
         logging.error(f"The file '{config_path}' could not be found. Does it exist?")
     except OSError:
-        logging.error(
-            f"The file '{config_path}' could not be read. Do you have read/write permissions?"
-        )
+        logging.error(f"The file '{config_path}' could not be read. Do you have read/write permissions?")
 
 
-def get_stylesheet(show_error_dialog=False) -> Union[str, None]:
+def get_stylesheet(show_error_dialog=False) -> str | None:
     styles_path = get_stylesheet_path()
     try:
         css_processor = CSSProcessor(styles_path)
@@ -160,9 +139,7 @@ def get_stylesheet(show_error_dialog=False) -> Union[str, None]:
         return css_content
 
     except SyntaxErr as e:
-        logging.error(
-            f"The file '{styles_path}' contains Syntax Error(s). Please fix:\n{str(e)}"
-        )
+        logging.error(f"The file '{styles_path}' contains Syntax Error(s). Please fix:\n{str(e)}")
         if show_error_dialog:
             raise_info_alert(
                 title="Failed to load recently updated stylesheet file.",
@@ -173,9 +150,7 @@ def get_stylesheet(show_error_dialog=False) -> Union[str, None]:
     except FileNotFoundError:
         logging.error(f"The file '{styles_path}' could not be found. Does it exist?")
     except OSError:
-        logging.error(
-            f"The file '{styles_path}' could not be read. Do you have read/write permissions?"
-        )
+        logging.error(f"The file '{styles_path}' could not be read. Do you have read/write permissions?")
     return None
 
 
@@ -188,9 +163,7 @@ def get_config_and_stylesheet() -> tuple[dict, str]:
     elif not stylesheet:
         error_msg = "User stylesheet could not be loaded. Exiting Application."
     elif not config["bars"]:
-        error_msg = (
-            "No bars have been configured. Please edit the config to add a status bar."
-        )
+        error_msg = "No bars have been configured. Please edit the config to add a status bar."
     else:
         return config, stylesheet
 

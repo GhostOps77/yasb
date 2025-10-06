@@ -113,10 +113,7 @@ class ApplicationsWidget(BaseWidget):
                 function_map[data]()
             else:
                 try:
-                    if not any(
-                        param in data
-                        for param in ["-new-tab", "-new-window", "-private-window"]
-                    ):
+                    if not any(param in data for param in ["-new-tab", "-new-window", "-private-window"]):
                         data = data.split()
                     subprocess.Popen(
                         data,

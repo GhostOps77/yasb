@@ -27,9 +27,7 @@ class BarManager(QObject):
         self.event_service = EventService()
         self.widget_event_listeners = set()
         self.bars: list[Bar] = []
-        self.config["bars"] = {
-            n: bar for n, bar in self.config["bars"].items() if bar["enabled"]
-        }
+        self.config["bars"] = {n: bar for n, bar in self.config["bars"].items() if bar["enabled"]}
         self._threads = {}
         self._active_listeners = {}
         self._widget_builder = WidgetBuilder(self.config["widgets"])
@@ -75,9 +73,7 @@ class BarManager(QObject):
                 reload_application("Reloading Application because of config change.")
             else:
                 self.config = config
-            logging.info(
-                "Successfully loaded updated config and re-initialised all bars."
-            )
+            logging.info("Successfully loaded updated config and re-initialised all bars.")
 
     @pyqtSlot(QScreen)
     def on_screens_update(self, _screen: QScreen) -> None:
@@ -100,9 +96,7 @@ class BarManager(QObject):
                     try:
                         thread.stop()
                     except Exception as e:
-                        logging.debug(
-                            f"Thread stop() raised for {listener.__name__}: {e}"
-                        )
+                        logging.debug(f"Thread stop() raised for {listener.__name__}: {e}")
                 if hasattr(thread, "quit"):
                     try:
                         thread.quit()
@@ -122,13 +116,9 @@ class BarManager(QObject):
         for bar_config in self.config["bars"].values():
             if bar_config["screens"] != ["*"]:
                 for screen in bar_config["screens"]:
-                    resolved_name = (
-                        primary_screen_name if screen == "primary" else screen
-                    )
+                    resolved_name = primary_screen_name if screen == "primary" else screen
                     if resolved_name not in available_screen_names:
-                        logging.warning(
-                            f"Screen '{resolved_name}' from config not found among connected screens."
-                        )
+                        logging.warning(f"Screen '{resolved_name}' from config not found among connected screens.")
                         continue
                     assigned_screens.add(resolved_name)
 
@@ -142,13 +132,9 @@ class BarManager(QObject):
                     initialized_screens.add(screen.name())
             else:
                 for screen_name in bar_config["screens"]:
-                    resolved_name = (
-                        primary_screen_name if screen_name == "primary" else screen_name
-                    )
+                    resolved_name = primary_screen_name if screen_name == "primary" else screen_name
                     if resolved_name not in available_screen_names:
-                        logging.warning(
-                            f"Screen '{resolved_name}' from config not found among connected screens."
-                        )
+                        logging.warning(f"Screen '{resolved_name}' from config not found among connected screens.")
                         continue
                     screen = get_screen_by_name(resolved_name)
                     if screen:
@@ -163,9 +149,7 @@ class BarManager(QObject):
         screen_name = screen.name().replace("\\", "").replace(".", "")
         bar_id = f"{name}_{screen_name}_{str(uuid.uuid4())[:8]}"
         bar_config = deepcopy(config)
-        bar_widgets, widget_event_listeners = self._widget_builder.build_widgets(
-            bar_config.get("widgets", {})
-        )
+        bar_widgets, widget_event_listeners = self._widget_builder.build_widgets(bar_config.get("widgets", {}))
         bar_options = {
             **bar_config,
             "bar_id": bar_id,
@@ -180,7 +164,5 @@ class BarManager(QObject):
         del bar_options["enabled"]
         del bar_options["screens"]
 
-        self.widget_event_listeners = self.widget_event_listeners.union(
-            widget_event_listeners
-        )
+        self.widget_event_listeners = self.widget_event_listeners.union(widget_event_listeners)
         self.bars.append(Bar(**bar_options))

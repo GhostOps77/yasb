@@ -192,7 +192,7 @@ class IPolicyConfig(comtypes.IUnknown):
 
 
 # PIPolicyConfig = POINTER(IPolicyConfig)
-class AudioSes(object):
+class AudioSes:
     name = "AudioSes"
     _reg_typelib_ = (IID_AudioSes, 1, 0)
 
@@ -280,9 +280,7 @@ class VolumeWidget(BaseWidget):
         add_shadow(self._widget_container, self._container_shadow)
         self.widget_layout.addWidget(self._widget_container)
 
-        build_widget_label(
-            self, self._label_content, self._label_alt_content, self._label_shadow
-        )
+        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("update_label", self._update_label)
@@ -305,9 +303,7 @@ class VolumeWidget(BaseWidget):
 
     def _toggle_volume_menu(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
         self.show_volume_menu()
 
     def _on_slider_released(self):
@@ -383,9 +379,7 @@ class VolumeWidget(BaseWidget):
 
         try:
             logging.debug(f"Attempting PolicyConfig interface with device: {device_id}")
-            pc = comtypes.CoCreateInstance(
-                CLSID_PolicyConfigClient, interface=IPolicyConfig, clsctx=CLSCTX_ALL
-            )
+            pc = comtypes.CoCreateInstance(CLSID_PolicyConfigClient, interface=IPolicyConfig, clsctx=CLSCTX_ALL)
             # eConsole = 0, eMultimedia = 1, eCommunications = 2
             pc.SetDefaultEndpoint(device_id, 0)
             # Re-initialize volume interface for new device
@@ -477,9 +471,7 @@ class VolumeWidget(BaseWidget):
 
     def _toggle_label(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
         self._show_alt_label = not self._show_alt_label
         for widget in self._widgets:
             widget.setVisible(not self._show_alt_label)
@@ -490,43 +482,29 @@ class VolumeWidget(BaseWidget):
     def _update_label(self):
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
         active_widgets_len = len(active_widgets)
-        active_label_content = (
-            self._label_alt_content if self._show_alt_label else self._label_content
-        )
+        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
 
         try:
             self._initialize_volume_interface()
             mute_status = self.volume.GetMute()
             icon_volume = self._get_volume_icon()
             level_volume = (
-                self._mute_text
-                if mute_status == 1
-                else f"{round(self.volume.GetMasterVolumeLevelScalar() * 100)}%"
+                self._mute_text if mute_status == 1 else f"{round(self.volume.GetMasterVolumeLevelScalar() * 100)}%"
             )
         except Exception:
             mute_status, icon_volume, level_volume = None, "", "No Device"
 
-        active_label_content = active_label_content.format(
-            icon=icon_volume, level=level_volume
-        )
+        active_label_content = active_label_content.format(icon=icon_volume, level=level_volume)
         label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
         widget_index = 0
 
         if self._progress_bar["enabled"] and self.progress_widget:
             if self._widget_container_layout.indexOf(self.progress_widget) == -1:
                 self._widget_container_layout.insertWidget(
-                    (
-                        0
-                        if self._progress_bar["position"] == "left"
-                        else self._widget_container_layout.count()
-                    ),
+                    (0 if self._progress_bar["position"] == "left" else self._widget_container_layout.count()),
                     self.progress_widget,
                 )
-            numeric_value = (
-                int(re.search(r"\d+", level_volume).group())
-                if re.search(r"\d+", level_volume)
-                else 0
-            )
+            numeric_value = int(re.search(r"\d+", level_volume).group()) if re.search(r"\d+", level_volume) else 0
             self.progress_widget.set_value(numeric_value)
 
         for part in label_parts:
@@ -612,9 +590,7 @@ class VolumeWidget(BaseWidget):
 
     def toggle_mute(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
         if self.volume is None:
             logging.warning("Cannot toggle mute: No audio device connected.")
             return

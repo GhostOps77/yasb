@@ -64,19 +64,13 @@ class ContextMenuMixin:
     def _handle_context_menu(self, pos):
         """Handle custom context menu request"""
         if self._parent_widget and hasattr(self._parent_widget, "_show_context_menu"):
-            self._parent_widget._show_context_menu(
-                self, pos, is_input=self._is_input_widget
-            )
+            self._parent_widget._show_context_menu(self, pos, is_input=self._is_input_widget)
 
     def mousePressEvent(self, event: QMouseEvent):
         """Handle mouse press events to show context menu on right click"""
         if event.button() == Qt.MouseButton.RightButton:
-            if self._parent_widget and hasattr(
-                self._parent_widget, "_show_context_menu"
-            ):
-                self._parent_widget._show_context_menu(
-                    self, event.pos(), is_input=self._is_input_widget
-                )
+            if self._parent_widget and hasattr(self._parent_widget, "_show_context_menu"):
+                self._parent_widget._show_context_menu(self, event.pos(), is_input=self._is_input_widget)
                 event.accept()
                 return
         super().mousePressEvent(event)
@@ -85,9 +79,7 @@ class ContextMenuMixin:
         """Override context menu event to show our custom menu"""
         if self._parent_widget and hasattr(self._parent_widget, "_show_context_menu"):
             local_pos = self.mapFromGlobal(event.globalPos())
-            self._parent_widget._show_context_menu(
-                self, local_pos, is_input=self._is_input_widget
-            )
+            self._parent_widget._show_context_menu(self, local_pos, is_input=self._is_input_widget)
             event.accept()
         else:
             super().contextMenuEvent(event)
@@ -132,8 +124,7 @@ class ChatMessageLabel(ContextMenuMixin, QLabel):
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         self.setTextFormat(Qt.TextFormat.RichText)
         self.setTextInteractionFlags(
-            Qt.TextInteractionFlag.TextSelectableByMouse
-            | Qt.TextInteractionFlag.LinksAccessibleByMouse
+            Qt.TextInteractionFlag.TextSelectableByMouse | Qt.TextInteractionFlag.LinksAccessibleByMouse
         )
         self.setOpenExternalLinks(True)
         self._init_context_menu(is_input_widget=False)
@@ -160,8 +151,7 @@ class ChatMessageLabel(ContextMenuMixin, QLabel):
                 if len(word) > 50 and "&" not in word and "<" not in word:
                     # Insert zero-width space every 30 characters
                     return "".join(
-                        char
-                        + ("\u200b" if (i + 1) % 30 == 0 and i + 1 < len(word) else "")
+                        char + ("\u200b" if (i + 1) % 30 == 0 and i + 1 < len(word) else "")
                         for i, char in enumerate(word)
                     )
                 return word
@@ -248,9 +238,7 @@ class NotificationLabel(QLabel):
             x = self.width() - radius - margin_x
             y = self.height() - radius - margin_y
 
-        painter.drawEllipse(
-            QPoint(x + radius // 2, y + radius // 2), radius // 2, radius // 2
-        )
+        painter.drawEllipse(QPoint(x + radius // 2, y + radius // 2), radius // 2, radius // 2)
 
 
 class AiChatWidget(BaseWidget):
@@ -360,11 +348,7 @@ class AiChatWidget(BaseWidget):
 
         try:
             # Enable send button only if provider, model are selected and input has text
-            has_provider_and_model = bool(
-                self._provider
-                and self._model
-                and not self._model.startswith("No models")
-            )
+            has_provider_and_model = bool(self._provider and self._model and not self._model.startswith("No models"))
             has_input_text = bool(self.input_edit.toPlainText().strip())
             is_enabled = has_provider_and_model and has_input_text
             self.send_btn.setEnabled(is_enabled)
@@ -402,9 +386,7 @@ class AiChatWidget(BaseWidget):
 
     def _reconnect_streaming_if_needed(self):
         """Reconnect streaming state when popup is reopened"""
-        streaming = hasattr(self, "_streaming_state") and self._streaming_state.get(
-            "in_progress"
-        )
+        streaming = hasattr(self, "_streaming_state") and self._streaming_state.get("in_progress")
         if not streaming:
             return
 
@@ -459,10 +441,7 @@ class AiChatWidget(BaseWidget):
             if row_widget and isinstance(row_widget, QWidget):
                 for i in range(row_widget.layout().count()):
                     child = row_widget.layout().itemAt(i).widget()
-                    if (
-                        isinstance(child, QLabel)
-                        and child.property("class") == "assistant-message"
-                    ):
+                    if isinstance(child, QLabel) and child.property("class") == "assistant-message":
                         msg_label = child
                         break
         elif last_role == "assistant" and msg_label is not None:
@@ -487,13 +466,9 @@ class AiChatWidget(BaseWidget):
 
     def _toggle_chat(self):
         # If popup is not visible or doesn't exist, open it
-        if self._popup_chat is None or not (
-            self._popup_chat and self._popup_chat.isVisible()
-        ):
+        if self._popup_chat is None or not (self._popup_chat and self._popup_chat.isVisible()):
             if self._animation["enabled"]:
-                AnimationManager.animate(
-                    self, self._animation["type"], self._animation["duration"]
-                )
+                AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
             self._show_chat()
         else:
             self._popup_chat.hide()
@@ -544,16 +519,10 @@ class AiChatWidget(BaseWidget):
         )
         self.provider_menu = QMenu(self.provider_btn)
         self.provider_menu.setProperty("class", "context-menu")
-        self.provider_menu.setStyleSheet(
-            "QMenu::indicator { width: 0px; height: 0px; }"
-        )
-        self.provider_menu.aboutToShow.connect(
-            lambda: qmenu_rounded_corners(self.provider_menu)
-        )
+        self.provider_menu.setStyleSheet("QMenu::indicator { width: 0px; height: 0px; }")
+        self.provider_menu.aboutToShow.connect(lambda: qmenu_rounded_corners(self.provider_menu))
         self.provider_btn.clicked.connect(
-            lambda: self.provider_menu.exec(
-                self.provider_btn.mapToGlobal(self.provider_btn.rect().bottomLeft())
-            )
+            lambda: self.provider_menu.exec(self.provider_btn.mapToGlobal(self.provider_btn.rect().bottomLeft()))
         )
         self._populate_provider_menu()
         model_label = QLabel("Model")
@@ -569,9 +538,7 @@ class AiChatWidget(BaseWidget):
             QPushButton::menu-indicator { image: none; width: 0px; height: 0px; }
         """
         )
-        self.model_btn.setEnabled(
-            bool(self._provider_config and self._provider_config.get("models"))
-        )
+        self.model_btn.setEnabled(bool(self._provider_config and self._provider_config.get("models")))
         self.model_menu = QMenu(self.model_btn)
         self.model_menu.setProperty("class", "context-menu")
         self.model_menu.setStyleSheet("QMenu::indicator { width: 0px; height: 0px; }")
@@ -593,9 +560,7 @@ class AiChatWidget(BaseWidget):
             )
         )
         self.model_btn.clicked.connect(
-            lambda: self.model_menu.exec(
-                self.model_btn.mapToGlobal(self.model_btn.rect().bottomLeft())
-            )
+            lambda: self.model_menu.exec(self.model_btn.mapToGlobal(self.model_btn.rect().bottomLeft()))
         )
         self._populate_model_menu()
 
@@ -616,12 +581,8 @@ class AiChatWidget(BaseWidget):
 
         self.chat_scroll = QScrollArea()
         self.chat_scroll.setWidgetResizable(True)
-        self.chat_scroll.setHorizontalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
-        )
-        self.chat_scroll.setVerticalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAsNeeded
-        )
+        self.chat_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.chat_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.chat_scroll.setProperty("class", "chat-content")
         self.chat_scroll.setStyleSheet(
             """
@@ -636,14 +597,10 @@ class AiChatWidget(BaseWidget):
 
         self.chat_widget = QWidget()
         self.chat_widget.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        self.chat_widget.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
-        )
+        self.chat_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.chat_layout = QVBoxLayout(self.chat_widget)
         self.chat_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.chat_layout.addSpacerItem(
-            QSpacerItem(1, 1, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
-        )
+        self.chat_layout.addSpacerItem(QSpacerItem(1, 1, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
         self.chat_scroll.setWidget(self.chat_widget)
         layout.addWidget(self.chat_scroll, stretch=1)
         v_scrollbar = self.chat_scroll.verticalScrollBar()
@@ -701,9 +658,7 @@ class AiChatWidget(BaseWidget):
             if provider_name == self._provider:
                 action.setChecked(True)
 
-            action.triggered.connect(
-                functools.partial(self._on_provider_changed, provider_name)
-            )
+            action.triggered.connect(functools.partial(self._on_provider_changed, provider_name))
 
     def _render_chat_history(self):
         """Render chat history for the current provider and model asynchronously."""
@@ -725,16 +680,12 @@ class AiChatWidget(BaseWidget):
         history = self._get_current_history()
 
         streaming_partial = None
-        if hasattr(self, "_streaming_state") and self._streaming_state.get(
-            "in_progress"
-        ):
+        if hasattr(self, "_streaming_state") and self._streaming_state.get("in_progress"):
             streaming_partial = self._streaming_state.get("partial_text", None)
         if not history and not streaming_partial:
             self._show_empty_chat_placeholder()
         else:
-            QTimer.singleShot(
-                10, lambda: self._load_all_messages_async(history, streaming_partial)
-            )
+            QTimer.singleShot(10, lambda: self._load_all_messages_async(history, streaming_partial))
         self.chat_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
     def _append_message(self, role, text):
@@ -746,17 +697,12 @@ class AiChatWidget(BaseWidget):
         row_layout.setContentsMargins(0, 0, 0, 0)
         row_layout.setSpacing(0)
         icon_label = QLabel()
-        icon_label.setSizePolicy(
-            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred
-        )
+        icon_label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
         msg_label = ChatMessageLabel()
-        msg_label.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
-        )
+        msg_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         msg_label.set_parent_widget(self)
         msg_label.setTextInteractionFlags(
-            Qt.TextInteractionFlag.TextSelectableByMouse
-            | Qt.TextInteractionFlag.LinksAccessibleByMouse
+            Qt.TextInteractionFlag.TextSelectableByMouse | Qt.TextInteractionFlag.LinksAccessibleByMouse
         )
         msg_label.setOpenExternalLinks(True)
         if role == "user":
@@ -782,18 +728,12 @@ class AiChatWidget(BaseWidget):
         from datetime import datetime
 
         hour = datetime.now().hour
-        greeting = (
-            "Good morning"
-            if 5 <= hour < 12
-            else "Good afternoon" if 12 <= hour < 18 else "Good evening"
-        )
+        greeting = "Good morning" if 5 <= hour < 12 else "Good afternoon" if 12 <= hour < 18 else "Good evening"
         placeholder = QWidget()
         placeholder.setProperty("class", "empty-chat")
         layout = QVBoxLayout(placeholder)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setAlignment(
-            Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter
-        )
+        layout.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         label1 = QLabel(greeting)
         label1.setProperty("class", "greeting")
         label1.setAlignment(Qt.AlignmentFlag.AlignHCenter)
@@ -802,9 +742,7 @@ class AiChatWidget(BaseWidget):
         label2.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         layout.addWidget(label1)
         layout.addWidget(label2)
-        self.chat_layout.insertWidget(
-            self.chat_layout.count() - 1, placeholder, stretch=1
-        )
+        self.chat_layout.insertWidget(self.chat_layout.count() - 1, placeholder, stretch=1)
 
     def _load_all_messages_async(self, history, streaming_partial):
         """Load all messages asynchronously in batches to prevent UI blocking."""
@@ -829,11 +767,7 @@ class AiChatWidget(BaseWidget):
             parent = chat_layout.parentWidget()
         except RuntimeError:
             return
-        if (
-            parent is None
-            or not isinstance(parent, QWidget)
-            or parent is not self.chat_widget
-        ):
+        if parent is None or not isinstance(parent, QWidget) or parent is not self.chat_widget:
             return
         if not hasattr(self, "_history_to_load"):
             return
@@ -867,10 +801,7 @@ class AiChatWidget(BaseWidget):
                 if row_widget and isinstance(row_widget, QWidget):
                     for i in range(row_widget.layout().count()):
                         child = row_widget.layout().itemAt(i).widget()
-                        if (
-                            isinstance(child, QLabel)
-                            and child.property("class") == "assistant-message"
-                        ):
+                        if isinstance(child, QLabel) and child.property("class") == "assistant-message":
                             msg_label = child
                             break
                 if hasattr(self, "_streaming_state") and msg_label is not None:
@@ -878,9 +809,7 @@ class AiChatWidget(BaseWidget):
                     # Ensure only one handler is connected
                     if hasattr(self, "_worker"):
                         try:
-                            self._worker.chunk_signal.disconnect(
-                                self._streaming_chunk_handler
-                            )
+                            self._worker.chunk_signal.disconnect(self._streaming_chunk_handler)
                         except Exception:
                             pass
                         self._worker.chunk_signal.connect(self._streaming_chunk_handler)
@@ -926,9 +855,7 @@ class AiChatWidget(BaseWidget):
             self._provider = provider_name
             self.provider_btn.setText(provider_name)
             # Find provider config
-            self._provider_config = next(
-                (p for p in self._providers if p["provider"] == provider_name), None
-            )
+            self._provider_config = next((p for p in self._providers if p["provider"] == provider_name), None)
             self._populate_model_menu()
             self._render_chat_history()
             self._update_send_button_state()
@@ -955,23 +882,15 @@ class AiChatWidget(BaseWidget):
                 action.setChecked(True)
             else:
                 action.setChecked(False)
-            action.triggered.connect(
-                lambda checked, m=model_label: self._on_model_changed_by_label(m)
-            )
+            action.triggered.connect(lambda checked, m=model_label: self._on_model_changed_by_label(m))
         self.model_btn.setEnabled(True)
         # Set first model as default from the provider config
-        if self._model and any(
-            m["name"] == self._model for m in self._provider_config["models"]
-        ):
-            selected_model = next(
-                m for m in self._provider_config["models"] if m["name"] == self._model
-            )
+        if self._model and any(m["name"] == self._model for m in self._provider_config["models"]):
+            selected_model = next(m for m in self._provider_config["models"] if m["name"] == self._model)
             self.model_btn.setText(selected_model.get("label", self._model))
         else:
             self._model = self._provider_config["models"][0]["name"]
-            self.model_btn.setText(
-                self._provider_config["models"][0].get("label", self._model)
-            )
+            self.model_btn.setText(self._provider_config["models"][0].get("label", self._model))
 
     def _on_model_changed_by_label(self, model_label):
         # Save current history before switching
@@ -992,12 +911,7 @@ class AiChatWidget(BaseWidget):
 
     def _on_send_clicked(self):
         user_text = self.input_edit.toPlainText().strip()
-        if (
-            not user_text
-            or not self._provider
-            or not self._model
-            or self._model.startswith("No models")
-        ):
+        if not user_text or not self._provider or not self._model or self._model.startswith("No models"):
             return
         self.input_edit.clear()
         self._append_message("user", user_text)
@@ -1012,24 +926,16 @@ class AiChatWidget(BaseWidget):
     def _on_stop_clicked(self):
         self._stop_event = True
 
-        if (
-            hasattr(self, "_worker")
-            and hasattr(self._worker, "client")
-            and self._worker.client
-        ):
+        if hasattr(self, "_worker") and hasattr(self._worker, "client") and self._worker.client:
             try:
                 self._worker.client.stop()
             except Exception:
                 logging.error("Failed to stop the AI chat client gracefully.")
                 pass
 
-        if hasattr(self, "_streaming_state") and self._streaming_state.get(
-            "partial_text"
-        ):
+        if hasattr(self, "_streaming_state") and self._streaming_state.get("partial_text"):
             # Use history management
-            history = AiChatWidget._persistent_chat_history.get(
-                self._get_history_key(), []
-            )
+            history = AiChatWidget._persistent_chat_history.get(self._get_history_key(), [])
             if not history or history[-1]["role"] != "assistant":
                 self._add_to_history("assistant", self._streaming_state["partial_text"])
             else:
@@ -1079,13 +985,9 @@ class AiChatWidget(BaseWidget):
 
         def run(self):
             try:
-                self.client = AiChatClient(
-                    self.provider_config, self.model, self.max_tokens
-                )
+                self.client = AiChatClient(self.provider_config, self.model, self.max_tokens)
                 full_text = ""
-                for chunk in self.client.chat(
-                    self.chat_history, temperature=self.temperature, top_p=self.top_p
-                ):
+                for chunk in self.client.chat(self.chat_history, temperature=self.temperature, top_p=self.top_p):
                     if self.stop_event_func():
                         self.client.stop()
                         break
@@ -1139,10 +1041,7 @@ class AiChatWidget(BaseWidget):
                 layout = widget.layout()
                 for j in range(layout.count()):
                     child = layout.itemAt(j).widget()
-                    if (
-                        isinstance(child, QLabel)
-                        and child.property("class") == "assistant-message"
-                    ):
+                    if isinstance(child, QLabel) and child.property("class") == "assistant-message":
                         msg_label = child
                         break
                 if msg_label:
@@ -1166,13 +1065,11 @@ class AiChatWidget(BaseWidget):
             top_p = model_config["top_p"]
 
             # Load instructions from file if specified, file must end with "_chatmode.md"
-            if isinstance(instructions, str) and instructions.strip().endswith(
-                "_chatmode.md"
-            ):
+            if isinstance(instructions, str) and instructions.strip().endswith("_chatmode.md"):
                 file_path = instructions.strip()
                 if os.path.isfile(file_path):
                     try:
-                        with open(file_path, "r", encoding="utf-8") as f:
+                        with open(file_path, encoding="utf-8") as f:
                             instructions = f.read()
                     except Exception:
                         instructions = None
@@ -1184,9 +1081,7 @@ class AiChatWidget(BaseWidget):
         chat_history = list(self._get_current_history())
         if instructions:
             if not (chat_history and chat_history[0]["role"] == "system"):
-                chat_history = [
-                    {"role": "system", "content": instructions}
-                ] + chat_history
+                chat_history = [{"role": "system", "content": instructions}] + chat_history
 
         # Setup streaming state for reconnection
         self._streaming_state = {
@@ -1207,18 +1102,10 @@ class AiChatWidget(BaseWidget):
             top_p,
         )
         self._worker.moveToThread(self._thread)
-        self._worker.chunk_signal.connect(
-            self._streaming_chunk_handler, Qt.ConnectionType.QueuedConnection
-        )
-        self._worker.done_signal.connect(
-            self._streaming_done_handler, Qt.ConnectionType.QueuedConnection
-        )
-        self._worker.error_signal.connect(
-            self._streaming_error_handler, Qt.ConnectionType.QueuedConnection
-        )
-        self._worker.finished_signal.connect(
-            self._thread.quit, Qt.ConnectionType.QueuedConnection
-        )
+        self._worker.chunk_signal.connect(self._streaming_chunk_handler, Qt.ConnectionType.QueuedConnection)
+        self._worker.done_signal.connect(self._streaming_done_handler, Qt.ConnectionType.QueuedConnection)
+        self._worker.error_signal.connect(self._streaming_error_handler, Qt.ConnectionType.QueuedConnection)
+        self._worker.finished_signal.connect(self._thread.quit, Qt.ConnectionType.QueuedConnection)
         self._thread.started.connect(self._worker.run)
         self._thread.finished.connect(self._thread.deleteLater)
         self._thread.start()
@@ -1273,11 +1160,7 @@ class AiChatWidget(BaseWidget):
     def _streaming_done_handler(self, text):
         if hasattr(self, "_streaming_state"):
             self._streaming_state["in_progress"] = False
-        msg_label = (
-            self._streaming_state.get("msg_label")
-            if hasattr(self, "_streaming_state")
-            else None
-        )
+        msg_label = self._streaming_state.get("msg_label") if hasattr(self, "_streaming_state") else None
         self._stop_thinking_animation()
 
         # Update chat history
@@ -1306,11 +1189,7 @@ class AiChatWidget(BaseWidget):
     def _streaming_error_handler(self, err):
         if hasattr(self, "_streaming_state"):
             self._streaming_state["in_progress"] = False
-        msg_label = (
-            self._streaming_state.get("msg_label")
-            if hasattr(self, "_streaming_state")
-            else None
-        )
+        msg_label = self._streaming_state.get("msg_label") if hasattr(self, "_streaming_state") else None
         self._stop_thinking_animation()
         reply = f"[Error: {err}]"
 
@@ -1361,9 +1240,7 @@ class AiChatWidget(BaseWidget):
             selected_text = text_edit.textCursor().selectedText()
             if selected_text:
                 copy_action = context_menu.addAction("Copy")
-                copy_action.triggered.connect(
-                    lambda: QApplication.clipboard().setText(selected_text)
-                )
+                copy_action.triggered.connect(lambda: QApplication.clipboard().setText(selected_text))
 
                 cut_action = context_menu.addAction("Cut")
                 cut_action.triggered.connect(
@@ -1377,9 +1254,7 @@ class AiChatWidget(BaseWidget):
             clipboard_text = clipboard.text()
             if clipboard_text:
                 paste_action = context_menu.addAction("Paste")
-                paste_action.triggered.connect(
-                    lambda: text_edit.insertPlainText(clipboard_text)
-                )
+                paste_action.triggered.connect(lambda: text_edit.insertPlainText(clipboard_text))
 
             if text_edit.toPlainText():
                 context_menu.addSeparator()
@@ -1429,12 +1304,8 @@ class AiChatWidget(BaseWidget):
 
     def _simulate_shortcut(self, widget, key):
         """Simulate a Ctrl+<key> keyboard shortcut on the given widget."""
-        press_event = QKeyEvent(
-            QEvent.Type.KeyPress, key, Qt.KeyboardModifier.ControlModifier
-        )
-        release_event = QKeyEvent(
-            QEvent.Type.KeyRelease, key, Qt.KeyboardModifier.ControlModifier
-        )
+        press_event = QKeyEvent(QEvent.Type.KeyPress, key, Qt.KeyboardModifier.ControlModifier)
+        release_event = QKeyEvent(QEvent.Type.KeyRelease, key, Qt.KeyboardModifier.ControlModifier)
         QApplication.sendEvent(widget, press_event)
         QApplication.sendEvent(widget, release_event)
 
@@ -1467,9 +1338,7 @@ class AiChatWidget(BaseWidget):
         """Save the current chat history to persistent storage"""
         if self._provider and self._model is not None:
             key = self._get_history_key()
-            AiChatWidget._persistent_chat_history[key] = list(
-                self._get_current_history()
-            )
+            AiChatWidget._persistent_chat_history[key] = list(self._get_current_history())
 
     def _get_current_history(self):
         """Get the current chat history for the active provider and model"""

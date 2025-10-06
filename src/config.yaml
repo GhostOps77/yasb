@@ -49,17 +49,17 @@ widgets:
           ignore_directories: true                   # we only care about files
           read_file_contents: true                   # read file contents on create/modify
           read_max_bytes: 8                          # optional limit
-      labels:
-        file:
-          created: "{data.src.content}"                   # show file contents when created
-          modified: "{data.src.content}"                  # update if modified
-          deleted: ""                            # show nothing when deleted
-          moved: ""                              # treat moved as creation
-        folder:
-          created: ""                            # folders not relevant
-          modified: ""
-          deleted: ""
-          moved: ""
+          labels:
+            file:
+              created: "{data.src.content}"                   # show file contents when created
+              modified: "{data.src.content}"                  # update if modified
+              deleted: ""                            # show nothing when deleted
+              moved: ""                              # treat moved as creation
+            folder:
+              created: ""                            # folders not relevant
+              modified: ""
+              deleted: ""
+              moved: ""
   media:
     type: "yasb.media.MediaWidget"
     options:

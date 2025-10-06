@@ -106,9 +106,7 @@ class HomeWidget(BaseWidget):
             self._add_menu_item(
                 main_layout,
                 self._menu_labels["about"],
-                lambda: subprocess.Popen(
-                    "winver", shell=True, creationflags=subprocess.CREATE_NO_WINDOW
-                ),
+                lambda: subprocess.Popen("winver", shell=True, creationflags=subprocess.CREATE_NO_WINDOW),
             )
 
             self._menu._add_separator(main_layout)
@@ -122,9 +120,7 @@ class HomeWidget(BaseWidget):
             self._add_menu_item(
                 main_layout,
                 self._menu_labels["task_manager"],
-                lambda: subprocess.Popen(
-                    "taskmgr", shell=True, creationflags=subprocess.CREATE_NO_WINDOW
-                ),
+                lambda: subprocess.Popen("taskmgr", shell=True, creationflags=subprocess.CREATE_NO_WINDOW),
             )
 
             self._menu._add_separator(main_layout)
@@ -138,11 +134,7 @@ class HomeWidget(BaseWidget):
                         menu_item["title"],
                         self.create_menu_action(menu_item["path"]),
                     )
-        if (
-            self._menu_list is not None
-            and len(self._menu_list) > 0
-            and self._power_menu
-        ):
+        if self._menu_list is not None and len(self._menu_list) > 0 and self._power_menu:
             self._menu._add_separator(main_layout)
 
         if self._power_menu:
@@ -217,7 +209,5 @@ class HomeWidget(BaseWidget):
 
     def _toggle_menu(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
         self._create_menu()

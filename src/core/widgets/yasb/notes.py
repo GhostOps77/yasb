@@ -3,7 +3,6 @@ import json
 import logging
 import os
 import re
-from typing import Dict, List
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QCursor
@@ -78,9 +77,7 @@ class NotesWidget(BaseWidget):
         add_shadow(self._widget_container, self._container_shadow)
         self.widget_layout.addWidget(self._widget_container)
 
-        build_widget_label(
-            self, self._label_content, self._label_alt_content, self._label_shadow
-        )
+        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("toggle_menu", self._toggle_menu)
@@ -109,9 +106,7 @@ class NotesWidget(BaseWidget):
 
     def _toggle_label(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
 
         self._show_alt_label = not self._show_alt_label
 
@@ -125,9 +120,7 @@ class NotesWidget(BaseWidget):
 
     def _toggle_menu(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
         self._show_menu()
 
     def _update_label(self):
@@ -135,9 +128,7 @@ class NotesWidget(BaseWidget):
 
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
         active_widgets_len = len(active_widgets)
-        active_label_content = (
-            self._label_alt_content if self._show_alt_label else self._label_content
-        )
+        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         active_label_content = active_label_content.format(count=notes_count)
 
         label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
@@ -324,9 +315,7 @@ class NotesWidget(BaseWidget):
         # Title
         display_title = re.sub(r"[\n\t\r]+", "", note["title"])
         if len(display_title) > self._menu_config["max_title_size"]:
-            display_title = (
-                display_title[: self._menu_config["max_title_size"] - 3] + "..."
-            )
+            display_title = display_title[: self._menu_config["max_title_size"] - 3] + "..."
 
         title_label = QLabel(display_title)
         title_label.setProperty("class", "title")
@@ -348,18 +337,14 @@ class NotesWidget(BaseWidget):
         container_layout.addWidget(text_container)
 
         # Spacer to push buttons to the right
-        container_layout.addItem(
-            QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-        )
+        container_layout.addItem(QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
 
         # Create vertical layout for the buttons
         buttons_container = QWidget()
         buttons_layout = QVBoxLayout(buttons_container)
         buttons_layout.setContentsMargins(0, 0, 0, 0)
         buttons_layout.setSpacing(5)  # Space between buttons
-        buttons_layout.setAlignment(
-            Qt.AlignmentFlag.AlignCenter
-        )  # Center the buttons vertically
+        buttons_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)  # Center the buttons vertically
 
         # Copy button on top
         copy_button = QPushButton(self._icons["copy"])
@@ -424,14 +409,14 @@ class NotesWidget(BaseWidget):
         clipboard = QApplication.clipboard()
         clipboard.setText(note["title"])
 
-    def _load_notes(self) -> List[Dict]:
+    def _load_notes(self) -> list[dict]:
         """Load notes from JSON file"""
         try:
             if os.path.exists(self._notes_file):
                 if DEBUG:
                     logging.debug(f"Loading notes from {self._notes_file}")
 
-                with open(self._notes_file, "r", encoding="utf-8") as f:
+                with open(self._notes_file, encoding="utf-8") as f:
                     return list(json.load(f))
 
         except Exception as e:

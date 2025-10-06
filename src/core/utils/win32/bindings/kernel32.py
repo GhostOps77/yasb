@@ -203,9 +203,7 @@ def ReadFile(hFile: int, nNumberOfBytesToRead: int) -> tuple[bool, bytes]:
     """
     buffer = create_string_buffer(nNumberOfBytesToRead)
     bytes_read = DWORD()
-    success = bool(
-        kernel32.ReadFile(hFile, buffer, nNumberOfBytesToRead, byref(bytes_read), None)
-    )
+    success = bool(kernel32.ReadFile(hFile, buffer, nNumberOfBytesToRead, byref(bytes_read), None))
     return success, buffer.raw[: bytes_read.value]
 
 

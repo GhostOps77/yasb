@@ -6,7 +6,7 @@ import re
 import sqlite3
 import subprocess
 import urllib.parse
-from typing import Any, List
+from typing import Any
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QCursor
@@ -73,9 +73,7 @@ class VSCodeWidget(BaseWidget):
         self._label_shadow = label_shadow
 
         if state_storage_path == "":
-            state_storage_path = os.path.expandvars(
-                r"%APPDATA%\Code\User\globalStorage\state.vscdb"
-            )
+            state_storage_path = os.path.expandvars(r"%APPDATA%\Code\User\globalStorage\state.vscdb")
         self._state_file_path = state_storage_path
 
         self._widget_container_layout = QHBoxLayout()
@@ -94,9 +92,7 @@ class VSCodeWidget(BaseWidget):
 
         self.widget_layout.addWidget(self._widget_container)
 
-        build_widget_label(
-            self, self._label_content, self._label_alt_content, self._label_shadow
-        )
+        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("toggle_menu", self._toggle_menu)
@@ -116,13 +112,11 @@ class VSCodeWidget(BaseWidget):
             path = f"{drive_part}:{rest}"
         return path
 
-    def _load_recent_workspaces(self) -> List[dict]:
+    def _load_recent_workspaces(self) -> list[dict]:
         try:
             conn = sqlite3.connect(self._state_file_path)
             cursor = conn.cursor()
-            cursor.execute(
-                "SELECT value FROM ItemTable WHERE key = 'history.recentlyOpenedPathsList'"
-            )
+            cursor.execute("SELECT value FROM ItemTable WHERE key = 'history.recentlyOpenedPathsList'")
             result = cursor.fetchone()
             result_list = []
             if result:
@@ -130,9 +124,7 @@ class VSCodeWidget(BaseWidget):
                 for path in paths_data:
                     if isinstance(path, dict):
                         if path.get("folderUri"):
-                            folder_path = self._uri_to_windows_path(
-                                path.get("folderUri")
-                            )
+                            folder_path = self._uri_to_windows_path(path.get("folderUri"))
                             if os.path.exists(folder_path):
                                 result_list.append({"folder": folder_path})
                         if path.get("fileUri"):
@@ -151,16 +143,12 @@ class VSCodeWidget(BaseWidget):
 
     def _toggle_menu(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
         self.show_menu()
 
     def _toggle_label(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
         self._show_alt_label = not self._show_alt_label
         for widget in self._widgets:
             widget.setVisible(not self._show_alt_label)
@@ -171,9 +159,7 @@ class VSCodeWidget(BaseWidget):
     def _update_label(self):
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
         active_widgets_len = len(active_widgets)
-        active_label_content = (
-            self._label_alt_content if self._show_alt_label else self._label_content
-        )
+        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
         widget_index = 0
 
@@ -272,9 +258,7 @@ class VSCodeWidget(BaseWidget):
 
         is_folder = "folder" in workspace_data
 
-        if (is_folder and not self._hide_folder_icon) or (
-            not is_folder and not self._hide_file_icon
-        ):
+        if (is_folder and not self._hide_folder_icon) or (not is_folder and not self._hide_file_icon):
             icon_label = QLabel(self._folder_icon if is_folder else self._file_icon)
             icon_label.setProperty("class", "folder-icon" if is_folder else "file-icon")
             container_layout.addWidget(icon_label)
@@ -301,9 +285,7 @@ class VSCodeWidget(BaseWidget):
         text_content_layout = QVBoxLayout(text_content)
         text_content_layout.addWidget(title_label)
         text_content_layout.addWidget(date_label)
-        text_content_layout.setAlignment(
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
-        )
+        text_content_layout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         text_content_layout.setContentsMargins(0, 0, 0, 0)
         text_content_layout.setSpacing(0)
 

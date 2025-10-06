@@ -70,9 +70,7 @@ class TrafficWidget(BaseWidget):
         TrafficDataManager.setup_global_data_storage()
 
         # Initialize session bytes sent and received
-        self.session_bytes_sent, self.session_bytes_recv = (
-            TrafficDataManager.initialize_interface(self._interface)
-        )
+        self.session_bytes_sent, self.session_bytes_recv = TrafficDataManager.initialize_interface(self._interface)
 
         self._widget_container_layout = QHBoxLayout()
         self._widget_container_layout.setSpacing(0)
@@ -90,43 +88,29 @@ class TrafficWidget(BaseWidget):
         add_shadow(self._widget_container, self._container_shadow)
 
         self.widget_layout.addWidget(self._widget_container)
-        build_widget_label(
-            self, self._label_content, self._label_alt_content, self._label_shadow
-        )
+        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
 
         self._initialize_instance_counters()
         self._setup_callbacks_and_timers(update_interval, callbacks)
 
         # Initial data update
-        QTimer.singleShot(
-            200, lambda: TrafficWidget._update_interface_data(self._interface)
-        )
+        QTimer.singleShot(200, lambda: TrafficWidget._update_interface_data(self._interface))
 
     def _setup_callbacks_and_timers(self, update_interval, callbacks):
         """Setup callbacks, timers, and internet checker"""
 
         # Create interface-specific internet checker
         try:
-            self.internet_checker = InternetChecker(
-                parent=self, interface=self._interface
-            )
-            self.internet_checker.connection_changed.connect(
-                self._on_connection_changed
-            )
+            self.internet_checker = InternetChecker(parent=self, interface=self._interface)
+            self.internet_checker.connection_changed.connect(self._on_connection_changed)
 
             self._is_internet_connected = True
             if DEBUG:
-                logging.info(
-                    f"Internet checker initialized for interface {self._interface}"
-                )
+                logging.info(f"Internet checker initialized for interface {self._interface}")
 
         except Exception as e:
-            logging.error(
-                f"Failed to initialize InternetChecker for interface {self._interface}: {e}"
-            )
-            self._is_internet_connected = (
-                False  # Default to disconnected if checker fails
-            )
+            logging.error(f"Failed to initialize InternetChecker for interface {self._interface}: {e}")
+            self._is_internet_connected = False  # Default to disconnected if checker fails
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("update_label", self._update_label)
@@ -157,16 +141,12 @@ class TrafficWidget(BaseWidget):
 
         def get_initial_counters():
             try:
-                initial_io = TrafficDataManager.get_interface_io_counters(
-                    self._interface
-                )
+                initial_io = TrafficDataManager.get_interface_io_counters(self._interface)
                 if initial_io:
                     self.bytes_sent = initial_io.bytes_sent
                     self.bytes_recv = initial_io.bytes_recv
                 else:
-                    logging.warning(
-                        f"Could not get initial IO counters for interface {self._interface}"
-                    )
+                    logging.warning(f"Could not get initial IO counters for interface {self._interface}")
             except Exception as e:
                 logging.error(f"Error initializing instance counters: {e}")
 
@@ -282,9 +262,7 @@ class TrafficWidget(BaseWidget):
 
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets  # type: ignore
         active_widgets_len = len(active_widgets)
-        active_label_content = (
-            self._label_alt_content if self._show_alt_label else self._label_content
-        )
+        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
 
         active_label_content = active_label_content.format_map(shared_data)
         label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
@@ -342,14 +320,10 @@ class TrafficWidget(BaseWidget):
 
         if "internet-info" in self.menu_labels:
             try:
-                net_status = (
-                    "connected" if self._is_internet_connected else "disconnected"
-                )
+                net_status = "connected" if self._is_internet_connected else "disconnected"
                 status_text = f"Internet {net_status.capitalize()}"
                 self.menu_labels["internet-info"].setText(status_text)
-                self.menu_labels["internet-info"].setProperty(
-                    "class", f"internet-info {net_status}"
-                )
+                self.menu_labels["internet-info"].setProperty("class", f"internet-info {net_status}")
                 self.menu_labels["internet-info"].setStyleSheet("")
             except (RuntimeError, AttributeError):
                 pass
@@ -422,9 +396,7 @@ class TrafficWidget(BaseWidget):
             column_layout.addWidget(speed_unit)
 
             placeholder = QLabel(placeholder_text)
-            placeholder.setProperty(
-                "class", f"speed-placeholder {label_prefix}-placeholder"
-            )
+            placeholder.setProperty("class", f"speed-placeholder {label_prefix}-placeholder")
             placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
             column_layout.addWidget(placeholder)
 
@@ -439,9 +411,7 @@ class TrafficWidget(BaseWidget):
 
         header_label = QLabel("Network Traffic")
         header_label.setProperty("class", "title")
-        header_label.setAlignment(
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
-        )
+        header_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         header_layout.addWidget(header_label)
 
         header_layout.addStretch()
@@ -467,9 +437,7 @@ class TrafficWidget(BaseWidget):
         speed_columns_layout.setSpacing(0)
 
         # Download column
-        download_column, download_value, download_unit = create_speed_column(
-            "download-speed", "Download"
-        )
+        download_column, download_value, download_unit = create_speed_column("download-speed", "Download")
         speed_columns_layout.addWidget(download_column)
 
         # Add separator between columns
@@ -478,9 +446,7 @@ class TrafficWidget(BaseWidget):
         speed_columns_layout.addWidget(separator)
 
         # Upload column
-        upload_column, upload_value, upload_unit = create_speed_column(
-            "upload-speed", "Upload"
-        )
+        upload_column, upload_value, upload_unit = create_speed_column("upload-speed", "Upload")
         speed_columns_layout.addWidget(upload_column)
 
         # Add columns to speed section
@@ -539,20 +505,14 @@ class TrafficWidget(BaseWidget):
             layout.addWidget(container)
 
         if self._menu["show_interface_name"]:
-            interface_label = QLabel(
-                f"Network Interface: {self._interface.capitalize()}"
-            )
+            interface_label = QLabel(f"Network Interface: {self._interface.capitalize()}")
             interface_label.setProperty("class", "interface-info")
             interface_label.setWordWrap(True)
             interface_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             layout.addWidget(interface_label)
 
         if self._menu["show_internet_info"]:
-            status_text = (
-                "Internet Connected"
-                if self._is_internet_connected
-                else "Internet Disconnected"
-            )
+            status_text = "Internet Connected" if self._is_internet_connected else "Internet Disconnected"
             internet_info = QLabel(status_text)
             internet_info.setProperty("class", "internet-info")
             internet_info.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -615,8 +575,8 @@ class TrafficWidget(BaseWidget):
                 return speed_str, ""
 
             # Update speed columns
-            upload_value, upload_unit_text = split_speed_unit(data['raw_upload_speed'])
-            download_value, download_unit_text = split_speed_unit(data['raw_download_speed'])
+            upload_value, upload_unit_text = split_speed_unit(data["raw_upload_speed"])
+            download_value, download_unit_text = split_speed_unit(data["raw_download_speed"])
 
             self.menu_labels["upload-speed-value"].setText(upload_value)
             self.menu_labels["upload-speed-unit"].setText(upload_unit_text)
@@ -634,14 +594,18 @@ class TrafficWidget(BaseWidget):
             #     "alltime-download": ("Downloaded:", alltime_downloaded),
             # }
             label_values_to_be_inserted = (
-                "session_uploaded", "session_downloaded", "session_duration", 
-                "today_uploaded", "today_downloaded", "alltime_uploaded", 
-                "alltime_downloaded", 
+                "session_uploaded",
+                "session_downloaded",
+                "session_duration",
+                "today_uploaded",
+                "today_downloaded",
+                "alltime_uploaded",
+                "alltime_downloaded",
             )
 
             for label_name in label_values_to_be_inserted:
-                text = label_name.rsplit('_', 1)[-1] + ':'
-                class_name = label_name.removesuffix('ed').replace('_', '-')
+                text = label_name.rsplit("_", 1)[-1] + ":"
+                class_name = label_name.removesuffix("ed").replace("_", "-")
 
                 text_key = f"{class_name}-text"
                 value_key = f"{class_name}-value"

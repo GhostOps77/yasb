@@ -61,9 +61,7 @@ class LibreHardwareMonitorWidget(BaseWidget):
         self._label_alt_content = label_alt
         self._sensor_id = sensor_id
         self._precision = precision
-        self._history = deque(
-            [0.0] * histogram_num_columns, maxlen=histogram_num_columns
-        )
+        self._history = deque([0.0] * histogram_num_columns, maxlen=histogram_num_columns)
         self._history_long: deque[float] = deque([], maxlen=history_size)
         self._histogram_fixed_min = histogram_fixed_min
         self._histogram_fixed_max = histogram_fixed_max
@@ -97,9 +95,7 @@ class LibreHardwareMonitorWidget(BaseWidget):
         add_shadow(self._widget_container, self._container_shadow)
         self.widget_layout.addWidget(self._widget_container)
 
-        build_widget_label(
-            self, self._label_content, self._label_alt_content, self._label_shadow
-        )
+        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("update_label", self._update_label)
@@ -111,14 +107,10 @@ class LibreHardwareMonitorWidget(BaseWidget):
         # Called when the request is finished
         self._network_manager.finished.connect(self._handle_network_response)
         # Called if the server requests authentication
-        self._network_manager.authenticationRequired.connect(
-            self._handle_authentication
-        )
+        self._network_manager.authenticationRequired.connect(self._handle_authentication)
 
         # Create a request
-        url = QUrl(
-            f"http://{self._server_host}:{self._server_port}/Sensor?action=Get&id={quote(self._sensor_id)}"
-        )
+        url = QUrl(f"http://{self._server_host}:{self._server_port}/Sensor?action=Get&id={quote(self._sensor_id)}")
         self.request = QNetworkRequest(url)
         self.request.setHeader(
             QNetworkRequest.KnownHeaders.ContentTypeHeader,
@@ -137,9 +129,7 @@ class LibreHardwareMonitorWidget(BaseWidget):
     def _toggle_label(self):
         """Toggle between main and alt labels"""
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
         self._show_alt_label = not self._show_alt_label
         for widget in self._widgets:
             widget.setVisible(not self._show_alt_label)
@@ -150,9 +140,7 @@ class LibreHardwareMonitorWidget(BaseWidget):
     def _toggle_menu(self):
         """Toggle the popup menu"""
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
         self._show_popup_menu()
 
     def _show_popup_menu(self):
@@ -235,9 +223,7 @@ class LibreHardwareMonitorWidget(BaseWidget):
         """Update just the value for a specific sensor"""
         if not self._is_menu_visible():
             return
-        url = QUrl(
-            f"http://{self._server_host}:{self._server_port}/Sensor?action=Get&id={quote(sensor_id)}"
-        )
+        url = QUrl(f"http://{self._server_host}:{self._server_port}/Sensor?action=Get&id={quote(sensor_id)}")
         request = QNetworkRequest(url)
         request.setHeader(
             QNetworkRequest.KnownHeaders.ContentTypeHeader,
@@ -264,20 +250,14 @@ class LibreHardwareMonitorWidget(BaseWidget):
     def _is_menu_visible(self):
         """Check if the popup menu is visible"""
         try:
-            if (
-                getattr(self, "_menu", None) is not None
-                and isinstance(self._menu, QWidget)
-                and self._menu.isVisible()
-            ):
+            if getattr(self, "_menu", None) is not None and isinstance(self._menu, QWidget) and self._menu.isVisible():
                 return True
         except (RuntimeError, AttributeError):
             return False
 
     def _get_histogram_bar(self, value: float, value_min: float, value_max: float):
         """Gets the appropriate histogram element from the icons list based on the value and min/max"""
-        bar_index = int(
-            (value - value_min) / max((value_max - value_min), 0.00001) * 10
-        )
+        bar_index = int((value - value_min) / max((value_max - value_min), 0.00001) * 10)
         bar_index = min(abs(bar_index), 8)
         return self._histogram_icons[bar_index]
 
@@ -297,26 +277,15 @@ class LibreHardwareMonitorWidget(BaseWidget):
             self._history_long.append(float_value)
             history_min_value = min(self._history_long)
             history_max_value = max(self._history_long)
-            min_val = (
-                history_min_value
-                if self._histogram_fixed_min is None
-                else self._histogram_fixed_min
-            )
-            max_val = (
-                history_max_value
-                if self._histogram_fixed_max is None
-                else self._histogram_fixed_max
-            )
+            min_val = history_min_value if self._histogram_fixed_min is None else self._histogram_fixed_min
+            max_val = history_max_value if self._histogram_fixed_max is None else self._histogram_fixed_max
 
             info["value"] = f"{value:.{self._precision}f}"
             info["min"] = f"{history_min_value:.{self._precision}f}"
             info["max"] = f"{history_max_value:.{self._precision}f}"
             info["unit"] = self._data.get("format", "Error Error").split(" ")[-1]
             info["histogram"] = (
-                "".join(
-                    self._get_histogram_bar(val, min_val, max_val)
-                    for val in self._history
-                )
+                "".join(self._get_histogram_bar(val, min_val, max_val) for val in self._history)
                 .encode("utf-8")
                 .decode("unicode_escape")
             )
@@ -325,9 +294,7 @@ class LibreHardwareMonitorWidget(BaseWidget):
 
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
         active_widgets_len = len(active_widgets)
-        active_label_content = (
-            self._label_alt_content if self._show_alt_label else self._label_content
-        )
+        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         active_label_content = active_label_content.format(info=info)
         label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
         widget_index = 0
@@ -337,9 +304,7 @@ class LibreHardwareMonitorWidget(BaseWidget):
             if not part:
                 continue
 
-            if widget_index >= active_widgets_len or not isinstance(
-                active_widgets[widget_index], QLabel
-            ):
+            if widget_index >= active_widgets_len or not isinstance(active_widgets[widget_index], QLabel):
                 continue
 
             if part.startswith("<span") and part.endswith("</span>"):

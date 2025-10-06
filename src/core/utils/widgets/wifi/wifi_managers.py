@@ -100,9 +100,7 @@ class WiFiConnectWorker(QThread):
     result = pyqtSignal(WiFiConnectionStatus, str, NetworkInfo)
     error = pyqtSignal(str)
 
-    def __init__(
-        self, network_info: NetworkInfo, ssid: str, password: str, hidden_ssid: bool
-    ):
+    def __init__(self, network_info: NetworkInfo, ssid: str, password: str, hidden_ssid: bool):
         super().__init__()
         self.network_info = network_info
         self.ssid = ssid
@@ -126,9 +124,7 @@ class WiFiConnectWorker(QThread):
         adapter = adapters[0]
         report: WiFiNetworkReport = adapter.network_report
         reconnection_kind = (
-            WiFiReconnectionKind.AUTOMATIC
-            if self.network_info.auto_connect
-            else WiFiReconnectionKind.MANUAL
+            WiFiReconnectionKind.AUTOMATIC if self.network_info.auto_connect else WiFiReconnectionKind.MANUAL
         )
         if not self.hidden_ssid:
             return self._connect_visible(adapter, report, reconnection_kind)
@@ -147,9 +143,7 @@ class WiFiConnectWorker(QThread):
                 if self.password:
                     cred = PasswordCredential()
                     cred.password = self.password
-                    result = adapter.connect_with_password_credential_async(
-                        network, reconnect_kind, cred
-                    ).get()
+                    result = adapter.connect_with_password_credential_async(network, reconnect_kind, cred).get()
                 else:
                     result = adapter.connect_async(network, reconnect_kind).get()
                 return result.connection_status
@@ -210,17 +204,13 @@ class WiFiManager(QObject):
         self._negotiated_version = DWORD()
         self._interface_list_ptr = POINTER(WLAN_INTERFACE_INFO_LIST)()
         self._interfaces: list[WLAN_INTERFACE_INFO] = []
-        self._notification_callback = WLAN_NOTIFICATION_CALLBACK(
-            self._on_wlan_notification
-        )
+        self._notification_callback = WLAN_NOTIFICATION_CALLBACK(self._on_wlan_notification)
 
     def init_wlan(self):
         """Open the WLAN handle and register notification callback"""
         if self._client_handle.value is not None:
             self.uninit_wlan()
-        result = WlanOpenHandle(
-            2, None, byref(self._negotiated_version), byref(self._client_handle)
-        )
+        result = WlanOpenHandle(2, None, byref(self._negotiated_version), byref(self._client_handle))
         if result != ERROR_SUCCESS:
             raise WinError(result)
 
@@ -264,20 +254,14 @@ class WiFiManager(QObject):
         # Force a new scan on all interfaces
         interfaces_ptr, interfaces = self._get_interface_list()
         for interface in interfaces:
-            result = WlanScan(
-                self._client_handle, byref(interface.InterfaceGuid), None, None, None
-            )
+            result = WlanScan(self._client_handle, byref(interface.InterfaceGuid), None, None, None)
             if result != ERROR_SUCCESS:
                 self._is_scanning = False
-                logger.error(
-                    f"Error scanning for WiFi networks: {format_error_message(result)}"
-                )
+                logger.error(f"Error scanning for WiFi networks: {format_error_message(result)}")
                 if result == ACCESS_DENIED:
                     self.wifi_scan_completed.emit(ScanResultStatus.ACCESS_DENIED, [])
                 elif result == ERROR_NDIS_DOT11_POWER_STATE_INVALID:
-                    self.wifi_scan_completed.emit(
-                        ScanResultStatus.POWER_STATE_INVALID, []
-                    )
+                    self.wifi_scan_completed.emit(ScanResultStatus.POWER_STATE_INVALID, [])
                 else:
                     self.wifi_scan_completed.emit(ScanResultStatus.ERROR, [])
                 return
@@ -318,9 +302,7 @@ class WiFiManager(QObject):
                 if result != ERROR_SUCCESS:
                     return None
                 try:
-                    network_info = self._find_connected_network_info(
-                        network_list_ptr, interface.InterfaceGuid
-                    )
+                    network_info = self._find_connected_network_info(network_list_ptr, interface.InterfaceGuid)
                 finally:
                     WlanFreeMemory(network_list_ptr)
             finally:
@@ -349,9 +331,9 @@ class WiFiManager(QObject):
                 logger.error(f"Error getting available networks: {result}")
                 continue
             network_list = network_list_ptr.contents
-            networks = (
-                WLAN_AVAILABLE_NETWORK * int(network_list.dwNumberOfItems)
-            ).from_address(addressof(network_list.Network))
+            networks = (WLAN_AVAILABLE_NETWORK * int(network_list.dwNumberOfItems)).from_address(
+                addressof(network_list.Network)
+            )
             for network in networks:
                 ssid = network.dot11Ssid
                 ssid_bytes = bytes(ssid.ucSSID[: ssid.uSSIDLength])
@@ -373,12 +355,8 @@ class WiFiManager(QObject):
                             networks_info[i].quality = network.wlanSignalQuality
                         break
                 if not duplicate:
-                    profile_exists = bool(
-                        network.dwFlags & WLAN_AVAILABLE_NETWORK_HAS_PROFILE
-                    )
-                    auto_connect = self._is_auto_connect_profile(
-                        self._client_handle, interface.InterfaceGuid, ssid_str
-                    )
+                    profile_exists = bool(network.dwFlags & WLAN_AVAILABLE_NETWORK_HAS_PROFILE)
+                    auto_connect = self._is_auto_connect_profile(self._client_handle, interface.InterfaceGuid, ssid_str)
                     state = WifiState(0)
                     if network.dwFlags & WLAN_AVAILABLE_NETWORK_CONNECTED:
                         state |= WifiState.CONNECTED
@@ -427,14 +405,10 @@ class WiFiManager(QObject):
         try:
             interfaces_ptr, interfaces = self._get_interface_list()
             for interface in interfaces:
-                is_auto_connect = self._is_auto_connect_profile(
-                    self._client_handle, interface.InterfaceGuid, ssid
-                )
+                is_auto_connect = self._is_auto_connect_profile(self._client_handle, interface.InterfaceGuid, ssid)
                 if is_auto_connect == auto_connect:
                     continue
-                wlan_profile = self._get_wlan_profile(
-                    self._client_handle, interface.InterfaceGuid, ssid
-                )
+                wlan_profile = self._get_wlan_profile(self._client_handle, interface.InterfaceGuid, ssid)
                 if not wlan_profile:
                     continue
                 new_mode = "auto" if auto_connect else "manual"
@@ -444,9 +418,7 @@ class WiFiManager(QObject):
                     wlan_profile,
                     flags=re.IGNORECASE,
                 )
-                result = self._set_wlan_profile(
-                    self._client_handle, interface.InterfaceGuid, modified_xml
-                )
+                result = self._set_wlan_profile(self._client_handle, interface.InterfaceGuid, modified_xml)
                 if result:
                     logger.debug("Changed auto-connect setting")
                     return True
@@ -484,16 +456,14 @@ class WiFiManager(QObject):
     ) -> tuple[CPointer[WLAN_INTERFACE_INFO_LIST], Array[WLAN_INTERFACE_INFO]]:
         """Get the list of WLAN interfaces"""
         interface_list_ptr = POINTER(WLAN_INTERFACE_INFO_LIST)()
-        result = WlanEnumInterfaces(
-            self._client_handle, None, byref(self._interface_list_ptr)
-        )
+        result = WlanEnumInterfaces(self._client_handle, None, byref(self._interface_list_ptr))
         if result != ERROR_SUCCESS:
             raise WinError(result)
 
         interface_list = self._interface_list_ptr.contents
-        interfaces = (
-            WLAN_INTERFACE_INFO * int(interface_list.dwNumberOfItems)
-        ).from_address(addressof(interface_list.InterfaceInfo))
+        interfaces = (WLAN_INTERFACE_INFO * int(interface_list.dwNumberOfItems)).from_address(
+            addressof(interface_list.InterfaceInfo)
+        )
         return interface_list_ptr, interfaces
 
     def _find_connected_network_info(
@@ -503,9 +473,9 @@ class WiFiManager(QObject):
     ) -> NetworkInfo | None:
         """Find the connected network in the available network list"""
         network_list = network_list_ptr.contents
-        networks = (
-            WLAN_AVAILABLE_NETWORK * int(network_list.dwNumberOfItems)
-        ).from_address(addressof(network_list.Network))
+        networks = (WLAN_AVAILABLE_NETWORK * int(network_list.dwNumberOfItems)).from_address(
+            addressof(network_list.Network)
+        )
 
         # Find the connected network
         for network in networks:
@@ -525,14 +495,8 @@ class WiFiManager(QObject):
             return NetworkInfo(
                 ssid=ssid_str,
                 quality=signal_quality,
-                state=(
-                    WifiState.CONNECTED | WifiState.SECURED
-                    if secured
-                    else WifiState.CONNECTED
-                ),
-                auto_connect=self._is_auto_connect_profile(
-                    self._client_handle, interface_guid, ssid_str
-                ),
+                state=(WifiState.CONNECTED | WifiState.SECURED if secured else WifiState.CONNECTED),
+                auto_connect=self._is_auto_connect_profile(self._client_handle, interface_guid, ssid_str),
             )
 
         return None
@@ -544,9 +508,7 @@ class WiFiManager(QObject):
         profile_name: str,
     ) -> bool:
         """Get the connection mode of a WiFi network where true is auto and false is manual"""
-        profile_xml = self._get_wlan_profile(
-            client_handle, interface_guid, profile_name
-        )
+        profile_xml = self._get_wlan_profile(client_handle, interface_guid, profile_name)
         match = re.search(r"<connectionMode>(.*?)</connectionMode>", profile_xml)
         if match:
             connection_mode = match.group(1)  # "auto" or "manual"
@@ -561,9 +523,7 @@ class WiFiManager(QObject):
         profile_name: str,
     ) -> bool:
         """Get the connection mode of a WiFi network where true is hidden and false is not hidden"""
-        profile_xml = self._get_wlan_profile(
-            client_handle, interface_guid, profile_name
-        )
+        profile_xml = self._get_wlan_profile(client_handle, interface_guid, profile_name)
         match = re.search(r"<nonBroadcast>(.*?)</nonBroadcast>", profile_xml)
         if match:
             connection_mode = match.group(1)  # "true" or "false"
@@ -586,9 +546,7 @@ class WiFiManager(QObject):
         modified_xml = re.sub(pattern, replacement, profile_xml, flags=re.IGNORECASE)
         return modified_xml
 
-    def _get_wlan_profile(
-        self, client_handle: HANDLE, interface_guid: GUID, ssid: str
-    ) -> str:
+    def _get_wlan_profile(self, client_handle: HANDLE, interface_guid: GUID, ssid: str) -> str:
         """Get the profile XML of a WiFi network"""
         profile_str_ptr = LPWSTR()
         result = WlanGetProfile(
@@ -607,9 +565,7 @@ class WiFiManager(QObject):
         logger.debug(f"Error getting profile: {result}")
         return ""
 
-    def _set_wlan_profile(
-        self, client_handle: HANDLE, interface_guid: GUID, profile_xml: str
-    ):
+    def _set_wlan_profile(self, client_handle: HANDLE, interface_guid: GUID, profile_xml: str):
         try:
             reason_code = DWORD()
             result = WlanSetProfile(
@@ -628,9 +584,7 @@ class WiFiManager(QObject):
             else:
                 buff = create_unicode_buffer(256)
                 WlanReasonCodeToString(reason_code.value, sizeof(buff), buff, None)
-                logger.debug(
-                    f"Failed to create profile: {result}. Code: {reason_code.value}. Reason: {buff.value}"
-                )
+                logger.debug(f"Failed to create profile: {result}. Code: {reason_code.value}. Reason: {buff.value}")
                 return False
 
         except Exception as e:

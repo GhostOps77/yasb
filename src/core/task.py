@@ -31,9 +31,7 @@ def get_current_user_sid():
 def find_pythonw_exe():
     pythonw_path = shutil.which("pythonw.exe")
     if pythonw_path is None:
-        ctypes.windll.user32.MessageBoxW(
-            0, "pythonw.exe not found in PATH.", "Error", 0x10
-        )
+        ctypes.windll.user32.MessageBoxW(0, "pythonw.exe not found in PATH.", "Error", 0x10)
         sys.exit(1)
     return pythonw_path
 
@@ -119,9 +117,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     if not is_admin():
-        ctypes.windll.shell32.ShellExecuteW(
-            None, "runas", sys.executable, " ".join(sys.argv), None, 1
-        )
+        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
     else:
         task_name = "YASB"
         script_path = r"src\main.py"

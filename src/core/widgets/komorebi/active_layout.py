@@ -121,27 +121,17 @@ class ActiveLayoutWidget(BaseWidget):
         self.register_callback("next_layout", self._next_layout)
         self.register_callback("prev_layout", self._prev_layout)
         self.register_callback("flip_layout", self._komorebic.flip_layout_horizontal)
-        self.register_callback(
-            "flip_layout_horizontal", self._komorebic.flip_layout_horizontal
-        )
-        self.register_callback(
-            "flip_layout_vertical", self._komorebic.flip_layout_vertical
-        )
+        self.register_callback("flip_layout_horizontal", self._komorebic.flip_layout_horizontal)
+        self.register_callback("flip_layout_vertical", self._komorebic.flip_layout_vertical)
         self.register_callback(
             "flip_layout_horizontal_and_vertical",
             self._komorebic.flip_layout_horizontal_and_vertical,
         )
         self.register_callback("first_layout", self._first_layout)
-        self.register_callback(
-            "toggle_tiling", lambda: self._komorebic.toggle("tiling")
-        )
+        self.register_callback("toggle_tiling", lambda: self._komorebic.toggle("tiling"))
         self.register_callback("toggle_float", lambda: self._komorebic.toggle("float"))
-        self.register_callback(
-            "toggle_monocle", lambda: self._komorebic.toggle("monocle")
-        )
-        self.register_callback(
-            "toggle_maximize", lambda: self._komorebic.toggle("maximize")
-        )
+        self.register_callback("toggle_monocle", lambda: self._komorebic.toggle("monocle"))
+        self.register_callback("toggle_maximize", lambda: self._komorebic.toggle("maximize"))
         self.register_callback("toggle_pause", lambda: self._komorebic.toggle("pause"))
         self.register_callback("toggle_layout_menu", self._toggle_layout_menu)
 
@@ -150,9 +140,7 @@ class ActiveLayoutWidget(BaseWidget):
 
     def _toggle_layout_menu(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
         self._show_layout_menu()
 
     def _show_layout_menu(self):
@@ -178,22 +166,14 @@ class ActiveLayoutWidget(BaseWidget):
             if self._layout_menu["show_layout_icons"]:
                 icon_label = QLabel(icon)
                 icon_label.setProperty("class", "menu-item-icon")
-                icon_label.setAlignment(
-                    Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
-                )
-                icon_label.setSizePolicy(
-                    QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
-                )
+                icon_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+                icon_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
                 item_layout.addWidget(icon_label)
 
             text_label = QLabel(text)
             text_label.setProperty("class", "menu-item-text")
-            text_label.setAlignment(
-                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
-            )
-            text_label.setSizePolicy(
-                QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
-            )
+            text_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            text_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
             item_layout.addWidget(text_label)
 
             item.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
@@ -229,11 +209,7 @@ class ActiveLayoutWidget(BaseWidget):
             ("Toggle Pause", lambda: self._komorebic.toggle("pause")),
         ]
         for label, func in toggle_actions:
-            main_layout.addWidget(
-                create_menu_item(
-                    toggle_icons.get(label, ""), label, make_toggle_handler(func)
-                )
-            )
+            main_layout.addWidget(create_menu_item(toggle_icons.get(label, ""), label, make_toggle_handler(func)))
 
         self._menu.adjustSize()
         self._menu.setPosition(
@@ -249,17 +225,13 @@ class ActiveLayoutWidget(BaseWidget):
         self.change_layout(layout_cmd)
         self._menu.hide()
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
 
     def _reset_layouts(self):
         self._layouts = deque([x.replace("_", "-") for x in self._layouts_config])
 
     def change_layout(self, layout: str):
-        self._komorebic.change_layout(
-            self._komorebi_screen["index"], self._focused_workspace["index"], layout
-        )
+        self._komorebic.change_layout(self._komorebi_screen["index"], self._focused_workspace["index"], layout)
 
     def _first_layout(self):
         if self._is_shift_layout_allowed():
@@ -271,9 +243,7 @@ class ActiveLayoutWidget(BaseWidget):
             self._layouts.rotate(1)
             self.change_layout(self._layouts[0])
             if self._animation["enabled"]:
-                AnimationManager.animate(
-                    self, self._animation["type"], self._animation["duration"]
-                )
+                AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
         else:
             self._toggle_blocking_state()
 
@@ -282,9 +252,7 @@ class ActiveLayoutWidget(BaseWidget):
             self._layouts.rotate(-1)
             self.change_layout(self._layouts[0])
             if self._animation["enabled"]:
-                AnimationManager.animate(
-                    self, self._animation["type"], self._animation["duration"]
-                )
+                AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
         else:
             self._toggle_blocking_state()
 
@@ -322,15 +290,9 @@ class ActiveLayoutWidget(BaseWidget):
         self.k_signal_layout_change.connect(self._on_komorebi_layout_change_event)
         self.k_signal_update.connect(self._on_komorebi_layout_change_event)
 
-        self._event_service.register_event(
-            KomorebiEvent.KomorebiConnect, self.k_signal_connect
-        )
-        self._event_service.register_event(
-            KomorebiEvent.KomorebiDisconnect, self.k_signal_disconnect
-        )
-        self._event_service.register_event(
-            KomorebiEvent.KomorebiUpdate, self.k_signal_update
-        )
+        self._event_service.register_event(KomorebiEvent.KomorebiConnect, self.k_signal_connect)
+        self._event_service.register_event(KomorebiEvent.KomorebiDisconnect, self.k_signal_disconnect)
+        self._event_service.register_event(KomorebiEvent.KomorebiUpdate, self.k_signal_update)
 
         for event_type in active_layout_change_event_watchlist:
             self._event_service.register_event(event_type, self.k_signal_layout_change)
@@ -341,15 +303,9 @@ class ActiveLayoutWidget(BaseWidget):
 
     def _on_destroyed(self, *args):
         try:
-            self._event_service.unregister_event(
-                KomorebiEvent.KomorebiConnect, self.k_signal_connect
-            )
-            self._event_service.unregister_event(
-                KomorebiEvent.KomorebiDisconnect, self.k_signal_disconnect
-            )
-            self._event_service.unregister_event(
-                KomorebiEvent.KomorebiUpdate, self.k_signal_update
-            )
+            self._event_service.unregister_event(KomorebiEvent.KomorebiConnect, self.k_signal_connect)
+            self._event_service.unregister_event(KomorebiEvent.KomorebiDisconnect, self.k_signal_disconnect)
+            self._event_service.unregister_event(KomorebiEvent.KomorebiUpdate, self.k_signal_update)
             for event_type in [
                 KomorebiEvent.ChangeLayout,
                 KomorebiEvent.FocusWorkspaceNumber,
@@ -359,9 +315,7 @@ class ActiveLayoutWidget(BaseWidget):
                 KomorebiEvent.ToggleMonocle,
                 KomorebiEvent.ToggleMaximize,
             ]:
-                self._event_service.unregister_event(
-                    event_type, self.k_signal_layout_change
-                )
+                self._event_service.unregister_event(event_type, self.k_signal_layout_change)
         except Exception:
             pass
 
@@ -380,9 +334,7 @@ class ActiveLayoutWidget(BaseWidget):
     def _update_active_layout(self, state: dict, is_connect_event=False):
         try:
             if self._update_komorebi_state(state):
-                self._focused_workspace = self._komorebic.get_focused_workspace(
-                    self._komorebi_screen
-                )
+                self._focused_workspace = self._komorebic.get_focused_workspace(self._komorebi_screen)
 
                 if not self._focused_workspace:
                     return
@@ -397,17 +349,13 @@ class ActiveLayoutWidget(BaseWidget):
                         self._layouts.rotate(1)
 
                 self._active_layout_text.setText(
-                    self._label.replace("{icon}", layout_icon).replace(
-                        "{layout_name}", layout_name
-                    )
+                    self._label.replace("{icon}", layout_icon).replace("{layout_name}", layout_name)
                 )
 
                 if self._active_layout_text.isHidden():
                     self.show()
         except Exception:
-            logging.exception(
-                "Failed to update komorebi status and widget button state"
-            )
+            logging.exception("Failed to update komorebi status and widget button state")
 
     def _get_layout_label_info(self):
         if self._komorebi_state.get("is_paused", False):
@@ -424,9 +372,7 @@ class ActiveLayoutWidget(BaseWidget):
             layout_icon = self._layout_icons["monocle"]
         else:
             layout_name = self._focused_workspace["layout"]["Default"]
-            layout_icon = self._layout_icons.get(
-                layout_snake_case[layout_name], "unknown layout"
-            )
+            layout_icon = self._layout_icons.get(layout_snake_case[layout_name], "unknown layout")
 
         return layout_name, layout_icon
 
@@ -436,12 +382,8 @@ class ActiveLayoutWidget(BaseWidget):
             self._komorebi_state = komorebi_state
 
             if self._komorebi_state:
-                self._komorebi_screen = self._komorebic.get_screen_by_hwnd(
-                    self._komorebi_state, self._screen_hwnd
-                )
-                self._komorebi_workspaces = self._komorebic.get_workspaces(
-                    self._komorebi_screen
-                )
+                self._komorebi_screen = self._komorebic.get_screen_by_hwnd(self._komorebi_state, self._screen_hwnd)
+                self._komorebi_workspaces = self._komorebic.get_workspaces(self._komorebi_screen)
                 return True
         except TypeError:
             return False

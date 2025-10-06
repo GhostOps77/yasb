@@ -38,9 +38,7 @@ def _get_holidays_module():
 
     if _holidays_cache["module"] is None:
         _holidays_cache["module"] = importlib.import_module("holidays")
-        _holidays_cache["supported_countries"] = set(
-            _holidays_cache["module"].list_supported_countries()
-        )
+        _holidays_cache["supported_countries"] = set(_holidays_cache["module"].list_supported_countries())
     return _holidays_cache["module"]
 
 
@@ -50,10 +48,8 @@ def _get_cached_country_holidays(country, year, subdivision=None):
     if cache_key not in _holidays_cache["country_holidays"]:
         holidays_module = _get_holidays_module()
         try:
-            _holidays_cache["country_holidays"][cache_key] = (
-                holidays_module.country_holidays(
-                    country, years=[year], subdiv=subdivision
-                )
+            _holidays_cache["country_holidays"][cache_key] = holidays_module.country_holidays(
+                country, years=[year], subdiv=subdivision
             )
         except Exception:
             _holidays_cache["country_holidays"][cache_key] = {}
@@ -77,9 +73,7 @@ class CustomCalendar(QCalendarWidget):
         self.show_holidays = show_holidays
         self.holiday_color = holiday_color
         self.setGridVisible(False)
-        self.setVerticalHeaderFormat(
-            QCalendarWidget.VerticalHeaderFormat.NoVerticalHeader
-        )
+        self.setVerticalHeaderFormat(QCalendarWidget.VerticalHeaderFormat.NoVerticalHeader)
         self.setNavigationBarVisible(False)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setAutoFillBackground(False)
@@ -147,9 +141,7 @@ class CustomCalendar(QCalendarWidget):
     def update_calendar_display(self):
         if self.timezone:
             datetime_now = datetime.now(pytz.timezone(self.timezone))
-            self.setSelectedDate(
-                QDate(datetime_now.year, datetime_now.month, datetime_now.day)
-            )
+            self.setSelectedDate(QDate(datetime_now.year, datetime_now.month, datetime_now.day))
 
 
 class ClockWidget(BaseWidget):
@@ -207,9 +199,7 @@ class ClockWidget(BaseWidget):
         # Add the container to the main widget layout
         self.widget_layout.addWidget(self._widget_container)
 
-        build_widget_label(
-            self, self._label_content, self._label_alt_content, self._label_shadow
-        )
+        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("update_label", self._update_label)
@@ -231,16 +221,12 @@ class ClockWidget(BaseWidget):
 
     def _toggle_calendar(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
         self.show_calendar()
 
     def _toggle_label(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
         self._show_alt_label = not self._show_alt_label
         for widget in self._widgets:
             widget.setVisible(not self._show_alt_label)
@@ -265,9 +251,7 @@ class ClockWidget(BaseWidget):
     def _update_label(self):
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
         active_widgets_len = len(active_widgets)
-        active_label_content = (
-            self._label_alt_content if self._show_alt_label else self._label_content
-        )
+        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         widget_index = 0
 
         now = datetime.now(pytz.timezone(self._active_tz))
@@ -292,9 +276,7 @@ class ClockWidget(BaseWidget):
             if not part:
                 continue
 
-            if widget_index >= active_widgets_len or not isinstance(
-                active_widgets[widget_index], QLabel
-            ):
+            if widget_index >= active_widgets_len or not isinstance(active_widgets[widget_index], QLabel):
                 continue
 
             if part.startswith("<span") and part.endswith("</span>"):
@@ -304,9 +286,7 @@ class ClockWidget(BaseWidget):
                         icon = self._get_icon_for_hour(now.hour)
                         active_widgets[widget_index].setText(icon)
                         hour_class = f"clock_{current_hour}"
-                        active_widgets[widget_index].setProperty(
-                            "class", f"icon {hour_class}"
-                        )
+                        active_widgets[widget_index].setProperty("class", f"icon {hour_class}")
                         self._reload_css(active_widgets[widget_index])
                 else:
                     active_widgets[widget_index].setText(icon_placeholder)
@@ -314,9 +294,7 @@ class ClockWidget(BaseWidget):
                 active_widgets[widget_index].setText(part)
                 if hour_changed:
                     hour_class = f"clock_{current_hour}"
-                    active_widgets[widget_index].setProperty(
-                        "class", f"label {hour_class}"
-                    )
+                    active_widgets[widget_index].setProperty("class", f"label {hour_class}")
                     self._reload_css(active_widgets[widget_index])
             widget_index += 1
 
@@ -428,11 +406,7 @@ class ClockWidget(BaseWidget):
         qlocale = QLocale(self._locale) if self._locale else QLocale.system()
 
         self.day_label = QLabel(
-            qlocale.dayName(
-                QDate(
-                    datetime_now.year, datetime_now.month, datetime_now.day
-                ).dayOfWeek()
-            )
+            qlocale.dayName(QDate(datetime_now.year, datetime_now.month, datetime_now.day).dayOfWeek())
         )
         self.day_label.setProperty("class", "day-label")
         self.day_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -449,25 +423,19 @@ class ClockWidget(BaseWidget):
         date_layout.addWidget(self.date_label)
 
         if self._calendar["show_week_numbers"]:
-            week_number = QDate(
-                datetime_now.year, datetime_now.month, datetime_now.day
-            ).weekNumber()[0]
+            week_number = QDate(datetime_now.year, datetime_now.month, datetime_now.day).weekNumber()[0]
             self.week_label = QLabel(f"Week {week_number}")
             self.week_label.setProperty("class", "week-label")
             self.week_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             date_layout.addWidget(self.week_label)
-            self.update_week_label(
-                QDate(datetime_now.year, datetime_now.month, datetime_now.day)
-            )
+            self.update_week_label(QDate(datetime_now.year, datetime_now.month, datetime_now.day))
         if self._calendar["show_holidays"]:
             self.holiday_label = QLabel("")
             self.holiday_label.setProperty("class", "holiday-label")
             self.holiday_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.holiday_label.setWordWrap(True)
             date_layout.addWidget(self.holiday_label)
-            self.update_holiday_label(
-                QDate(datetime_now.year, datetime_now.month, datetime_now.day)
-            )
+            self.update_holiday_label(QDate(datetime_now.year, datetime_now.month, datetime_now.day))
 
         layout.addLayout(date_layout)
 

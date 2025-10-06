@@ -124,9 +124,7 @@ class SystrayWidget(BaseWidget):
         super().__init__(class_name=class_name)  # type: ignore
         self.label_collapsed = label_collapsed
         self.label_expanded = label_expanded
-        self.label_position = (
-            label_position if label_position in {"left", "right"} else "left"
-        )
+        self.label_position = label_position if label_position in {"left", "right"} else "left"
         self.icon_size = icon_size
         self.show_unpinned = show_unpinned
         self.show_unpinned_button = show_unpinned_button
@@ -186,9 +184,7 @@ class SystrayWidget(BaseWidget):
         self.unpinned_vis_btn = QPushButton(self)
         self.unpinned_vis_btn.setCheckable(True)
         self.unpinned_vis_btn.clicked.connect(self.toggle_unpinned_widget_visibility)  # type: ignore
-        self.unpinned_vis_btn.setContextMenuPolicy(
-            Qt.ContextMenuPolicy.CustomContextMenu
-        )
+        self.unpinned_vis_btn.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.unpinned_vis_btn.customContextMenuRequested.connect(self.show_context_menu)  # type: ignore
 
         self.unpinned_widget = DropWidget(self)
@@ -225,12 +221,8 @@ class SystrayWidget(BaseWidget):
 
         self.unpinned_vis_btn.setVisible(self.show_unpinned_button)
 
-        QTimer.singleShot(
-            0, self.setup_client
-        )  # pyright: ignore [reportUnknownMemberType]
-        QTimer.singleShot(
-            0, self.set_containers_visibility
-        )  # pyright: ignore [reportUnknownMemberType]
+        QTimer.singleShot(0, self.setup_client)  # pyright: ignore [reportUnknownMemberType]
+        QTimer.singleShot(0, self.set_containers_visibility)  # pyright: ignore [reportUnknownMemberType]
 
     def show_context_menu(self, pos: QPoint):
         """Show the context menu for the unpinned visibility button"""
@@ -239,14 +231,10 @@ class SystrayWidget(BaseWidget):
         qmenu_rounded_corners(menu)
         menu.setContentsMargins(0, 0, 0, 0)
         menu.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
-        refresh_action = menu.addAction(
-            "Refresh Systray"
-        )  # pyright: ignore [reportUnknownMemberType]
+        refresh_action = menu.addAction("Refresh Systray")  # pyright: ignore [reportUnknownMemberType]
         if not refresh_action:
             return
-        refresh_action.triggered.connect(
-            self.refresh_systray
-        )  # pyright: ignore [reportUnknownMemberType]
+        refresh_action.triggered.connect(self.refresh_systray)  # pyright: ignore [reportUnknownMemberType]
 
         def _on_menu_about_to_hide():
             from core.global_state import get_autohide_owner_for_widget
@@ -273,9 +261,7 @@ class SystrayWidget(BaseWidget):
     def setup_client(self):
         """Setup the tray monitor client and connect signals"""
         self.load_state()
-        systray_client, systray_thread, tasks_service, tasks_thread = (
-            SystrayWidget.get_client_instance()
-        )
+        systray_client, systray_thread, tasks_service, tasks_thread = SystrayWidget.get_client_instance()
         systray_client.icon_modified.connect(self.on_icon_modified)  # type: ignore
         systray_client.icon_deleted.connect(self.on_icon_deleted)  # type: ignore
 
@@ -292,18 +278,12 @@ class SystrayWidget(BaseWidget):
     def set_containers_visibility(self):
         """Update the containers visibility based on the show_unpinned_button setting"""
         self.unpinned_vis_btn.setChecked(self.show_unpinned)
-        self.unpinned_vis_btn.setText(
-            self.label_expanded if self.show_unpinned else self.label_collapsed
-        )
-        self.unpinned_widget.setVisible(
-            self.show_unpinned or not self.show_unpinned_button
-        )
+        self.unpinned_vis_btn.setText(self.label_expanded if self.show_unpinned else self.label_collapsed)
+        self.unpinned_widget.setVisible(self.show_unpinned or not self.show_unpinned_button)
 
     def on_thread_started(self):
         logger.debug("Systray thread started")
-        QTimer.singleShot(
-            200, TrayMonitor.send_taskbar_created
-        )  # pyright: ignore [reportUnknownMemberType]
+        QTimer.singleShot(200, TrayMonitor.send_taskbar_created)  # pyright: ignore [reportUnknownMemberType]
 
     @pyqtSlot()
     def on_drag_started(self):
@@ -335,9 +315,7 @@ class SystrayWidget(BaseWidget):
             uuid = str(data.guid) if data.guid is not None else data.exe_path
             saved_data = self.current_state.get(
                 uuid,
-                self.current_state.get(
-                    data.exe_path, IconState(index=-1, is_pinned=False)
-                ),
+                self.current_state.get(data.exe_path, IconState(index=-1, is_pinned=False)),
             )
             add_shadow(icon, self.btn_shadow)
 
@@ -492,11 +470,7 @@ class SystrayWidget(BaseWidget):
             w.unpolish(self.pinned_widget)
             w.polish(self.pinned_widget)
 
-        elif (
-            self.pinned_widget.property("forceshow")
-            and not is_empty
-            and (w := self.pinned_widget.style())
-        ):
+        elif self.pinned_widget.property("forceshow") and not is_empty and (w := self.pinned_widget.style()):
             logger.debug(f"Is empty: {is_empty}, force show: {force_show}")
             self.pinned_widget.setProperty("forceshow", False)
             w.unpolish(self.pinned_widget)
@@ -560,7 +534,7 @@ class SystrayWidget(BaseWidget):
         logger.debug(f"Saving state to {file_path}")
         saved_state: dict[str, Any] = {}
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 saved_state = json.load(f)
         except json.JSONDecodeError:
             logger.debug("State file decode error. Ignoring.")
@@ -578,7 +552,7 @@ class SystrayWidget(BaseWidget):
         logger.debug(f"Loading state from {file_path}")
         self.current_state = {}
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 state = json.load(f)
                 for k, v in state.items():
                     self.current_state[k] = IconState.from_dict(v)
@@ -591,9 +565,7 @@ class SystrayWidget(BaseWidget):
         """Get the screen id for the current systray widget instance"""
         screen = self.screen()
         if screen is not None:
-            raw_id = (
-                f"{screen.manufacturer()}{screen.name()}{screen.serialNumber()}".upper()
-            )
+            raw_id = f"{screen.manufacturer()}{screen.name()}{screen.serialNumber()}".upper()
             self.screen_id = re.sub(r"\W+", "", raw_id)
             return self.screen_id
 

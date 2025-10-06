@@ -214,9 +214,9 @@ def find_focused_screen(follow_mouse, follow_window, screens=None):
 
     # Map device names to Qt screen names for window focus
     device_to_screen = {
-        win32api.GetMonitorInfo(
-            win32api.MonitorFromRect((geo.left(), geo.top(), geo.right(), geo.bottom()))
-        ).get("Device"): screen.name()
+        win32api.GetMonitorInfo(win32api.MonitorFromRect((geo.left(), geo.top(), geo.right(), geo.bottom()))).get(
+            "Device"
+        ): screen.name()
         for screen in qt_screens
         for geo in [screen.geometry()]
     }
@@ -289,7 +289,7 @@ def is_autostart_enabled(app_name: str) -> bool:
         with _open_startup_registry(winreg.KEY_READ) as key:
             winreg.QueryValueEx(key, app_name)
         return True
-    except WindowsError:
+    except OSError:
         return False
     except Exception as e:
         logging.error(f"Failed to check startup status for {app_name}: {e}")

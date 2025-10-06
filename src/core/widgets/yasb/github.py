@@ -96,9 +96,7 @@ class NotificationLabel(QLabel):
                 x = self.width() - radius - margin_x
                 y = self.height() - radius - margin_y
 
-            painter.drawEllipse(
-                QPoint(x + radius // 2, y + radius // 2), radius // 2, radius // 2
-            )
+            painter.drawEllipse(QPoint(x + radius // 2, y + radius // 2), radius // 2, radius // 2)
 
 
 class GithubWidget(BaseWidget):
@@ -175,16 +173,12 @@ class GithubWidget(BaseWidget):
 
     def _toggle_menu(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
         self.show_menu()
 
     def _toggle_label(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
         self._show_alt_label = not self._show_alt_label
         for widget in self._widgets:
             widget.setVisible(not self._show_alt_label)
@@ -235,14 +229,10 @@ class GithubWidget(BaseWidget):
         self._widgets_alt = process_content(content_alt, is_alt=True)
 
     def _update_label(self):
-        notification_count = sum(
-            1 for notification in self._github_data if notification["unread"]
-        )
+        notification_count = sum(1 for notification in self._github_data if notification["unread"])
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
         active_widgets_len = len(active_widgets)
-        active_label_content = (
-            self._label_alt_content if self._show_alt_label else self._label_content
-        )
+        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         active_label_content = active_label_content.format(data=notification_count)
 
         # Split label content and filter out empty parts
@@ -261,9 +251,7 @@ class GithubWidget(BaseWidget):
             if not part:
                 continue
 
-            if widget_index >= active_widgets_len or not isinstance(
-                active_widgets[widget_index], QLabel
-            ):
+            if widget_index >= active_widgets_len or not isinstance(active_widgets[widget_index], QLabel):
                 continue
 
             current_widget = active_widgets[widget_index]
@@ -281,9 +269,7 @@ class GithubWidget(BaseWidget):
                 if notification_count > 0:
                     current_classes.append(notification_class)
                 else:
-                    current_classes = (
-                        cls for cls in current_classes if cls != notification_class
-                    )
+                    current_classes = (cls for cls in current_classes if cls != notification_class)
                 current_widget.setProperty("class", " ".join(current_classes))
 
             else:
@@ -318,9 +304,7 @@ class GithubWidget(BaseWidget):
             with urllib.request.urlopen(req):
                 QTimer.singleShot(0, self._update_label)
                 if DEBUG:
-                    logging.info(
-                        f"Notification {notification_id} marked as read on GitHub."
-                    )
+                    logging.info(f"Notification {notification_id} marked as read on GitHub.")
         except urllib.error.HTTPError as e:
             logging.error(f"HTTP Error occurred: {e.code} - {e.reason}")
         except Exception as e:
@@ -334,9 +318,7 @@ class GithubWidget(BaseWidget):
         QDesktopServices.openUrl(QUrl(url))
         self.mark_as_read_notification_on_github(notification_id)
 
-    def _create_container_mouse_press_event(
-        self, notification_id, url, container_label
-    ):
+    def _create_container_mouse_press_event(self, notification_id, url, container_label):
         def mouse_press_event(event):
             self._handle_mouse_press_event(event, notification_id, url, container_label)
 
@@ -344,9 +326,7 @@ class GithubWidget(BaseWidget):
 
     def show_menu(self):
         notifications_count = len(self._github_data)
-        notifications_unread_count = sum(
-            1 for notification in self._github_data if notification["unread"]
-        )
+        notifications_unread_count = sum(1 for notification in self._github_data if notification["unread"])
 
         self._menu = PopupWidget(
             self,
@@ -361,9 +341,7 @@ class GithubWidget(BaseWidget):
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0, 0, 0, 0)
 
-        header_label = QLabel(
-            "<span style='font-weight:bold'>GitHub</span> Notifications"
-        )
+        header_label = QLabel("<span style='font-weight:bold'>GitHub</span> Notifications")
         header_label.setProperty("class", "header")
         main_layout.addWidget(header_label)
 
@@ -371,9 +349,7 @@ class GithubWidget(BaseWidget):
         scroll_area.setWidgetResizable(True)
         scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
-        scroll_area.setViewportMargins(
-            0, 0, -4, 0
-        )  # overlay the scrollbar 6px to the left
+        scroll_area.setViewportMargins(0, 0, -4, 0)  # overlay the scrollbar 6px to the left
         scroll_area.setStyleSheet(
             """
             QScrollArea { background: transparent; border: none; border-radius:0; }
@@ -403,9 +379,7 @@ class GithubWidget(BaseWidget):
 
                 repo_description = notification["type"]
                 if len(repo_description) > self._max_field_size:
-                    repo_description = (
-                        repo_description[: self._max_field_size - 3] + "..."
-                    )
+                    repo_description = repo_description[: self._max_field_size - 3] + "..."
 
                 icon_type = {
                     "Issue": self._icons["issue"],
@@ -459,9 +433,7 @@ class GithubWidget(BaseWidget):
             large_label.setGraphicsEffect(opacity_effect)
 
             no_data = QLabel("No unread notifications")
-            no_data.setStyleSheet(
-                "font-size:18px;font-weight:400;font-family: Segoe UI"
-            )
+            no_data.setStyleSheet("font-size:18px;font-weight:400;font-family: Segoe UI")
             opacity_effect = QGraphicsOpacityEffect()
             opacity_effect.setOpacity(0.5)
             no_data.setGraphicsEffect(opacity_effect)
@@ -477,9 +449,7 @@ class GithubWidget(BaseWidget):
             scroll_layout.addLayout(center_layout)
 
         if notifications_count > 0:
-            footer_label = QLabel(
-                f"Unread notifications ({notifications_unread_count})"
-            )
+            footer_label = QLabel(f"Unread notifications ({notifications_unread_count})")
             footer_label.setProperty("class", "footer")
             main_layout.addWidget(footer_label)
 
@@ -533,19 +503,13 @@ class GithubWidget(BaseWidget):
                 subject_url = notification["subject"]["url"]
 
                 if subject_type == "Issue":
-                    github_url = subject_url.replace(
-                        "api.github.com/repos", "github.com"
-                    )
+                    github_url = subject_url.replace("api.github.com/repos", "github.com")
                 elif subject_type == "PullRequest":
-                    github_url = subject_url.replace(
-                        "api.github.com/repos", "github.com"
-                    ).replace("/pulls/", "/pull/")
+                    github_url = subject_url.replace("api.github.com/repos", "github.com").replace("/pulls/", "/pull/")
                 elif subject_type == "Release":
                     github_url = f"https://github.com/{repo_full_name}/releases"
                 elif subject_type == "Discussion":
-                    github_url = subject_url.replace(
-                        "api.github.com/repos", "github.com"
-                    )
+                    github_url = subject_url.replace("api.github.com/repos", "github.com")
                 else:
                     github_url = notification["repository"]["html_url"]
 

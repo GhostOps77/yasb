@@ -170,9 +170,7 @@ VALIDATION_SCHEMA = {
     "callbacks": {
         "required": False,
         "type": "dict",
-        "schema": {
-            "on_left": {"type": "string", "default": DEFAULTS["callbacks"]["on_left"]}
-        },
+        "schema": {"on_left": {"type": "string", "default": DEFAULTS["callbacks"]["on_left"]}},
         "default": DEFAULTS["callbacks"],
     },
 }

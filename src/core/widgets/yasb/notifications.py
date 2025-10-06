@@ -71,9 +71,7 @@ class NotificationsWidget(BaseWidget):
         # Add the container to the main widget layout
         self.widget_layout.addWidget(self._widget_container)
 
-        build_widget_label(
-            self, self._label_content, self._label_alt_content, self._label_shadow
-        )
+        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
 
         self.callback_left = callbacks["on_left"]
         self.callback_right = callbacks["on_right"]
@@ -85,12 +83,8 @@ class NotificationsWidget(BaseWidget):
 
         # Register the WindowsNotificationUpdate event
         self.event_service = EventService()
-        self.event_service.register_event(
-            "WindowsNotificationUpdate", self.windows_notification_update_signal
-        )
-        self.windows_notification_update_signal.connect(
-            self._on_windows_notification_update
-        )
+        self.event_service.register_event("WindowsNotificationUpdate", self.windows_notification_update_signal)
+        self.windows_notification_update_signal.connect(self._on_windows_notification_update)
 
         self._update_label()
 
@@ -104,9 +98,7 @@ class NotificationsWidget(BaseWidget):
 
     def _toggle_notification(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
         if is_windows_10():
             quick_settings()
         else:
@@ -114,9 +106,7 @@ class NotificationsWidget(BaseWidget):
 
     def _toggle_label(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
         self._show_alt_label = not self._show_alt_label
         for widget in self._widgets:
             widget.setVisible(not self._show_alt_label)
@@ -126,13 +116,9 @@ class NotificationsWidget(BaseWidget):
 
     def _clear_notifications(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
         if WindowsNotificationEventListener:
-            self.event_service.emit_event(
-                "WindowsNotificationClear", "clear_all_notifications"
-            )
+            self.event_service.emit_event("WindowsNotificationClear", "clear_all_notifications")
 
     def _update_label(self):
         if self._notification_count == 0 and self._hide_empty:
@@ -141,16 +127,10 @@ class NotificationsWidget(BaseWidget):
 
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
         active_widgets_len = len(active_widgets)
-        active_label_content = (
-            self._label_alt_content if self._show_alt_label else self._label_content
-        )
+        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         active_label_content = active_label_content.format(
             count=self._notification_count,
-            icon=(
-                self._icons["new"]
-                if self._notification_count > 0
-                else self._icons["default"]
-            ),
+            icon=(self._icons["new"] if self._notification_count > 0 else self._icons["default"]),
         )
 
         label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)

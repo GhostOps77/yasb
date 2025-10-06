@@ -5,7 +5,6 @@ import random
 import re
 import subprocess
 import threading
-from typing import List
 
 import pythoncom
 import pywintypes
@@ -91,9 +90,7 @@ class WallpapersWidget(BaseWidget):
         self._create_dynamically_label(self._label_content)
 
         self.set_wallpaper_signal.connect(self.change_background)
-        self._event_service.register_event(
-            "set_wallpaper_signal", self.set_wallpaper_signal
-        )
+        self._event_service.register_event("set_wallpaper_signal", self.set_wallpaper_signal)
 
         self.register_callback("change_background", self.change_background)
 
@@ -110,9 +107,7 @@ class WallpapersWidget(BaseWidget):
         if widget == "wallpapers":
             current_screen = self.window().screen() if self.window() else None
             current_screen_name = current_screen.name() if current_screen else None
-            if not screen or (
-                current_screen_name and screen.lower() == current_screen_name.lower()
-            ):
+            if not screen or (current_screen_name and screen.lower() == current_screen_name.lower()):
                 self._popup_from_cli = True
                 self._toggle_widget()
 
@@ -214,9 +209,7 @@ class WallpapersWidget(BaseWidget):
 
         return enum_windows
 
-    def find_window_handles(
-        self, parent: int = None, window_class: str = None, title: str = None
-    ) -> List[int]:
+    def find_window_handles(self, parent: int = None, window_class: str = None, title: str = None) -> list[int]:
         """Find window handles based on class name and title."""
         cb = self._make_filter(window_class, title)
         try:
@@ -241,7 +234,7 @@ class WallpapersWidget(BaseWidget):
             self.user32.SendMessageTimeoutW(progman, *cryptic_params)
         except IndexError as e:
             logging.error("Cannot enable Active Desktop: %s", e)
-            raise WindowsError("Cannot enable Active Desktop") from e
+            raise OSError("Cannot enable Active Desktop") from e
 
     def set_wallpaper(self, image_path: str, use_activedesktop: bool = True):
         """Set the desktop wallpaper to the specified image."""
@@ -272,9 +265,7 @@ class WallpapersWidget(BaseWidget):
 
         if self._gallery["enabled"]:
             if self._animation["enabled"]:
-                AnimationManager.animate(
-                    self, self._animation["type"], self._animation["duration"]
-                )
+                AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
             if event is None or event.button() == Qt.MouseButton.LeftButton:
                 if self._image_gallery is not None and self._image_gallery.isVisible():
                     self._image_gallery.fade_out_and_close_gallery()
@@ -319,9 +310,7 @@ class WallpapersWidget(BaseWidget):
             logging.error(f"Error setting wallpaper {new_wallpaper}: {e}")
 
         if self._run_after:
-            threading.Thread(
-                target=self.run_after_command, args=(new_wallpaper,)
-            ).start()
+            threading.Thread(target=self.run_after_command, args=(new_wallpaper,)).start()
 
     def run_after_command(self, new_wallpaper):
         """Run post-change commands after setting the wallpaper."""
@@ -330,9 +319,7 @@ class WallpapersWidget(BaseWidget):
                 formatted_command = command.format(image=f'"{new_wallpaper}"')
                 if DEBUG:
                     logging.debug(f"Running command: {formatted_command}")
-                result = subprocess.run(
-                    formatted_command, shell=True, capture_output=True, text=True
-                )
+                result = subprocess.run(formatted_command, shell=True, capture_output=True, text=True)
                 if result.stderr:
                     logging.error(f"error: {result.stderr}")
 

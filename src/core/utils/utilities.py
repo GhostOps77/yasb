@@ -5,7 +5,7 @@ import re
 from enum import StrEnum
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, TypeGuard, cast, override
+from typing import Any, Generator, TypeGuard, cast, override
 
 import psutil
 from PyQt6 import sip
@@ -32,6 +32,7 @@ from PyQt6.QtGui import (
 )
 from PyQt6.QtWidgets import (
     QApplication,
+    QBoxLayout,
     QFrame,
     QGraphicsDropShadowEffect,
     QLabel,
@@ -42,6 +43,10 @@ from winrt.windows.data.xml.dom import XmlDocument
 from winrt.windows.ui.notifications import ToastNotification, ToastNotificationManager
 
 from core.utils.win32.win32_accent import Blur
+
+CAPTURE_SPAN_TAG_REGEX = re.compile(r"(<span[^>]*?>.*?</span>)")
+REPLACE_SPAN_TAG_REGEX = re.compile(r"<span[^>]*?>|</span>")
+HTML_TAG_CLASS_ATTR_REGEX = re.compile(r'class=(["\'])(.+?)\1')
 
 
 def is_valid_qobject[T](obj: T | None) -> TypeGuard[T]:
@@ -63,14 +68,14 @@ def app_data_path(filename: str = None) -> Path:
 
 def is_windows_10() -> bool:
     version = platform.version()
-    return bool(re.match(r"^10\.0\.1\d{4}$", version))
+    return re.match(r"^10\.0\.1\d{4}$", version) is not None
 
 
 def is_process_running(process_name: str) -> bool:
-    for proc in psutil.process_iter(["name"]):
-        if proc.info["name"] == process_name:
-            return True
-    return False
+    return any(
+        proc.info["name"] == process_name
+        for proc in psutil.process_iter(["name"])
+    )
 
 
 def percent_to_float(percent: str) -> float:
@@ -82,9 +87,7 @@ def is_valid_percentage_str(s: str) -> bool:
 
 
 def get_screen_by_name(screen_name: str) -> QScreen:
-    return next(
-        filter(lambda scr: screen_name in scr.name(), QApplication.screens()), None
-    )
+    return next(filter(lambda scr: screen_name in scr.name(), QApplication.screens()), None)
 
 
 def add_shadow(el: QWidget, options: dict[str, Any]) -> None:
@@ -105,48 +108,82 @@ def add_shadow(el: QWidget, options: dict[str, Any]) -> None:
             g = int(color[2:4], 16)
             b = int(color[4:6], 16)
             a = int(color[6:8], 16)
-            shadow_effect.setColor(QColor(r, g, b, a))
+            color_obj = QColor(r, g, b, a)
         else:
             # Regular hex color without alpha
-            shadow_effect.setColor(QColor("#" + color))
+            color_obj = QColor("#" + color)
     else:
         # Named colors like "black", "red", etc.
-        shadow_effect.setColor(QColor(color))
+        color_obj = QColor(color)
 
+    shadow_effect.setColor(color_obj)
     el.setGraphicsEffect(shadow_effect)
 
 
-def build_widget_label(
-    self, content: str, content_alt: str = None, content_shadow: dict = None
-):
+def iterate_label_as_parts(
+    layout: QBoxLayout,
+    widgets: list[QLabel],
+    content: str,
+    class_name: str,
+    content_shadow: dict = None
+) -> Generator[QLabel, None, None]:
+    label_parts = CAPTURE_SPAN_TAG_REGEX.split(content)
+    widgets_len = len(widgets)
+    widgets_idx = 0
+
+    for part in label_parts:
+        part = part.strip()
+        if not part:
+            continue
+
+        class_result = class_name
+        if part.startswith("<span") and part.endswith("</span>"):
+            class_name = HTML_TAG_CLASS_ATTR_REGEX.search(part)
+            class_result += ' ' + (class_name.group(2) if class_name else "icon")
+            part = REPLACE_SPAN_TAG_REGEX.sub("", part).strip()
+
+        if widgets_idx < widgets_len:
+            label = widgets[widgets_idx]
+            widgets_idx += 1
+            label.setText(part)
+        else:
+            label = QLabel(part)
+            widgets.append(label)
+            layout.addWidget(label)
+
+        label.setProperty('class', class_result)
+        if content_shadow:
+            add_shadow(label, content_shadow)
+
+        if label.isHidden():
+            label.setVisible(True)
+
+        yield label
+
+    for i in range(widgets_idx, widgets_len):
+        # if not widgets[i].isHidden():
+        widgets[i].setVisible(False)
+
+
+def build_widget_label(self, content: str, content_alt: str = None, content_shadow: dict = None):
     def process_content(content, is_alt=False):
-        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", content)
         widgets = []
-        for part in label_parts:
-            part = part.strip()
-            if not part:
-                continue
 
-            if part.startswith("<span") and part.endswith("</span>"):
-                class_name = re.search(r'class=(["\'])([^"\']+?)\1', part)
-                class_result = class_name.group(2) if class_name else "icon"
-                icon = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
-                label = QLabel(icon)
-                label.setProperty("class", class_result)
-            else:
-                label = QLabel(part)
-                label.setProperty("class", "label alt" if is_alt else "label")
+        label_parts_gen = iterate_label_as_parts(
+            self._widget_container_layout,
+            widgets,
+            content,
+            "label alt" if is_alt else "label",
+            content_shadow
+        )
 
+        for label in label_parts_gen:
             label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             label.setCursor(Qt.CursorShape.PointingHandCursor)
-            if content_shadow:
-                add_shadow(label, content_shadow)
-            self._widget_container_layout.addWidget(label)
-            widgets.append(label)
             if is_alt:
-                label.hide()
+                label.setVisible(False)
             else:
-                label.show()
+                label.setVisible(True)
         return widgets
 
     self._widgets = process_content(content)
@@ -187,9 +224,7 @@ def get_app_identifier():
     from settings import APP_ID
 
     try:
-        key = winreg.OpenKey(
-            winreg.HKEY_LOCAL_MACHINE, f"SOFTWARE\\Classes\\AppUserModelId\\{APP_ID}"
-        )
+        key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, f"SOFTWARE\\Classes\\AppUserModelId\\{APP_ID}")
         winreg.CloseKey(key)
         return APP_ID
     except:
@@ -269,9 +304,7 @@ class PopupWidget(QWidget):
         if name == "class":
             self._popup_content.setProperty(name, value)
 
-    def setPosition(
-        self, alignment="left", direction="down", offset_left=0, offset_top=0
-    ):
+    def setPosition(self, alignment="left", direction="down", offset_left=0, offset_top=0):
         """
         Position the popup relative to its parent widget.
         Args:
@@ -288,15 +321,11 @@ class PopupWidget(QWidget):
         if not parent:
             return
 
-        widget_global_pos = parent.mapToGlobal(
-            QPoint(offset_left, parent.height() + offset_top)
-        )
+        widget_global_pos = parent.mapToGlobal(QPoint(offset_left, parent.height() + offset_top))
 
         if direction == "up":
             global_y = parent.mapToGlobal(QPoint(0, 0)).y() - self.height() - offset_top
-            widget_global_pos = QPoint(
-                parent.mapToGlobal(QPoint(0, 0)).x() + offset_left, global_y
-            )
+            widget_global_pos = QPoint(parent.mapToGlobal(QPoint(0, 0)).x() + offset_left, global_y)
 
         if alignment == "left":
             global_position = widget_global_pos
@@ -562,9 +591,7 @@ class ScrollingLabel(QLabel):
         super().__init__(parent)
         if options is None:
             options = {}
-        self._update_interval: int = max(
-            min(options.get("update_interval_ms", 33), 1000), 4
-        )
+        self._update_interval: int = max(min(options.get("update_interval_ms", 33), 1000), 4)
         self._ease_slope: int = options.get("ease_slope", 20)
         self._ease_pos: float = options.get("ease_pos", 0.8)
         self._ease_min: float = max(min(options.get("ease_min_value", 0.5), 1), 0.2)
@@ -587,9 +614,7 @@ class ScrollingLabel(QLabel):
         self.setText(self._text)
 
         self._scroll_timer = QTimer(self)
-        self._scroll_timer.timeout.connect(
-            self._scroll_text
-        )  # pyright: ignore[reportUnknownMemberType]
+        self._scroll_timer.timeout.connect(self._scroll_text)  # pyright: ignore[reportUnknownMemberType]
         self._update_text_metrics()
         self._scroll_timer.start(self._update_interval)
 
@@ -615,12 +640,7 @@ class ScrollingLabel(QLabel):
         self._offset = 0
         self._text = ""
         if a0 is not None:
-            self._text = (
-                self._label_padding_chars
-                + a0
-                + self._separator
-                + self._label_padding_chars
-            )
+            self._text = self._label_padding_chars + a0 + self._separator + self._label_padding_chars
             self._static_text = QStaticText(self._text)
             self._static_text.prepare(QTransform(), self.font())
         self._update_text_metrics()
@@ -668,16 +688,9 @@ class ScrollingLabel(QLabel):
         self._font_metrics = QFontMetrics(self.font())
         self._text_width = max(self._font_metrics.horizontalAdvance(self._text), 1)
         self._text_bb_width = self._font_metrics.boundingRect(self._text).width()
-        self._text_y = (
-            self.height()
-            + self._font_metrics.ascent()
-            - self._font_metrics.descent()
-            + 1
-        ) // 2
+        self._text_y = (self.height() + self._font_metrics.ascent() - self._font_metrics.descent() + 1) // 2
         if self._max_width:
-            self.setMaximumWidth(
-                self._font_metrics.averageCharWidth() * self._max_width
-            )
+            self.setMaximumWidth(self._font_metrics.averageCharWidth() * self._max_width)
 
     @override
     def paintEvent(self, a0: QPaintEvent | None):
@@ -731,5 +744,5 @@ class Singleton(type):
 
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+            cls._instances[cls] = super().__call__(*args, **kwargs)
         return cls._instances[cls]

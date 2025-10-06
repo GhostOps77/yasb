@@ -1,11 +1,11 @@
 import logging
 import shlex
 import subprocess
-from typing import Callable, Union
+from typing import Callable, Union, cast
 
 from PyQt6.QtCore import Qt, QThread, QTimer
 from PyQt6.QtGui import QMouseEvent
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QWidget
+from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QStyle, QWidget
 
 from core.utils.win32.system_function import function_map
 
@@ -78,16 +78,12 @@ class BaseWidget(QWidget):
             callback_args = []
 
         is_valid_callback = callback_type in self.callbacks.keys()
-        self.callback = self.callbacks[
-            callback_type if is_valid_callback else "default"
-        ]
+        self.callback = self.callbacks[callback_type if is_valid_callback else "default"]
 
         try:
             self.callbacks[callback_type](*callback_args)
         except Exception:
-            logging.exception(
-                f"Failed to execute callback of type '{callback_type}' with args: {callback_args}"
-            )
+            logging.exception(f"Failed to execute callback of type '{callback_type}' with args: {callback_args}")
 
     def _timer_callback(self):
         self._run_callback(self.callback_timer)
@@ -98,5 +94,12 @@ class BaseWidget(QWidget):
         else:
             subprocess.Popen([cmd, *cmd_args] if cmd_args else [cmd], shell=True)
 
+    def _reload_css(self, label: QLabel):
+        style = cast(QStyle, label.style())
+        style.unpolish(label)
+        style.polish(label)
+        label.update()
+
     def _cb_do_nothing(self):
         pass
+

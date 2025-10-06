@@ -98,16 +98,10 @@ class Win32AppBar:
             exStyle | win32con.WS_EX_NOACTIVATE | win32con.WS_EX_TOPMOST,
         )
 
-    def position_bar(
-        self, app_bar_height: int, screen: QScreen, scale_screen: bool = False
-    ) -> None:
+    def position_bar(self, app_bar_height: int, screen: QScreen, scale_screen: bool = False) -> None:
         geometry = screen.geometry()
         bar_height = int(app_bar_height * screen.devicePixelRatio())
-        screen_height = int(
-            geometry.height() * screen.devicePixelRatio()
-            if scale_screen
-            else geometry.height()
-        )
+        screen_height = int(geometry.height() * screen.devicePixelRatio() if scale_screen else geometry.height())
 
         self.app_bar_data.rc.left = geometry.x()
         self.app_bar_data.rc.right = geometry.x() + geometry.width()
@@ -116,9 +110,7 @@ class Win32AppBar:
             self.app_bar_data.rc.top = screen.geometry().y()
             self.app_bar_data.rc.bottom = screen.geometry().y() + bar_height
         else:
-            self.app_bar_data.rc.top = (
-                screen.geometry().y() + screen_height - bar_height
-            )
+            self.app_bar_data.rc.top = screen.geometry().y() + screen_height - bar_height
             self.app_bar_data.rc.bottom = screen.geometry().y() + screen_height
         if settings.DEBUG:
             logging.info(
@@ -129,14 +121,10 @@ class Win32AppBar:
         shell32.SHAppBarMessage(AppBarMessage.New, P_APPBAR_DATA(self.app_bar_data))
 
     def window_pos_changed(self):
-        shell32.SHAppBarMessage(
-            AppBarMessage.WindowPosChanged, P_APPBAR_DATA(self.app_bar_data)
-        )
+        shell32.SHAppBarMessage(AppBarMessage.WindowPosChanged, P_APPBAR_DATA(self.app_bar_data))
 
     def query_appbar_position(self):
-        shell32.SHAppBarMessage(
-            AppBarMessage.QueryPos, P_APPBAR_DATA(self.app_bar_data)
-        )
+        shell32.SHAppBarMessage(AppBarMessage.QueryPos, P_APPBAR_DATA(self.app_bar_data))
 
     def set_position(self):
         shell32.SHAppBarMessage(AppBarMessage.SetPos, P_APPBAR_DATA(self.app_bar_data))

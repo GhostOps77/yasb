@@ -52,9 +52,7 @@ class SystemEventListener(QThread):
         foreground_window_hwnd = GetForegroundWindow()
 
         if foreground_window_hwnd:
-            self._event_service.emit_event(
-                foreground_event, foreground_window_hwnd, foreground_event
-            )
+            self._event_service.emit_event(foreground_event, foreground_window_hwnd, foreground_event)
 
     def run(self):
         self._hook = self._build_event_hook()

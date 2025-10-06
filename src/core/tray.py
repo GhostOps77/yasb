@@ -49,11 +49,7 @@ class SystemTrayManager(QSystemTrayIcon):
             if self.menu and self.menu.isVisible():
                 global_pos = event.globalPosition().toPoint()
                 all_menus = [self.menu]
-                all_menus += [
-                    act.menu()
-                    for act in self.menu.actions()
-                    if act.menu() and act.menu().isVisible()
-                ]
+                all_menus += [act.menu() for act in self.menu.actions() if act.menu() and act.menu().isVisible()]
                 if not any(m.geometry().contains(global_pos) for m in all_menus):
                     self.menu.hide()
                     self.menu.deleteLater()
@@ -84,9 +80,7 @@ class SystemTrayManager(QSystemTrayIcon):
 
     def _load_favicon(self):
         # Get the current directory of the script
-        self._icon.addFile(
-            os.path.join(SCRIPT_PATH, "assets", "images", "app_icon.png"), QSize(48, 48)
-        )
+        self._icon.addFile(os.path.join(SCRIPT_PATH, "assets", "images", "app_icon.png"), QSize(48, 48))
         self.setIcon(self._icon)
 
     def _load_context_menu(self):
@@ -156,28 +150,20 @@ class SystemTrayManager(QSystemTrayIcon):
             komorebi_menu = self.menu.addMenu("Komorebi")
             start_komorebi = komorebi_menu.addAction("Start Komorebi")
             start_komorebi.triggered.connect(
-                lambda checked=False, wm="Komorebi", cmd=self.komorebi_start: self._run_wm_command(
-                    wm, cmd
-                )
+                lambda checked=False, wm="Komorebi", cmd=self.komorebi_start: self._run_wm_command(wm, cmd)
             )
 
             stop_komorebi = komorebi_menu.addAction("Stop Komorebi")
             stop_komorebi.triggered.connect(
-                lambda checked=False, wm="Komorebi", cmd=self.komorebi_stop: self._run_wm_command(
-                    wm, cmd
-                )
+                lambda checked=False, wm="Komorebi", cmd=self.komorebi_stop: self._run_wm_command(wm, cmd)
             )
 
             reload_komorebi = komorebi_menu.addAction("Reload Komorebi")
             reload_komorebi.triggered.connect(
-                lambda checked=False, wm="Komorebi", cmd=self.komorebi_reload: self._run_wm_command(
-                    wm, cmd
-                )
+                lambda checked=False, wm="Komorebi", cmd=self.komorebi_reload: self._run_wm_command(wm, cmd)
             )
 
-            komorebi_menu.aboutToShow.connect(
-                lambda: qmenu_rounded_corners(komorebi_menu)
-            )
+            komorebi_menu.aboutToShow.connect(lambda: qmenu_rounded_corners(komorebi_menu))
 
             self.menu.addSeparator()
 
@@ -185,28 +171,20 @@ class SystemTrayManager(QSystemTrayIcon):
             glazewm_menu = self.menu.addMenu("Glazewm")
             start_glazewm = glazewm_menu.addAction("Start Glazewm")
             start_glazewm.triggered.connect(
-                lambda checked=False, wm="Glazewm", cmd=self.glazewm_start: self._run_wm_command(
-                    wm, cmd
-                )
+                lambda checked=False, wm="Glazewm", cmd=self.glazewm_start: self._run_wm_command(wm, cmd)
             )
 
             stop_glazewm = glazewm_menu.addAction("Stop Glazewm")
             stop_glazewm.triggered.connect(
-                lambda checked=False, wm="Glazewm", cmd=self.glazewm_stop: self._run_wm_command(
-                    wm, cmd
-                )
+                lambda checked=False, wm="Glazewm", cmd=self.glazewm_stop: self._run_wm_command(wm, cmd)
             )
 
             reload_glazewm = glazewm_menu.addAction("Reload Glazewm")
             reload_glazewm.triggered.connect(
-                lambda checked=False, wm="Glazewm", cmd=self.glazewm_reload: self._run_wm_command(
-                    wm, cmd
-                )
+                lambda checked=False, wm="Glazewm", cmd=self.glazewm_reload: self._run_wm_command(wm, cmd)
             )
 
-            glazewm_menu.aboutToShow.connect(
-                lambda: qmenu_rounded_corners(glazewm_menu)
-            )
+            glazewm_menu.aboutToShow.connect(lambda: qmenu_rounded_corners(glazewm_menu))
 
             self.menu.addSeparator()
 
@@ -218,9 +196,7 @@ class SystemTrayManager(QSystemTrayIcon):
             enable_startup_action.triggered.connect(self._enable_startup)
 
         help_action = self.menu.addAction("Help")
-        help_action.triggered.connect(
-            lambda: self._open_in_browser(f"{GITHUB_URL}/wiki")
-        )
+        help_action.triggered.connect(lambda: self._open_in_browser(f"{GITHUB_URL}/wiki"))
 
         about_action = self.menu.addAction("About")
         about_action.triggered.connect(self._show_about_dialog)
@@ -251,9 +227,7 @@ class SystemTrayManager(QSystemTrayIcon):
 
     def _open_config(self):
         try:
-            subprocess.run(
-                ["explorer", str(os.path.join(Path.home(), DEFAULT_CONFIG_DIRECTORY))]
-            )
+            subprocess.run(["explorer", str(os.path.join(Path.home(), DEFAULT_CONFIG_DIRECTORY))])
         except Exception as e:
             logging.error(f"Failed to open config directory: {e}")
 

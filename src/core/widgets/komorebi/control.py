@@ -1,7 +1,6 @@
 import logging
 import re
 import subprocess
-from typing import Optional
 
 from PyQt6.QtCore import QEvent, Qt, QThread, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -51,7 +50,7 @@ class KomorebiControlWidget(BaseWidget):
         icons: dict[str, str],
         run_ahk: bool,
         run_whkd: bool,
-        config_path: Optional[str],
+        config_path: str | None,
         show_version: bool,
         komorebi_menu: dict[str, str],
         container_padding: dict[str, int],
@@ -115,12 +114,8 @@ class KomorebiControlWidget(BaseWidget):
         self.k_signal_connect.connect(self._on_komorebi_connect_event)
         self.k_signal_disconnect.connect(self._on_komorebi_disconnect_event)
         # Register for events
-        self._event_service.register_event(
-            KomorebiEvent.KomorebiConnect, self.k_signal_connect
-        )
-        self._event_service.register_event(
-            KomorebiEvent.KomorebiDisconnect, self.k_signal_disconnect
-        )
+        self._event_service.register_event(KomorebiEvent.KomorebiConnect, self.k_signal_connect)
+        self._event_service.register_event(KomorebiEvent.KomorebiDisconnect, self.k_signal_disconnect)
         # Ensure we unregister on destruction to prevent late emits hitting deleted objects
         try:
             self.destroyed.connect(self._on_destroyed)  # type: ignore[attr-defined]
@@ -129,12 +124,8 @@ class KomorebiControlWidget(BaseWidget):
 
     def _on_destroyed(self, *args):
         try:
-            self._event_service.unregister_event(
-                KomorebiEvent.KomorebiConnect, self.k_signal_connect
-            )
-            self._event_service.unregister_event(
-                KomorebiEvent.KomorebiDisconnect, self.k_signal_disconnect
-            )
+            self._event_service.unregister_event(KomorebiEvent.KomorebiConnect, self.k_signal_connect)
+            self._event_service.unregister_event(KomorebiEvent.KomorebiDisconnect, self.k_signal_disconnect)
         except Exception:
             pass
 
@@ -156,15 +147,11 @@ class KomorebiControlWidget(BaseWidget):
                     break
         # Also update stored label if we created it on the dialog
         if hasattr(self, "_version_label") and self._show_version:
-            self._version_label.setText(
-                self._version_text if self._version_text else ""
-            )
+            self._version_label.setText(self._version_text if self._version_text else "")
 
     def _toggle_menu(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
         self.show_menu()
 
     def show_menu(self):
@@ -225,9 +212,7 @@ class KomorebiControlWidget(BaseWidget):
         self._version_label = QLabel(self._version_text)
         self._version_label.setProperty("class", "text version")
         self._version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._version_label.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
-        )
+        self._version_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         version_layout.addWidget(self._version_label)
 
         # Add widgets to main layout vertically
@@ -261,20 +246,14 @@ class KomorebiControlWidget(BaseWidget):
 
         if hasattr(self, "_version_label"):
             try:
-                self._version_label.setText(
-                    self._version_text if self._version_text else ""
-                )
+                self._version_label.setText(self._version_text if self._version_text else "")
             except Exception:
                 pass
 
         self._lock_menu = False
         # If the dialog is visible (and was locked before), force it to regain focus.
         try:
-            if (
-                hasattr(self, "dialog")
-                and self.dialog is not None
-                and self.dialog.isVisible()
-            ):
+            if hasattr(self, "dialog") and self.dialog is not None and self.dialog.isVisible():
                 self.dialog.activateWindow()
                 self.dialog.setFocus()
         except RuntimeError:
@@ -348,11 +327,7 @@ class KomorebiControlWidget(BaseWidget):
             flags = self._build_komorebi_flags(include_config=True)
             command = f"{self._komorebic._komorebic_path} start {flags}"
             # If the menu is open, show a transient starting message
-            if (
-                hasattr(self, "_version_label")
-                and getattr(self, "dialog", None)
-                and self.dialog.isVisible()
-            ):
+            if hasattr(self, "_version_label") and getattr(self, "dialog", None) and self.dialog.isVisible():
                 try:
                     self._version_label.setText("Starting...")
                 except Exception:
@@ -373,11 +348,7 @@ class KomorebiControlWidget(BaseWidget):
             stop_flags = self._build_komorebi_flags(include_config=False)
             start_flags = self._build_komorebi_flags(include_config=True)
             command = f"{self._komorebic._komorebic_path} stop {stop_flags} && {self._komorebic._komorebic_path} start {start_flags}"
-            if (
-                hasattr(self, "_version_label")
-                and getattr(self, "dialog", None)
-                and self.dialog.isVisible()
-            ):
+            if hasattr(self, "_version_label") and getattr(self, "dialog", None) and self.dialog.isVisible():
                 try:
                     self._version_label.setText("Reloading...")
                 except Exception:
@@ -401,7 +372,7 @@ class VersionCheckThread(QThread):
         version = self.get_version()
         self.version_result.emit(version if version else None)
 
-    def get_version(self) -> Optional[str]:
+    def get_version(self) -> str | None:
         """Returns the Komorebi version or None if unavailable."""
         try:
             output = subprocess.check_output(
@@ -411,9 +382,7 @@ class VersionCheckThread(QThread):
                 shell=True,
                 text=True,
             )
-            match = re.search(
-                r"komorebic\s+(\d+\.\d+\.\d+)", output.strip().split("\n")[0]
-            )
+            match = re.search(r"komorebic\s+(\d+\.\d+\.\d+)", output.strip().split("\n")[0])
             return match.group(1) if match else None
         except:
             return None

@@ -125,12 +125,8 @@ class WifiWidget(BaseWidget):
         self._show_alt_label = not self._show_alt_label
         self._update_label()
 
-    def _create_dynamically_label(
-        self, content: str, content_alt: str, is_ethernet: bool = False
-    ):
-        def process_content(
-            content: str, is_alt: bool = False, is_ethernet: bool = False
-        ) -> list[QLabel]:
+    def _create_dynamically_label(self, content: str, content_alt: str, is_ethernet: bool = False):
+        def process_content(content: str, is_alt: bool = False, is_ethernet: bool = False) -> list[QLabel]:
             label_parts = re.split(
                 r"(<span[^>]*?>.*?</span>)", content
             )  # Filters out empty parts before entering the loop
@@ -161,9 +157,7 @@ class WifiWidget(BaseWidget):
 
         if is_ethernet:
             self._widgets_ethernet = process_content(content, is_ethernet=True)
-            self._widgets_ethernet_alt = process_content(
-                content_alt, is_alt=True, is_ethernet=True
-            )
+            self._widgets_ethernet_alt = process_content(content_alt, is_alt=True, is_ethernet=True)
         else:
             self._widgets = process_content(content)
             self._widgets_alt = process_content(content_alt, is_alt=True)
@@ -181,9 +175,7 @@ class WifiWidget(BaseWidget):
                 # NOTE: Optionally get the exact wifi strength from winapi (won't work if location services are disabled)
                 winapi_connection_info: NetworkInfo | None = None
                 if self._get_exact_wifi_strength:
-                    winapi_connection_info = (
-                        self._wifi_menu.wifi_manager.get_current_connection()
-                    )
+                    winapi_connection_info = self._wifi_menu.wifi_manager.get_current_connection()
 
                 if winapi_connection_info:
                     wifi_strength = winapi_connection_info.quality
@@ -207,23 +199,13 @@ class WifiWidget(BaseWidget):
 
         self._display_correct_label()
         if self._ethernet_active:
-            active_widgets = (
-                self._widgets_ethernet_alt
-                if self._show_alt_label
-                else self._widgets_ethernet
-            )
+            active_widgets = self._widgets_ethernet_alt if self._show_alt_label else self._widgets_ethernet
             active_label_content = (
-                self._ethernet_label_alt_content
-                if self._show_alt_label
-                else self._ethernet_label_content
+                self._ethernet_label_alt_content if self._show_alt_label else self._ethernet_label_content
             )
         else:
-            active_widgets = (
-                self._widgets_alt if self._show_alt_label else self._widgets
-            )
-            active_label_content = (
-                self._label_alt_content if self._show_alt_label else self._label_content
-            )
+            active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+            active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
 
         active_label_content = active_label_content.format(
             wifi_icon=wifi_icon,
@@ -251,10 +233,7 @@ class WifiWidget(BaseWidget):
         """Get the WiFi signal bars safely, not requiring location permissions"""
         connections = NetworkInformation.get_connection_profiles()
         for connection in connections:
-            if (
-                connection.get_network_connectivity_level()
-                == NetworkConnectivityLevel.INTERNET_ACCESS
-            ):
+            if connection.get_network_connectivity_level() == NetworkConnectivityLevel.INTERNET_ACCESS:
                 signal_strength = connection.get_signal_bars()
                 if signal_strength is not None:
                     return signal_strength
@@ -264,10 +243,7 @@ class WifiWidget(BaseWidget):
         """Get the WiFi name safely, not requiring location permissions"""
         connections = NetworkInformation.get_connection_profiles()
         for connection in connections:
-            if (
-                connection.get_network_connectivity_level()
-                == NetworkConnectivityLevel.INTERNET_ACCESS
-            ):
+            if connection.get_network_connectivity_level() == NetworkConnectivityLevel.INTERNET_ACCESS:
                 return connection.profile_name
         return "Disconnected"
 

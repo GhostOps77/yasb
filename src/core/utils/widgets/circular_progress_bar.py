@@ -58,11 +58,7 @@ class CircularProgressBar(QFrame):
                 gradient.setColorAt(i * step, QColor(color))
             return gradient
         else:
-            color = (
-                self._color_config[0]
-                if isinstance(self._color_config, list)
-                else self._color_config
-            )
+            color = self._color_config[0] if isinstance(self._color_config, list) else self._color_config
             return QColor(color)
 
     def paintEvent(self, event):

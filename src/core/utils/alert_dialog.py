@@ -26,9 +26,7 @@ class AlertDialog(QMessageBox):
         self.setWindowTitle(title)
         self.setTextInteractionFlags(Qt.TextInteractionFlag.LinksAccessibleByMouse)
         self.setWindowFlags(
-            Qt.WindowType.WindowStaysOnTopHint
-            | Qt.WindowType.WindowCloseButtonHint
-            | Qt.WindowType.WindowTitleHint
+            Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.WindowCloseButtonHint | Qt.WindowType.WindowTitleHint
         )
         self.setIcon(icon)
         self.setText(message)
@@ -40,19 +38,11 @@ class AlertDialog(QMessageBox):
             self.setInformativeText(informative_message)
 
         if additional_details:
-            self.setSizePolicy(
-                QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
-            )
+            self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
             self.setDetailedText(additional_details)
 
-        self.ok_button = (
-            self.addButton("Ok", QMessageBox.ButtonRole.AcceptRole) if show_ok else None
-        )
-        self.quit_button = (
-            self.addButton("Quit", QMessageBox.ButtonRole.DestructiveRole)
-            if show_quit
-            else None
-        )
+        self.ok_button = self.addButton("Ok", QMessageBox.ButtonRole.AcceptRole) if show_ok else None
+        self.quit_button = self.addButton("Quit", QMessageBox.ButtonRole.DestructiveRole) if show_quit else None
         self.setSizeGripEnabled(False)
 
         self.setMinimumHeight(0)
@@ -69,9 +59,7 @@ class AlertDialog(QMessageBox):
             text_edit.setMaximumHeight(150)
             text_edit.setMinimumWidth(420)
             text_edit.setMaximumWidth(520)
-            text_edit.setSizePolicy(
-                QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
-            )
+            text_edit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         super().showEvent(event)
 
@@ -89,9 +77,7 @@ class AlertDialog(QMessageBox):
             text_edit.setMaximumHeight(150)
             text_edit.setMinimumWidth(420)
             text_edit.setMaximumWidth(520)
-            text_edit.setSizePolicy(
-                QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
-            )
+            text_edit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         return result
 
@@ -148,9 +134,7 @@ def raise_error_alert(
         title=title,
         message=msg,
         informative_message=informative_msg,
-        additional_details=(
-            additional_details if additional_details else traceback.format_exc()
-        ),
+        additional_details=(additional_details if additional_details else traceback.format_exc()),
         show_quit=True,
         parent=parent,
     )

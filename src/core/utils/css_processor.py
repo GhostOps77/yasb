@@ -1,7 +1,6 @@
 import logging
 import os
 import re
-from typing import Dict, Set
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFontDatabase, QIcon
@@ -22,7 +21,7 @@ class CSSProcessor:
     def __init__(self, css_path: str):
         self.css_path = css_path
         self.base_path = os.path.dirname(css_path)
-        self.imported_files: Set[str] = set()
+        self.imported_files: set[str] = set()
         self.css_content = self._read_css_file(css_path)
 
     def process(self) -> str:
@@ -45,7 +44,7 @@ class CSSProcessor:
 
     def _read_css_file(self, file_path: str) -> str:
         try:
-            with open(file_path, "r", encoding="utf-8") as file:
+            with open(file_path, encoding="utf-8") as file:
                 return file.read()
         except (FileNotFoundError, OSError) as e:
             logging.error(f"CSSProcessor Error '{file_path}': {e}")
@@ -59,16 +58,12 @@ class CSSProcessor:
 
     def _process_imports(self, css: str) -> str:
         # Handle @import url("..."); and @import "...";
-        import_pattern = re.compile(
-            r'@import\s+(?:url\((["\']?)([^)]+?)\1\)|(["\'])(.+?)\3)\s*;', re.IGNORECASE
-        )
+        import_pattern = re.compile(r'@import\s+(?:url\((["\']?)([^)]+?)\1\)|(["\'])(.+?)\3)\s*;', re.IGNORECASE)
 
         def import_replacer(match):
             path = match.group(2) or match.group(4)
             import_path = path.strip("'\"")
-            full_import_path = os.path.normpath(
-                os.path.join(self.base_path, import_path)
-            )
+            full_import_path = os.path.normpath(os.path.join(self.base_path, import_path))
             if full_import_path in self.imported_files:
                 logging.warning(f"Circular import detected: {full_import_path}")
                 return ""
@@ -82,7 +77,7 @@ class CSSProcessor:
 
     def _extract_and_replace_variables(self, css: str) -> str:
         # Extract variables from :root
-        root_vars: Dict[str, str] = {}
+        root_vars: dict[str, str] = {}
 
         def root_replacer(match):
             content = match.group(1)
@@ -180,31 +175,20 @@ class CSSProcessor:
         font_families = set()
         font_status = {}
 
-        matches = re.findall(
-            r"font-family\s*:\s*([^;}\n]+)\s*[;}]+", css, flags=re.IGNORECASE
-        )
+        matches = re.findall(r"font-family\s*:\s*([^;}\n]+)\s*[;}]+", css, flags=re.IGNORECASE)
         for match in matches:
             fonts = [f.strip(" '\"\t\r\n") for f in match.split(",")]
             for font in fonts:
                 if font:
                     font_families.add(font)
-                    font_status[font] = (
-                        font.lower() in generic_families
-                        or font.lower() in available_fonts
-                    )
+                    font_status[font] = font.lower() in generic_families or font.lower() in available_fonts
 
-        missing_fonts = [
-            font for font, installed in font_status.items() if not installed
-        ]
+        missing_fonts = [font for font, installed in font_status.items() if not installed]
         if missing_fonts:
             details = [
                 (
                     f'<a href="https://www.nerdfonts.com/font-downloads">{font}</a>'
-                    if (
-                        "nerd font" in font.lower()
-                        or font.lower().endswith(" nf")
-                        or font.lower().endswith(" nfp")
-                    )
+                    if ("nerd font" in font.lower() or font.lower().endswith(" nf") or font.lower().endswith(" nfp"))
                     else font
                 )
                 for font in missing_fonts
@@ -241,8 +225,7 @@ class CSSProcessor:
             "some icons or symbols may not be visible or may not display correctly."
         )
         msg_box.setInformativeText(
-            "Please install the missing fonts.<br>"
-            + "<br>".join(f"<strong>{font}</strong>" for font in details)
+            "Please install the missing fonts.<br>" + "<br>".join(f"<strong>{font}</strong>" for font in details)
         )
         msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
         msg_box.setTextFormat(Qt.TextFormat.RichText)

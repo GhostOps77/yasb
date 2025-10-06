@@ -27,8 +27,7 @@ class CavaBar(QFrame):
                 self._cava_widget._bar_width
                 + (
                     self._cava_widget._bar_spacing
-                    if self._cava_widget._bar_type == "bars_mirrored"
-                    or self._cava_widget._bar_type == "bars"
+                    if self._cava_widget._bar_type == "bars_mirrored" or self._cava_widget._bar_type == "bars"
                     else 0
                 )
             )
@@ -67,19 +66,14 @@ class CavaBar(QFrame):
         else:
             # Only one side has fade - allow it to use full width if needed
             effective_fade_left = min(fade_left, widget_width) if fade_left > 0 else 0
-            effective_fade_right = (
-                min(fade_right, widget_width) if fade_right > 0 else 0
-            )
+            effective_fade_right = min(fade_right, widget_width) if fade_right > 0 else 0
 
         # Left edge fade (0 to effective_fade_left)
         if effective_fade_left > 0 and x_position <= effective_fade_left:
             return max(0.0, x_position / effective_fade_left)
 
         # Right edge fade (widget_width - effective_fade_right to widget_width)
-        elif (
-            effective_fade_right > 0
-            and x_position >= widget_width - effective_fade_right
-        ):
+        elif effective_fade_right > 0 and x_position >= widget_width - effective_fade_right:
             return max(0.0, (widget_width - x_position) / effective_fade_right)
 
         # Middle area - full opacity
@@ -127,32 +121,22 @@ class CavaBar(QFrame):
 
                 if self._cava_widget._gradient == 1 and self._cava_widget.colors:
                     gradient = QLinearGradient(0, 1, 0, 0)
-                    gradient.setCoordinateMode(
-                        QLinearGradient.CoordinateMode.ObjectBoundingMode
-                    )
+                    gradient.setCoordinateMode(QLinearGradient.CoordinateMode.ObjectBoundingMode)
                     stop_step = 1.0 / (len(self._cava_widget.colors) - 1)
                     for idx, color in enumerate(self._cava_widget.colors):
                         gradient.setColorAt(idx * stop_step, color)
 
-                    if (
-                        self._cava_widget._edge_fade_left > 0
-                        or self._cava_widget._edge_fade_right > 0
-                    ):
+                    if self._cava_widget._edge_fade_left > 0 or self._cava_widget._edge_fade_right > 0:
                         fade_opacity = self._get_fade_opacity(rx + rw / 2)
                         painter.setOpacity(fade_opacity)
 
                     painter.fillRect(QRectF(rx, ry, rw, rh), gradient)
                 else:
-                    if (
-                        self._cava_widget._edge_fade_left > 0
-                        or self._cava_widget._edge_fade_right > 0
-                    ):
+                    if self._cava_widget._edge_fade_left > 0 or self._cava_widget._edge_fade_right > 0:
                         fade_opacity = self._get_fade_opacity(rx + rw / 2)
                         painter.setOpacity(fade_opacity)
 
-                    painter.fillRect(
-                        QRectF(rx, ry, rw, rh), self._cava_widget.foreground_color
-                    )
+                    painter.fillRect(QRectF(rx, ry, rw, rh), self._cava_widget.foreground_color)
 
     def draw_bars_mirrored(self, painter):
         """Draw mirrored bar visualization"""
@@ -169,22 +153,16 @@ class CavaBar(QFrame):
 
         total_w_px = max(1, round(float(width) * dpr))
         bars_count = len(samples)
-        total_bars_width_px = (
-            bars_count * band_w_px + max(0, (bars_count - 1)) * band_s_px
-        )
+        total_bars_width_px = bars_count * band_w_px + max(0, (bars_count - 1)) * band_s_px
         left_margin_px = max(0, (total_w_px - total_bars_width_px) // 2)
 
         # Precompute brushes (single gradient instance reused)
         if self._cava_widget._gradient == 1 and self._cava_widget.colors:
             stop_step = 1.0 / (len(self._cava_widget.colors) - 1)
             gradient_upper = QLinearGradient(0, 1, 0, 0)
-            gradient_upper.setCoordinateMode(
-                QLinearGradient.CoordinateMode.ObjectBoundingMode
-            )
+            gradient_upper.setCoordinateMode(QLinearGradient.CoordinateMode.ObjectBoundingMode)
             gradient_lower = QLinearGradient(0, 0, 0, 1)
-            gradient_lower.setCoordinateMode(
-                QLinearGradient.CoordinateMode.ObjectBoundingMode
-            )
+            gradient_lower.setCoordinateMode(QLinearGradient.CoordinateMode.ObjectBoundingMode)
             for idx, color in enumerate(self._cava_widget.colors):
                 gradient_upper.setColorAt(idx * stop_step, color)
                 gradient_lower.setColorAt(idx * stop_step, color)
@@ -197,9 +175,7 @@ class CavaBar(QFrame):
             ux_px = left_margin_px + i * (band_w_px + band_s_px)
 
             min_height_logical = float(self._cava_widget._min_height) / dpr
-            full_height_logical = max(
-                min_height_logical, sample * float(self._cava_widget._height)
-            )
+            full_height_logical = max(min_height_logical, sample * float(self._cava_widget._height))
 
             full_h_px = round(full_height_logical * dpr)
             if full_h_px <= 0:
@@ -210,13 +186,8 @@ class CavaBar(QFrame):
 
             uy_px = max(0, round(center_y * dpr) - up_px)
             if up_px > 0:
-                if (
-                    self._cava_widget._edge_fade_left > 0
-                    or self._cava_widget._edge_fade_right > 0
-                ):
-                    fade_opacity = self._get_fade_opacity(
-                        ux_px / dpr + (band_w_px / dpr) / 2
-                    )
+                if self._cava_widget._edge_fade_left > 0 or self._cava_widget._edge_fade_right > 0:
+                    fade_opacity = self._get_fade_opacity(ux_px / dpr + (band_w_px / dpr) / 2)
                     painter.setOpacity(fade_opacity)
 
                 painter.fillRect(
@@ -230,19 +201,12 @@ class CavaBar(QFrame):
                 if ly_px + down_px > max_h_px:
                     down_px = max(0, max_h_px - ly_px)
                 if down_px > 0:
-                    if (
-                        self._cava_widget._edge_fade_left > 0
-                        or self._cava_widget._edge_fade_right > 0
-                    ):
-                        fade_opacity = self._get_fade_opacity(
-                            ux_px / dpr + (band_w_px / dpr) / 2
-                        )
+                    if self._cava_widget._edge_fade_left > 0 or self._cava_widget._edge_fade_right > 0:
+                        fade_opacity = self._get_fade_opacity(ux_px / dpr + (band_w_px / dpr) / 2)
                         painter.setOpacity(fade_opacity)
 
                     painter.fillRect(
-                        QRectF(
-                            ux_px / dpr, ly_px / dpr, band_w_px / dpr, down_px / dpr
-                        ),
+                        QRectF(ux_px / dpr, ly_px / dpr, band_w_px / dpr, down_px / dpr),
                         brush_lower,
                     )
 
@@ -260,9 +224,7 @@ class CavaBar(QFrame):
         if self._cava_widget._gradient == 1 and self._cava_widget.colors:
             stop_step = 1.0 / (len(self._cava_widget.colors) - 1)
             gradient = QLinearGradient(0, 1, 0, 0)
-            gradient.setCoordinateMode(
-                QLinearGradient.CoordinateMode.ObjectBoundingMode
-            )
+            gradient.setCoordinateMode(QLinearGradient.CoordinateMode.ObjectBoundingMode)
             for idx, color in enumerate(self._cava_widget.colors):
                 gradient.setColorAt(idx * stop_step, color)
             brush = gradient
@@ -298,10 +260,7 @@ class CavaBar(QFrame):
         path.lineTo(points[-1].x(), bottom)
         path.closeSubpath()
 
-        if (
-            self._cava_widget._edge_fade_left > 0
-            or self._cava_widget._edge_fade_right > 0
-        ):
+        if self._cava_widget._edge_fade_left > 0 or self._cava_widget._edge_fade_right > 0:
             # Draw wave in strips with varying opacity
             widget_width = self.width()
             widget_height = int(height)  # Convert to int for setClipRect
@@ -337,9 +296,7 @@ class CavaBar(QFrame):
             colors_len = len(self._cava_widget.colors)
             stop_step = 1.0 / (colors_len - 1) if colors_len > 1 else 1.0
             gradient = QLinearGradient(0, 0, 0, 1)
-            gradient.setCoordinateMode(
-                QLinearGradient.CoordinateMode.ObjectBoundingMode
-            )
+            gradient.setCoordinateMode(QLinearGradient.CoordinateMode.ObjectBoundingMode)
             for idx, color in enumerate(self._cava_widget.colors):
                 s = idx * stop_step
                 pos_top = max(0.0, 0.5 - s * 0.5)
@@ -383,10 +340,7 @@ class CavaBar(QFrame):
             combined.lineTo(p)
         combined.closeSubpath()
 
-        if (
-            self._cava_widget._edge_fade_left > 0
-            or self._cava_widget._edge_fade_right > 0
-        ):
+        if self._cava_widget._edge_fade_left > 0 or self._cava_widget._edge_fade_right > 0:
             # Draw wave in strips with varying opacity
             widget_width = self.width()
             widget_height = int(height)  # Convert to int for setClipRect

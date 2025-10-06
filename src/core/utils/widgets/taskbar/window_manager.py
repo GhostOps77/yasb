@@ -1,6 +1,5 @@
 import ctypes
 import logging
-from typing import Dict, Optional
 
 from PyQt6.QtCore import (
     QAbstractNativeEventFilter,
@@ -64,9 +63,7 @@ def connect_taskbar(widget):
     except Exception:
         strict_filtering = False
 
-    task_manager = get_shared_task_manager(
-        excluded_classes, ignored_processes, ignored_titles, strict_filtering
-    )
+    task_manager = get_shared_task_manager(excluded_classes, ignored_processes, ignored_titles, strict_filtering)
 
     # Connect signals
     task_manager.window_added.connect(widget._on_window_added)
@@ -78,12 +75,8 @@ def connect_taskbar(widget):
     global _shellhook_event_filter
     try:
         if _shellhook_event_filter is None and QCoreApplication.instance() is not None:
-            _shellhook_event_filter = _ShellHookEventFilter(
-                lambda: _shared_task_manager
-            )
-            QCoreApplication.instance().installNativeEventFilter(
-                _shellhook_event_filter
-            )
+            _shellhook_event_filter = _ShellHookEventFilter(lambda: _shared_task_manager)
+            QCoreApplication.instance().installNativeEventFilter(_shellhook_event_filter)
     except Exception as e:
         logger.warning(f"Failed to install native event filter: {e}")
 
@@ -196,16 +189,14 @@ class TaskbarWindowManager(QObject):
         except Exception as e:
             logger.warning(f"CoInitialize failed or already initialized: {e}")
 
-    def start(self, hwnd: Optional[int] = None):
+    def start(self, hwnd: int | None = None):
         """Register shell hooks on provided Qt hwnd; set WinEvent hooks and enumerate existing windows."""
         if self._initialized:
             return
 
         try:
             if not hwnd:
-                raise RuntimeError(
-                    "Qt top-level window handle (hwnd) is required for shell hooks"
-                )
+                raise RuntimeError("Qt top-level window handle (hwnd) is required for shell hooks")
             self._register_shell_hooks(hwnd)
             self._set_win_event_hooks()
 
@@ -301,23 +292,15 @@ class TaskbarWindowManager(QObject):
                         hwnd_int = int(hWnd)
 
                         if eventType == WCONST.EVENT_OBJECT_UNCLOAKED:
-                            QTimer.singleShot(
-                                100, lambda: self._on_window_uncloaked(hwnd_int)
-                            )
+                            QTimer.singleShot(100, lambda: self._on_window_uncloaked(hwnd_int))
                         elif eventType == WCONST.EVENT_OBJECT_CLOAKED:
-                            QTimer.singleShot(
-                                50, lambda: self._on_window_cloaked(hwnd_int)
-                            )
+                            QTimer.singleShot(50, lambda: self._on_window_cloaked(hwnd_int))
                         elif eventType == WCONST.EVENT_OBJECT_SHOW:
                             if not self._strict_filtering:
-                                QTimer.singleShot(
-                                    0, lambda: self._on_window_show(hwnd_int)
-                                )
+                                QTimer.singleShot(0, lambda: self._on_window_show(hwnd_int))
                         elif eventType == WCONST.EVENT_OBJECT_HIDE:
                             if not self._strict_filtering:
-                                QTimer.singleShot(
-                                    0, lambda: self._on_window_hide(hwnd_int)
-                                )
+                                QTimer.singleShot(0, lambda: self._on_window_hide(hwnd_int))
                         else:
                             if hwnd_int in self._windows:
                                 self._schedule_window_update(hwnd_int)
@@ -801,9 +784,7 @@ class TaskbarWindowManager(QObject):
                     pass
                 return True
 
-            EnumWindowsProc = ctypes.WINFUNCTYPE(
-                ctypes.c_bool, ctypes.wintypes.HWND, ctypes.POINTER(ctypes.c_long)
-            )
+            EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.wintypes.HWND, ctypes.POINTER(ctypes.c_long))
             enum_callback = EnumWindowsProc(enum_proc)
 
             EnumWindows(enum_callback, 0)
@@ -840,11 +821,11 @@ class TaskbarWindowManager(QObject):
 
     # Hidden window creation/destruction removed
 
-    def get_windows(self) -> Dict[int, ApplicationWindow]:
+    def get_windows(self) -> dict[int, ApplicationWindow]:
         """Return a copy of all tracked windows keyed by hwnd."""
         return self._windows.copy()
 
-    def get_window(self, hwnd: int) -> Optional[ApplicationWindow]:
+    def get_window(self, hwnd: int) -> ApplicationWindow | None:
         """Return a tracked window by handle or None."""
         return self._windows.get(hwnd)
 

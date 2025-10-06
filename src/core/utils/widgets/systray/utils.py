@@ -2,12 +2,12 @@
 
 import ctypes as ct
 import logging
+from collections.abc import Callable
 from ctypes import GetLastError, byref, windll
 from ctypes.wintypes import (
     MSG,
     POINT,
 )
-from typing import Callable
 
 from win32con import (
     WM_CLOSE,
@@ -121,9 +121,7 @@ def get_exe_path_from_hwnd(hwnd: int) -> str | None:
     PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
     h_process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, process_id.value)
     if not h_process:
-        logger.debug(
-            f"Could not open process ID {process_id.value}. Err: {GetLastError()}"
-        )
+        logger.debug(f"Could not open process ID {process_id.value}. Err: {GetLastError()}")
         return None
 
     try:

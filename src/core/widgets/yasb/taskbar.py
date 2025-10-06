@@ -107,9 +107,7 @@ class DraggableAppButton(QFrame):
         if self._press_global_pos is None:
             return False
         threshold = max(8, QApplication.startDragDistance())
-        moved = (
-            event.globalPosition().toPoint() - self._press_global_pos
-        ).manhattanLength()
+        moved = (event.globalPosition().toPoint() - self._press_global_pos).manhattanLength()
         if moved >= threshold and self._lmb_pressed:
             self._dragging = True
             try:
@@ -131,10 +129,7 @@ class DraggableAppButton(QFrame):
                     pass
                 # If cursor still over button after drag, preview again
                 try:
-                    if (
-                        self.rect().contains(self.mapFromGlobal(QCursor.pos()))
-                        and self._taskbar._preview_enabled
-                    ):
+                    if self.rect().contains(self.mapFromGlobal(QCursor.pos())) and self._taskbar._preview_enabled:
                         self._preview_timer.start()
                 except Exception:
                     pass
@@ -178,10 +173,7 @@ class DraggableAppButton(QFrame):
             else:
                 # Drag ended, if pointer still over button, start preview timer
                 try:
-                    if (
-                        self.rect().contains(self.mapFromGlobal(QCursor.pos()))
-                        and self._taskbar._preview_enabled
-                    ):
+                    if self.rect().contains(self.mapFromGlobal(QCursor.pos())) and self._taskbar._preview_enabled:
                         self._preview_timer.start()
                 except Exception:
                     pass
@@ -244,14 +236,9 @@ class TaskbarDropWidget(QFrame):
         if isinstance(source, DraggableAppButton):
             pos = event.position().toPoint()
             hovered = self._find_button_at(pos)
-            if (
-                isinstance(hovered, DraggableAppButton)
-                and hovered is not self.dragged_button
-            ):
+            if isinstance(hovered, DraggableAppButton) and hovered is not self.dragged_button:
                 self._highlight_hover(hovered)
-                self.current_indicator_index = self._get_index_from_hover(
-                    hovered, source
-                )
+                self.current_indicator_index = self._get_index_from_hover(hovered, source)
             else:
                 self._clear_hover_highlight()
                 self.current_indicator_index = -1
@@ -348,9 +335,7 @@ class TaskbarDropWidget(QFrame):
             pass
         obj = btn.objectName() or ""
         if obj:
-            btn.setStyleSheet(
-                f"#{obj} {{ background-color: rgba(255, 255, 255, 0.2); }}"
-            )
+            btn.setStyleSheet(f"#{obj} {{ background-color: rgba(255, 255, 255, 0.2); }}")
         btn.update()
 
     def _clear_hover_highlight(self):
@@ -453,9 +438,7 @@ class TaskbarWidget(BaseWidget):
         self._dpi = None
         self._label_icon_size = icon_size
         self._animation = (
-            {"enabled": animation, "type": "fadeInOut", "duration": 200}
-            if isinstance(animation, bool)
-            else animation
+            {"enabled": animation, "type": "fadeInOut", "duration": 200} if isinstance(animation, bool) else animation
         )
         self._title_label = title_label
         self._monitor_exclusive = monitor_exclusive
@@ -477,9 +460,7 @@ class TaskbarWidget(BaseWidget):
         self._tooltip = tooltip if not self._preview_enabled else False
 
         self._ignore_apps["classes"] = list(set(self._ignore_apps.get("classes", [])))
-        self._ignore_apps["processes"] = list(
-            set(self._ignore_apps.get("processes", []))
-        )
+        self._ignore_apps["processes"] = list(set(self._ignore_apps.get("processes", [])))
         self._ignore_apps["titles"] = list(set(self._ignore_apps.get("titles", [])))
 
         self._icon_cache = {}
@@ -517,9 +498,7 @@ class TaskbarWidget(BaseWidget):
             self._task_manager = None
             self._task_manager_connected = False
         else:
-            logging.error(
-                "Shared task manager not available - taskbar functionality will be limited"
-            )
+            logging.error("Shared task manager not available - taskbar functionality will be limited")
 
         if self._preview_enabled:
             self._thumbnail_mgr = TaskbarThumbnailManager(
@@ -552,9 +531,7 @@ class TaskbarWidget(BaseWidget):
                     self._task_manager = connect_taskbar(self)
                     self._task_manager_connected = True
                 except Exception as e:
-                    logging.error(
-                        f"Failed to connect taskbar manager from showEvent: {e}"
-                    )
+                    logging.error(f"Failed to connect taskbar manager from showEvent: {e}")
         except Exception:
             pass
         try:
@@ -607,9 +584,7 @@ class TaskbarWidget(BaseWidget):
                     self._remove_window_ui(hwnd, window_data, immediate=True)
         else:
             # If not monitor exclusive, treat as regular update
-            if hwnd not in self._window_buttons and self._should_show_window(
-                hwnd, window_data
-            ):
+            if hwnd not in self._window_buttons and self._should_show_window(hwnd, window_data):
                 self._add_window_ui(hwnd, window_data)
             else:
                 self._update_window_ui(hwnd, window_data)
@@ -620,9 +595,7 @@ class TaskbarWidget(BaseWidget):
             try:
                 self._widget_monitor_handle = get_monitor_hwnd(self.winId())
                 try:
-                    self._widget_monitor_info = get_monitor_info(
-                        self._widget_monitor_handle
-                    )
+                    self._widget_monitor_info = get_monitor_info(self._widget_monitor_handle)
                 except Exception:
                     self._widget_monitor_info = None
             except Exception:
@@ -792,9 +765,7 @@ class TaskbarWidget(BaseWidget):
                 if self._title_label["show"] == "focused" and title_wrapper:
                     desired_visible = self._get_title_visibility(hwnd)
                     if desired_visible != title_wrapper.isVisible():
-                        self._animate_or_set_title_visible(
-                            title_wrapper, desired_visible
-                        )
+                        self._animate_or_set_title_visible(title_wrapper, desired_visible)
                         layout.activate()
         except Exception:
             pass
@@ -975,9 +946,7 @@ class TaskbarWidget(BaseWidget):
             tw_layout.setContentsMargins(0, 0, 0, 0)
             tw_layout.setSpacing(0)
             try:
-                title_wrapper.setSizePolicy(
-                    QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred
-                )
+                title_wrapper.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
             except Exception:
                 pass
 
@@ -1011,11 +980,7 @@ class TaskbarWidget(BaseWidget):
     def _get_container_class(self, hwnd: int) -> str:
         """Get CSS class for the app container based on window active and flashing status."""
         # Check if window is active using task manager data
-        if (
-            hasattr(self, "_task_manager")
-            and self._task_manager
-            and hwnd in self._task_manager._windows
-        ):
+        if hasattr(self, "_task_manager") and self._task_manager and hwnd in self._task_manager._windows:
             app_window = self._task_manager._windows[hwnd]
 
             # Check for flashing state first (flashing takes priority over active)
@@ -1098,9 +1063,7 @@ class TaskbarWidget(BaseWidget):
 
         if action == "toggle":
             if self._animation["enabled"] and not self._suspend_updates:
-                AnimationManager.animate(
-                    widget, self._animation["type"], self._animation["duration"]
-                )
+                AnimationManager.animate(widget, self._animation["type"], self._animation["duration"])
             self.bring_to_foreground(hwnd)
         else:
             logging.warning(f"Unknown action '{action}'.")
@@ -1124,11 +1087,7 @@ class TaskbarWidget(BaseWidget):
             base, focus_target = resolve_base_and_focus(hwnd)
             is_active = False
             try:
-                if (
-                    hasattr(self, "_task_manager")
-                    and self._task_manager
-                    and base in self._task_manager._windows
-                ):
+                if hasattr(self, "_task_manager") and self._task_manager and base in self._task_manager._windows:
                     app_window = self._task_manager._windows[base]
                     is_active = bool(getattr(app_window, "is_active", False))
             except Exception:
@@ -1140,9 +1099,7 @@ class TaskbarWidget(BaseWidget):
                 restore_window(base)
                 set_foreground(base)
                 try:
-                    QTimer.singleShot(
-                        0, lambda h=focus_target or base: set_foreground(h)
-                    )
+                    QTimer.singleShot(0, lambda h=focus_target or base: set_foreground(h))
                 except Exception:
                     pass
                 return
@@ -1162,16 +1119,10 @@ class TaskbarWidget(BaseWidget):
                 try:
                     win32gui.ShowWindow(
                         hwnd,
-                        (
-                            win32con.SW_RESTORE
-                            if win32gui.IsIconic(hwnd)
-                            else win32con.SW_SHOW
-                        ),
+                        (win32con.SW_RESTORE if win32gui.IsIconic(hwnd) else win32con.SW_SHOW),
                     )
                     if DEBUG:
-                        logging.warning(
-                            f"Could not bring window {hwnd} to foreground: {e}"
-                        )
+                        logging.warning(f"Could not bring window {hwnd} to foreground: {e}")
                 except Exception as final_e:
                     if DEBUG:
                         logging.error(f"Failed to show window {hwnd}: {final_e}")
@@ -1198,11 +1149,7 @@ class TaskbarWidget(BaseWidget):
                 try:
                     win32gui.ShowWindow(
                         hwnd,
-                        (
-                            win32con.SW_RESTORE
-                            if win32gui.IsIconic(hwnd)
-                            else win32con.SW_SHOW
-                        ),
+                        (win32con.SW_RESTORE if win32gui.IsIconic(hwnd) else win32con.SW_SHOW),
                     )
                 except Exception:
                     pass
@@ -1221,11 +1168,7 @@ class TaskbarWidget(BaseWidget):
 
                 # Preserve flashing if manager reports it
                 try:
-                    if (
-                        hasattr(self, "_task_manager")
-                        and self._task_manager
-                        and hwnd in self._task_manager._windows
-                    ):
+                    if hasattr(self, "_task_manager") and self._task_manager and hwnd in self._task_manager._windows:
                         aw = self._task_manager._windows[hwnd]
                         if getattr(aw, "is_flashing", False):
                             new_cls = "app-container flashing"
@@ -1238,21 +1181,14 @@ class TaskbarWidget(BaseWidget):
 
                 if w.property("class") != new_cls:
                     w.setProperty("class", new_cls)
-                    if (
-                        self._title_label.get("enabled")
-                        and self._title_label.get("show") == "focused"
-                    ):
+                    if self._title_label.get("enabled") and self._title_label.get("show") == "focused":
                         lay = w.layout()
                         if lay and lay.count() > 1:
                             title_wrapper = lay.itemAt(1).widget()
                             if title_wrapper:
-                                want_visible = (
-                                    target_hwnd is not None and hwnd == target_hwnd
-                                )
+                                want_visible = target_hwnd is not None and hwnd == target_hwnd
                                 if title_wrapper.isVisible() != want_visible:
-                                    self._animate_or_set_title_visible(
-                                        title_wrapper, want_visible
-                                    )
+                                    self._animate_or_set_title_visible(title_wrapper, want_visible)
                                     lay.activate()
                     st = w.style()
                     if st:
@@ -1272,9 +1208,7 @@ class TaskbarWidget(BaseWidget):
             pass
         return None
 
-    def _animate_container(
-        self, container, start_width=0, end_width=0, duration=300, hwnd=None
-    ) -> None:
+    def _animate_container(self, container, start_width=0, end_width=0, duration=300, hwnd=None) -> None:
         """Animate the width of a container widget."""
         animation = QPropertyAnimation(container, b"maximumWidth", container)
         animation.setStartValue(start_width)
@@ -1310,9 +1244,7 @@ class TaskbarWidget(BaseWidget):
         animation.finished.connect(on_finished)
         animation.start()
 
-    def _animate_or_set_title_visible(
-        self, label: QWidget, visible: bool, duration: int = 200
-    ) -> None:
+    def _animate_or_set_title_visible(self, label: QWidget, visible: bool, duration: int = 200) -> None:
         """Animate the title label's width when toggling visibility."""
         try:
             if not self._animation["enabled"]:
@@ -1332,11 +1264,7 @@ class TaskbarWidget(BaseWidget):
             except Exception:
                 pass
 
-            start_width = (
-                label.maximumWidth()
-                if label.maximumWidth() != 16777215
-                else label.width()
-            )
+            start_width = label.maximumWidth() if label.maximumWidth() != 16777215 else label.width()
             end_width = label.sizeHint().width() if visible else 0
 
             # Ensure label is visible before animating in

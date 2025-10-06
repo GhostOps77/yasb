@@ -57,10 +57,6 @@ def init_logger():
     file_handler.setFormatter(logging.Formatter(LOG_FORMAT, datefmt=LOG_DATETIME))
     # Configure logging with colors
     console_handler = logging.StreamHandler()
-    console_handler.setFormatter(
-        ColoredFormatter(CONSOLE_FORMAT, datefmt=CONSOLE_DATETIME)
-    )
-    logging.basicConfig(
-        level=logging.DEBUG, handlers=[file_handler, console_handler], encoding="utf-8"
-    )
+    console_handler.setFormatter(ColoredFormatter(CONSOLE_FORMAT, datefmt=CONSOLE_DATETIME))
+    logging.basicConfig(level=logging.DEBUG, handlers=[file_handler, console_handler], encoding="utf-8")
     logging.info(f"{APP_NAME} v{BUILD_VERSION}")

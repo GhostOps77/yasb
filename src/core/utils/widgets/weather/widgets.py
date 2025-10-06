@@ -162,9 +162,7 @@ class HourlyTemperatureLineWidget(QFrame):
 
         self.config = config or {}
         self.units = units
-        self.current_line_style = CurrentHourLineStyle(
-            self.config.get("current_line_style", "dot")
-        )
+        self.current_line_style = CurrentHourLineStyle(self.config.get("current_line_style", "dot"))
         self.hour_point_spacing: int = self.config.get("hourly_point_spacing", 76)
 
         self.icon_fetcher = IconFetcher.get_instance(self)
@@ -250,9 +248,7 @@ class HourlyTemperatureLineWidget(QFrame):
                 | QPainter.RenderHint.SmoothPixmapTransform
             )
         else:
-            painter.setRenderHint(
-                QPainter.RenderHint.Antialiasing | QPainter.RenderHint.TextAntialiasing
-            )
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing | QPainter.RenderHint.TextAntialiasing)
 
         height = self.height()
         width = self.width()
@@ -298,9 +294,7 @@ class HourlyTemperatureLineWidget(QFrame):
                 pixmap,
             )
             # Set temp, wind and icon combined height
-            text_wind_icon_height = (
-                time_rect.height() + wind_rect.height() + icon_size.height()
-            )
+            text_wind_icon_height = time_rect.height() + wind_rect.height() + icon_size.height()
 
         # Draw temperature curve
         temp_line_width = self.config.get("temp_line_width", 2)
@@ -322,9 +316,7 @@ class HourlyTemperatureLineWidget(QFrame):
         painter.setPen(default_pen)
         for i in range(1, len(self.hourly_data) - 1):
             x_offset = i * self.hour_point_spacing
-            temp_text = (
-                f"{self.hourly_data[i].temp}{'°C' if self.units == 'metric' else '°F'}"
-            )
+            temp_text = f"{self.hourly_data[i].temp}{'°C' if self.units == 'metric' else '°F'}"
             temp_rect = painter.fontMetrics().boundingRect(temp_text)
             temp_x = x_offset - temp_rect.width() / 2
             # Text will be drawn above the curve
@@ -355,9 +347,7 @@ class HourlyTemperatureLineWidget(QFrame):
             if self.current_idx is not None:
                 line_x = points[self.current_idx].x()
                 if temp_line_width > 0:
-                    custom_point = quadratic_bezier_point(
-                        points[0], points[1], points[2], 0.5
-                    )
+                    custom_point = quadratic_bezier_point(points[0], points[1], points[2], 0.5)
                     average_point = (custom_point + points[1]) / 2
                     line_from = average_point.y() + 10
                 else:

@@ -85,9 +85,7 @@ class TodoWidget(BaseWidget):
         add_shadow(self._widget_container, self._container_shadow)
         self.widget_layout.addWidget(self._widget_container)
 
-        build_widget_label(
-            self, self._label_content, self._label_alt_content, self._label_shadow
-        )
+        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("toggle_menu", self._toggle_menu)
@@ -111,7 +109,7 @@ class TodoWidget(BaseWidget):
         try:
             tasks_file = self._get_tasks_file_path()
             if os.path.exists(tasks_file):
-                with open(tasks_file, "r", encoding="utf-8") as f:
+                with open(tasks_file, encoding="utf-8") as f:
                     self._tasks = json.load(f)
                 self._tasks.sort(key=lambda t: t["order"], reverse=True)
             else:
@@ -193,28 +191,20 @@ class TodoWidget(BaseWidget):
 
         self._title_input = QLineEdit()
         self.widget_context_menu(self._title_input)
-        self._title_input.setPlaceholderText(
-            "Task title... (max 100 characters, required)"
-        )
+        self._title_input.setPlaceholderText("Task title... (max 100 characters, required)")
         self._title_input.setProperty("class", "title-field")
         if task:
             self._title_input.setText(task["title"])
-        self._title_input.textChanged.connect(
-            lambda: self._limit_text_length("title", 100)
-        )
+        self._title_input.textChanged.connect(lambda: self._limit_text_length("title", 100))
         content_layout.addWidget(self._title_input)
 
         self._desc_input = QTextEdit()
-        self._desc_input.insertFromMimeData = (
-            lambda source: self._desc_input.insertPlainText(source.text())
-        )
+        self._desc_input.insertFromMimeData = lambda source: self._desc_input.insertPlainText(source.text())
         self.widget_context_menu(self._desc_input)
         self._desc_input.setPlaceholderText("Task description... (max 500 characters)")
         if task:
             self._desc_input.setText(task.get("description", ""))
-        self._desc_input.textChanged.connect(
-            lambda: self._limit_text_length("description", 500)
-        )
+        self._desc_input.textChanged.connect(lambda: self._limit_text_length("description", 500))
         self._desc_input.setProperty("class", "desc-field")
         content_layout.addWidget(self._desc_input)
 
@@ -252,9 +242,7 @@ class TodoWidget(BaseWidget):
         save_button = QPushButton(save_button_text)
         save_button.setProperty("class", "button add")
         save_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        save_button.clicked.connect(
-            lambda: on_save(dialog, task) if task else on_save(dialog)
-        )
+        save_button.clicked.connect(lambda: on_save(dialog, task) if task else on_save(dialog))
         button_layout.addWidget(save_button)
 
         dialog_layout.addWidget(button_container)
@@ -264,9 +252,7 @@ class TodoWidget(BaseWidget):
 
     def _toggle_label(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
 
         self._show_alt_label = not self._show_alt_label
 
@@ -290,9 +276,7 @@ class TodoWidget(BaseWidget):
     def _update_label(self):
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
         active_widgets_len = len(active_widgets)
-        active_label_content = (
-            self._label_alt_content if self._show_alt_label else self._label_content
-        )
+        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
 
         active_tasks = self._get_filtered_tasks(completed=False)
         completed_tasks = self._get_filtered_tasks(completed=True)
@@ -324,18 +308,12 @@ class TodoWidget(BaseWidget):
         # Tooltip: show number of tasks per category, skip 0s
         category_counts = {}
         for cat_key, cat_conf in self._categories.items():
-            count = sum(
-                1
-                for t in self._tasks
-                if t.get("category") == cat_key and not t.get("completed", False)
-            )
+            count = sum(1 for t in self._tasks if t.get("category") == cat_key and not t.get("completed", False))
             if count > 0:
                 category_counts[cat_conf["label"]] = count
 
         if category_counts:
-            tooltip_lines = [
-                f"{label}: {count}" for label, count in category_counts.items()
-            ]
+            tooltip_lines = [f"{label}: {count}" for label, count in category_counts.items()]
             tooltip_text = "\n".join(tooltip_lines)
         else:
             tooltip_text = "No tasks."
@@ -344,9 +322,7 @@ class TodoWidget(BaseWidget):
 
     def _toggle_menu(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
         self._show_completed = False
         self._expanded_task_id = None
         self._show_menu()
@@ -429,9 +405,7 @@ class TodoWidget(BaseWidget):
         scroll_layout.setContentsMargins(0, 0, 0, 0)
         scroll_layout.setSpacing(0)
 
-        tasks = self._get_filtered_tasks(
-            completed=False, category=self._category_filter
-        )
+        tasks = self._get_filtered_tasks(completed=False, category=self._category_filter)
         if self._expanded_task_id is None and tasks:
             self._expanded_task_id = tasks[0]["id"]
 
@@ -466,15 +440,9 @@ class TodoWidget(BaseWidget):
         menu.addAction(sort_by_date_old)
         menu.addAction(sort_reset)
 
-        sort_by_date.triggered.connect(
-            lambda: self._sort_and_filter_tasks(sort_mode="date")
-        )
-        sort_by_date_old.triggered.connect(
-            lambda: self._sort_and_filter_tasks(sort_mode="date", reverse=True)
-        )
-        sort_reset.triggered.connect(
-            lambda: self._sort_and_filter_tasks(sort_mode="default")
-        )
+        sort_by_date.triggered.connect(lambda: self._sort_and_filter_tasks(sort_mode="date"))
+        sort_by_date_old.triggered.connect(lambda: self._sort_and_filter_tasks(sort_mode="date", reverse=True))
+        sort_reset.triggered.connect(lambda: self._sort_and_filter_tasks(sort_mode="default"))
         menu.addSeparator()
 
         show_all_action = QAction("Show all categories", self)
@@ -486,9 +454,7 @@ class TodoWidget(BaseWidget):
             action = QAction(f"Show only {cat_config['label']}", self)
             action.setCheckable(True)
             action.setChecked(self._category_filter == cat_key)
-            action.triggered.connect(
-                lambda checked, c=cat_key: self._sort_and_filter_tasks(category_key=c)
-            )
+            action.triggered.connect(lambda checked, c=cat_key: self._sort_and_filter_tasks(category_key=c))
             menu.addAction(action)
 
         button_pos = self._order_btn.mapToGlobal(self._order_btn.rect().bottomLeft())
@@ -536,13 +502,9 @@ class TodoWidget(BaseWidget):
 
         if tasks is None:
             if not self._show_completed:
-                tasks = self._get_filtered_tasks(
-                    completed=False, category=self._category_filter
-                )
+                tasks = self._get_filtered_tasks(completed=False, category=self._category_filter)
             else:
-                tasks = self._get_filtered_tasks(
-                    completed=True, category=self._category_filter
-                )
+                tasks = self._get_filtered_tasks(completed=True, category=self._category_filter)
 
         if tasks:
             for task in tasks:
@@ -570,9 +532,7 @@ class TodoWidget(BaseWidget):
             no_tasks_label = QLabel(msg)
             no_tasks_label.setProperty("class", "no-tasks")
             no_tasks_label.setWordWrap(True)
-            no_tasks_label.setSizePolicy(
-                QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
-            )
+            no_tasks_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
             no_tasks_label.setTextFormat(Qt.TextFormat.RichText)
             no_tasks_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             layout.addWidget(no_tasks_icon)
@@ -593,9 +553,7 @@ class TodoWidget(BaseWidget):
             return
 
         # Use filtered tasks for refresh
-        tasks = self._get_filtered_tasks(
-            completed=self._show_completed, category=self._category_filter
-        )
+        tasks = self._get_filtered_tasks(completed=self._show_completed, category=self._category_filter)
         self._refresh_task_list(scroll_widget.layout(), tasks)
 
     def _expand_task(self, task_id):
@@ -678,9 +636,7 @@ class TodoWidget(BaseWidget):
         container_layout.setContentsMargins(0, 0, 0, 0)
         container_layout.setSpacing(0)
 
-        checkbox = QPushButton(
-            self._icons["checked"] if completed else self._icons["unchecked"]
-        )
+        checkbox = QPushButton(self._icons["checked"] if completed else self._icons["unchecked"])
         checkbox.setChecked(completed)
         checkbox.setProperty("class", "task-checkbox")
         checkbox.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
@@ -701,9 +657,7 @@ class TodoWidget(BaseWidget):
             def delayed_archive(checked, t=task, cb=checkbox):
                 cb.setChecked(True)
                 cb.setEnabled(False)
-                container.setProperty(
-                    "class", f"task-item completed {task.get('category', 'default')}"
-                )
+                container.setProperty("class", f"task-item completed {task.get('category', 'default')}")
                 container.style().unpolish(container)
                 container.style().polish(container)
                 checkbox.setText(self._icons["checked"])
@@ -716,11 +670,7 @@ class TodoWidget(BaseWidget):
                     self._save_tasks()
                     TodoWidget.update_all()
                     try:
-                        if (
-                            hasattr(self, "_menu")
-                            and self._menu
-                            and self._menu.isVisible()
-                        ):
+                        if hasattr(self, "_menu") and self._menu and self._menu.isVisible():
                             self._refresh_menu_task_list()
                     except RuntimeError:
                         pass
@@ -731,9 +681,7 @@ class TodoWidget(BaseWidget):
         container_layout.addWidget(checkbox, alignment=Qt.AlignmentFlag.AlignTop)
 
         text_container = QWidget()
-        text_container.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
-        )
+        text_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         text_layout = QVBoxLayout(text_container)
         text_layout.setContentsMargins(0, 0, 0, 0)
         text_layout.setSpacing(0)
@@ -749,9 +697,7 @@ class TodoWidget(BaseWidget):
                 desc_label = QLabel()
                 desc_label.setProperty("class", "description")
                 desc_label.setWordWrap(True)
-                desc_label.setTextInteractionFlags(
-                    Qt.TextInteractionFlag.TextBrowserInteraction
-                )
+                desc_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
                 desc_label.setOpenExternalLinks(True)
                 desc = task["description"]
 
@@ -760,9 +706,7 @@ class TodoWidget(BaseWidget):
                     def replacer(match):
                         url = match.group(1)
                         domain = urllib.parse.urlparse(url).netloc or "link"
-                        return (
-                            f'<a style="text-decoration:none" href="{url}">{domain}</a>'
-                        )
+                        return f'<a style="text-decoration:none" href="{url}">{domain}</a>'
 
                     desc = re.sub(r"(https?://[^\s]+)", replacer, desc)
                 desc_label.setText(desc)
@@ -803,9 +747,7 @@ class TodoWidget(BaseWidget):
                 edit_btn = QPushButton(self._icons["edit"])
                 edit_btn.setProperty("class", "edit-task-button")
                 edit_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-                edit_btn.clicked.connect(
-                    lambda _, t=task: self._show_edit_task_dialog(t)
-                )
+                edit_btn.clicked.connect(lambda _, t=task: self._show_edit_task_dialog(t))
 
                 delete_btn = QPushButton(self._icons["delete"])
                 delete_btn.setProperty("class", "delete-task-button")
@@ -886,10 +828,7 @@ class TodoWidget(BaseWidget):
             widget_to_remove.setParent(None)
 
         # Only refresh if no task items left after removal
-        task_items_left = any(
-            hasattr(layout.itemAt(i).widget(), "_task_id")
-            for i in range(layout.count())
-        )
+        task_items_left = any(hasattr(layout.itemAt(i).widget(), "_task_id") for i in range(layout.count()))
 
         if task_items_left:
             self._refresh_menu_task_list()
@@ -897,25 +836,15 @@ class TodoWidget(BaseWidget):
     def _reorder_tasks(self, source_id, target_id):
         try:
             tasks_sorted = sorted(self._tasks, key=lambda t: t["order"], reverse=True)
-            source_index = next(
-                (i for i, t in enumerate(tasks_sorted) if str(t["id"]) == source_id), -1
-            )
-            target_index = next(
-                (i for i, t in enumerate(tasks_sorted) if str(t["id"]) == target_id), -1
-            )
-            if (
-                source_index != -1
-                and target_index != -1
-                and source_index != target_index
-            ):
+            source_index = next((i for i, t in enumerate(tasks_sorted) if str(t["id"]) == source_id), -1)
+            target_index = next((i for i, t in enumerate(tasks_sorted) if str(t["id"]) == target_id), -1)
+            if source_index != -1 and target_index != -1 and source_index != target_index:
                 task = tasks_sorted.pop(source_index)
                 tasks_sorted.insert(target_index, task)
                 for idx, t in enumerate(tasks_sorted):
                     t["order"] = len(tasks_sorted) - idx - 1
 
-                self._tasks = sorted(
-                    tasks_sorted, key=lambda t: t["order"], reverse=True
-                )
+                self._tasks = sorted(tasks_sorted, key=lambda t: t["order"], reverse=True)
                 self._save_tasks()
                 self._refresh_menu_task_list()
         except Exception as e:
@@ -970,9 +899,7 @@ class TaskFrame(QFrame):
             return
 
         self._drop_highlight = True
-        self.setProperty(
-            "class", f"task-item drop-highlight {self._task.get('category', 'default')}"
-        )
+        self.setProperty("class", f"task-item drop-highlight {self._task.get('category', 'default')}")
         self.setStyleSheet("")
         self.update()
         event.acceptProposedAction()
@@ -992,13 +919,9 @@ class TaskFrame(QFrame):
             viewport_pos = scroll_area.viewport().mapFromGlobal(global_pos)
             margin = 40
             if viewport_pos.y() < margin:
-                scroll_area.verticalScrollBar().setValue(
-                    scroll_area.verticalScrollBar().value() - 20
-                )
+                scroll_area.verticalScrollBar().setValue(scroll_area.verticalScrollBar().value() - 20)
             elif viewport_pos.y() > scroll_area.viewport().height() - margin:
-                scroll_area.verticalScrollBar().setValue(
-                    scroll_area.verticalScrollBar().value() + 20
-                )
+                scroll_area.verticalScrollBar().setValue(scroll_area.verticalScrollBar().value() + 20)
         event.acceptProposedAction()
 
     def dropEvent(self, event):

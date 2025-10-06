@@ -109,9 +109,7 @@ class MicrophoneWidget(BaseWidget):
         add_shadow(self._widget_container, self._container_shadow)
         self.widget_layout.addWidget(self._widget_container)
 
-        build_widget_label(
-            self, self._label_content, self._label_alt_content, self._label_shadow
-        )
+        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("toggle_mute", self.toggle_mute)
@@ -133,9 +131,7 @@ class MicrophoneWidget(BaseWidget):
 
     def _toggle_label(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
         self._show_alt_label = not self._show_alt_label
         for widget in self._widgets:
             widget.setVisible(not self._show_alt_label)
@@ -151,9 +147,7 @@ class MicrophoneWidget(BaseWidget):
             try:
                 self._initialize_microphone_interface()
                 mute_status = self.audio_endpoint.GetMute()
-                mic_level = round(
-                    self.audio_endpoint.GetMasterVolumeLevelScalar() * 100
-                )
+                mic_level = round(self.audio_endpoint.GetMasterVolumeLevelScalar() * 100)
                 min_icon = self._get_mic_icon()
                 min_level = self._mute_text if mute_status == 1 else f"{mic_level}%"
             except Exception:
@@ -166,12 +160,8 @@ class MicrophoneWidget(BaseWidget):
 
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
         active_widgets_len = len(active_widgets)
-        active_label_content = (
-            self._label_alt_content if self._show_alt_label else self._label_content
-        )
-        active_label_content = active_label_content.format(
-            icon=min_icon, level=min_level
-        )
+        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
+        active_label_content = active_label_content.format(icon=min_icon, level=min_level)
 
         label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
         widget_index = 0
@@ -179,18 +169,10 @@ class MicrophoneWidget(BaseWidget):
         if self._progress_bar["enabled"] and self.progress_widget:
             if self._widget_container_layout.indexOf(self.progress_widget) == -1:
                 self._widget_container_layout.insertWidget(
-                    (
-                        0
-                        if self._progress_bar["position"] == "left"
-                        else self._widget_container_layout.count()
-                    ),
+                    (0 if self._progress_bar["position"] == "left" else self._widget_container_layout.count()),
                     self.progress_widget,
                 )
-            numeric_value = (
-                int(re.search(r"\d+", min_level).group())
-                if re.search(r"\d+", min_level)
-                else 0
-            )
+            numeric_value = int(re.search(r"\d+", min_level).group()) if re.search(r"\d+", min_level) else 0
             self.progress_widget.set_value(numeric_value)
 
         for part in label_parts:
@@ -198,9 +180,7 @@ class MicrophoneWidget(BaseWidget):
             if not part:
                 continue
 
-            if widget_index >= active_widgets_len or not isinstance(
-                active_widgets[widget_index], QLabel
-            ):
+            if widget_index >= active_widgets_len or not isinstance(active_widgets[widget_index], QLabel):
                 continue
 
             active_widgets[widget_index].setText(part)
@@ -251,9 +231,7 @@ class MicrophoneWidget(BaseWidget):
 
     def toggle_mute(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
         if self.audio_endpoint:
             current_mute_status = self.audio_endpoint.GetMute()
             self.audio_endpoint.SetMute(not current_mute_status, None)
@@ -304,9 +282,7 @@ class MicrophoneWidget(BaseWidget):
 
         try:
             if self.audio_endpoint:
-                current_volume = round(
-                    self.audio_endpoint.GetMasterVolumeLevelScalar() * 100
-                )
+                current_volume = round(self.audio_endpoint.GetMasterVolumeLevelScalar() * 100)
                 self.volume_slider.setValue(current_volume)
         except Exception:
             self.volume_slider.setValue(0)

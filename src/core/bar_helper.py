@@ -84,9 +84,7 @@ class AutoHideManager(QObject):
             from core import global_state
 
             if hasattr(self.bar_widget, "bar_id"):
-                global_state.set_autohide_owner_for_bar(
-                    self.bar_widget.bar_id, self.bar_widget
-                )
+                global_state.set_autohide_owner_for_bar(self.bar_widget.bar_id, self.bar_widget)
         except Exception:
             pass
 
@@ -111,9 +109,7 @@ class AutoHideManager(QObject):
         else:
             self._detection_zone.setGeometry(
                 screen_geometry.x(),
-                screen_geometry.y()
-                + screen_geometry.height()
-                - self._detection_zone_height,
+                screen_geometry.y() + screen_geometry.height() - self._detection_zone_height,
                 screen_geometry.width(),
                 self._detection_zone_height,
             )
@@ -170,9 +166,7 @@ class AutoHideManager(QObject):
             bar_top = bar_geometry.y() - screen_geometry.y()
             return 0 <= screen_y <= bar_top
         else:
-            bar_bottom = (
-                bar_geometry.y() + bar_geometry.height()
-            ) - screen_geometry.y()
+            bar_bottom = (bar_geometry.y() + bar_geometry.height()) - screen_geometry.y()
             return bar_bottom <= screen_y <= screen_geometry.height()
 
     def is_enabled(self):
@@ -277,9 +271,7 @@ class FullscreenManager(QObject):
             return
 
         # Early exit if focused window is invisible/minimized
-        if not win32gui.IsWindowVisible(focused_hwnd) or win32gui.IsIconic(
-            focused_hwnd
-        ):
+        if not win32gui.IsWindowVisible(focused_hwnd) or win32gui.IsIconic(focused_hwnd):
             self._prev_fullscreen_state = False
             if not self.bar_widget.isVisible():
                 self.bar_widget.show()
@@ -334,10 +326,7 @@ class FullscreenManager(QObject):
         screen_geometry = screen.geometry()
         dpi = screen.devicePixelRatio()
         # Check if we have cached data for this screen
-        if (
-            cache_key not in self._cached_screen_data
-            or self._cached_screen_data[cache_key]["dpi"] != dpi
-        ):
+        if cache_key not in self._cached_screen_data or self._cached_screen_data[cache_key]["dpi"] != dpi:
             # Calculate and cache screen rect for this screen
             screen_rect = (
                 screen_geometry.x(),
@@ -345,9 +334,7 @@ class FullscreenManager(QObject):
                 screen_geometry.width(),
                 screen_geometry.height(),
             )
-            scaled_screen_rect = screen_rect[:2] + tuple(
-                round(dim * dpi) for dim in screen_rect[2:]
-            )
+            scaled_screen_rect = screen_rect[:2] + tuple(round(dim * dpi) for dim in screen_rect[2:])
 
             self._cached_screen_data[cache_key] = {
                 "scaled_rect": scaled_screen_rect,
@@ -390,9 +377,7 @@ class FullscreenManager(QObject):
             screen_geometry.width(),
             screen_geometry.height(),
         )
-        scaled_screen_rect = screen_rect[:2] + tuple(
-            round(dim * dpi) for dim in screen_rect[2:]
-        )
+        scaled_screen_rect = screen_rect[:2] + tuple(round(dim * dpi) for dim in screen_rect[2:])
 
         def enum_windows_proc(hwnd, lparam):
             try:
@@ -535,14 +520,10 @@ class BarContextMenu:
             disable_autohide.triggered.connect(self._disable_autohide)
 
         reload_action = self._menu.addAction("Reload Bar")
-        reload_action.triggered.connect(
-            partial(reload_application, "Reloading Bar from context menu...")
-        )
+        reload_action.triggered.connect(partial(reload_application, "Reloading Bar from context menu..."))
 
         exit_action = self._menu.addAction("Exit")
-        exit_action.triggered.connect(
-            partial(exit_application, "Exiting Application from context menu...")
-        )
+        exit_action.triggered.connect(partial(exit_application, "Exiting Application from context menu..."))
 
         self._menu.popup(self.parent.mapToGlobal(position))
         self._menu.activateWindow()
@@ -558,9 +539,7 @@ class BarContextMenu:
             ):
                 # Start the autohide timer with the configured delay
                 if self.parent._autohide_manager._hide_timer:
-                    self.parent._autohide_manager._hide_timer.start(
-                        self.parent._autohide_manager._autohide_delay
-                    )
+                    self.parent._autohide_manager._hide_timer.start(self.parent._autohide_manager._autohide_delay)
 
         except Exception as e:
             logging.error(f"Failed to restart autohide timer: {e}")
@@ -599,16 +578,11 @@ class BarContextMenu:
         layout = QHBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(checkbox)
-        container.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
-        )
+        container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
 
         # Event filter for hover and click
         def event_filter(obj, event):
-            if (
-                event.type() == QEvent.Type.MouseButtonPress
-                and event.button() == Qt.MouseButton.LeftButton
-            ):
+            if event.type() == QEvent.Type.MouseButtonPress and event.button() == Qt.MouseButton.LeftButton:
                 checkbox.toggle()
                 return True
             return False
@@ -643,9 +617,7 @@ class BarContextMenu:
             widget.hide = controlled_hide
 
         except Exception as e:
-            logging.error(
-                f"Failed to toggle widget {self._get_widget_display_name(widget)}: {e}"
-            )
+            logging.error(f"Failed to toggle widget {self._get_widget_display_name(widget)}: {e}")
 
     def _get_widget_display_name(self, widget):
         for layout_type, widget_list in self._widgets.items():
@@ -656,20 +628,14 @@ class BarContextMenu:
                     and layout_type in self._widget_config_map
                     and index < len(self._widget_config_map[layout_type])
                 ):
-                    return (
-                        self._widget_config_map[layout_type][index]
-                        .replace("_", " ")
-                        .title()
-                    )
+                    return self._widget_config_map[layout_type][index].replace("_", " ").title()
             except ValueError:
                 continue
         return str(widget)
 
     def _open_task_manager(self):
         try:
-            subprocess.Popen(
-                "taskmgr", shell=True, creationflags=subprocess.CREATE_NO_WINDOW
-            )
+            subprocess.Popen("taskmgr", shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
         except Exception as e:
             logging.error(f"Failed to open Task Manager: {e}")
 
@@ -682,9 +648,7 @@ class BarContextMenu:
             screen_geometry = screen.geometry()
 
             # Get bar padding information
-            bar_padding = getattr(
-                self.parent, "_padding", {"top": 0, "bottom": 0, "left": 0, "right": 0}
-            )
+            bar_padding = getattr(self.parent, "_padding", {"top": 0, "bottom": 0, "left": 0, "right": 0})
             bar_alignment = getattr(self.parent, "_alignment", {"position": "top"})
 
             # Calculate screenshot area with padding
@@ -696,19 +660,13 @@ class BarContextMenu:
                 screenshot_x = screen_geometry.x()
                 screenshot_y = screen_geometry.y()
                 screenshot_width = screen_geometry.width()
-                screenshot_height = (
-                    (bar_geometry.y() - screen_geometry.y())
-                    + bar_geometry.height()
-                    + padding_area
-                )
+                screenshot_height = (bar_geometry.y() - screen_geometry.y()) + bar_geometry.height() + padding_area
             else:
                 # For bottom bar: start from bar top - padding and extend to screen bottom
                 screenshot_x = screen_geometry.x()
                 screenshot_y = bar_geometry.y() - padding_top
                 screenshot_width = screen_geometry.width()
-                screenshot_height = (
-                    screen_geometry.y() + screen_geometry.height()
-                ) - screenshot_y
+                screenshot_height = (screen_geometry.y() + screen_geometry.height()) - screenshot_y
 
             # Take screenshot of the calculated area
             screenshot = screen.grabWindow(
@@ -720,9 +678,7 @@ class BarContextMenu:
             )
 
             # Create screenshots directory if it doesn't exist
-            screenshots_dir = os.path.join(
-                os.path.expanduser("~"), "Pictures", "YASB_Screenshots"
-            )
+            screenshots_dir = os.path.join(os.path.expanduser("~"), "Pictures", "YASB_Screenshots")
             os.makedirs(screenshots_dir, exist_ok=True)
 
             # Generate filename with timestamp
@@ -752,9 +708,7 @@ class BarContextMenu:
             self.flash_animation.setKeyValueAt(0.5, 0.2)
             self.flash_animation.setEndValue(1.0)
 
-            self.flash_animation.finished.connect(
-                lambda: self.parent.setGraphicsEffect(None)
-            )
+            self.flash_animation.finished.connect(lambda: self.parent.setGraphicsEffect(None))
             self.flash_animation.start()
 
         except Exception as e:
@@ -763,14 +717,9 @@ class BarContextMenu:
     def _enable_autohide(self):
         """Enable autohide functionality for the bar"""
         try:
-            if (
-                not hasattr(self.parent, "_autohide_manager")
-                or not self.parent._autohide_manager
-            ):
+            if not hasattr(self.parent, "_autohide_manager") or not self.parent._autohide_manager:
                 # Create autohide manager if it doesn't exist
-                self.parent._autohide_manager = AutoHideManager(
-                    self.parent, self.parent
-                )
+                self.parent._autohide_manager = AutoHideManager(self.parent, self.parent)
 
             # Setup autohide if not already enabled
             if not self.parent._autohide_manager.is_enabled():
@@ -782,10 +731,7 @@ class BarContextMenu:
     def _disable_autohide(self):
         """Disable autohide functionality"""
         try:
-            if (
-                hasattr(self.parent, "_autohide_manager")
-                and self.parent._autohide_manager
-            ):
+            if hasattr(self.parent, "_autohide_manager") and self.parent._autohide_manager:
                 self.parent._autohide_manager.cleanup()
                 self.parent._autohide_manager = None
 

@@ -82,9 +82,7 @@ class ServerCheckWorker(QThread):
                 updated += 1
                 self.progress_updated.emit(server, updated, total)
 
-                status = self.check_single_server(
-                    server, self.ssl_verify, self.ssl_check, self.timeout
-                )
+                status = self.check_single_server(server, self.ssl_verify, self.ssl_check, self.timeout)
                 server_statuses.append(status)
 
             self.status_updated.emit(server_statuses)
@@ -105,11 +103,7 @@ class ServerCheckWorker(QThread):
         return {
             "name": server,
             "ssl": ping_result["ssl"],
-            "response_time": (
-                f"{ping_result['response_time']}ms"
-                if ping_result["response_time"]
-                else None
-            ),
+            "response_time": (f"{ping_result['response_time']}ms" if ping_result["response_time"] else None),
             "response_code": ping_result["response_code"],
             "status": ping_result["status"],
         }
@@ -133,9 +127,7 @@ class ServerCheckWorker(QThread):
             request = urllib.request.Request(url, method="GET")
 
             try:
-                with urllib.request.urlopen(
-                    request, timeout=timeout, context=context
-                ) as response:
+                with urllib.request.urlopen(request, timeout=timeout, context=context) as response:
                     http_status = response.status
                     # Get redirect hostname if any
                     parsed_url = urlparse(response.url)
@@ -145,18 +137,14 @@ class ServerCheckWorker(QThread):
 
             # Calculate response time if we got a status code
             if http_status is not None:
-                response_time = int(
-                    (datetime.now() - start_time).total_seconds() * 1000
-                )
+                response_time = int((datetime.now() - start_time).total_seconds() * 1000)
 
-        except (urllib.error.URLError, socket.timeout, ssl.SSLError, ConnectionError):
+        except (urllib.error.URLError, TimeoutError, ssl.SSLError, ConnectionError):
             pass
 
         # Check SSL if needed and determine status
         ssl_days = self.check_ssl_expiry(final_hostname, timeout) if ssl_check else None
-        status = (
-            "Online" if http_status is not None and http_status < 500 else "Offline"
-        )
+        status = "Online" if http_status is not None and http_status < 500 else "Offline"
 
         return {
             "status": status,
@@ -171,14 +159,12 @@ class ServerCheckWorker(QThread):
             with socket.create_connection((hostname, 443), timeout=timeout) as sock:
                 with context.wrap_socket(sock, server_hostname=hostname) as ssock:
                     cert = ssock.getpeercert()
-                    exp_date = datetime.strptime(
-                        cert["notAfter"], "%b %d %H:%M:%S %Y %Z"
-                    )
+                    exp_date = datetime.strptime(cert["notAfter"], "%b %d %H:%M:%S %Y %Z")
                     days_left = (exp_date - datetime.now()).days
                     return days_left
         except (
             socket.gaierror,
-            socket.timeout,
+            TimeoutError,
             ssl.SSLError,
             ConnectionResetError,
             ConnectionRefusedError,
@@ -234,9 +220,7 @@ class ServerMonitor(BaseWidget):
         self._server_status_data = None
         self._first_run = True
         self._animations = []
-        self._icon_path = os.path.join(
-            SCRIPT_PATH, "assets", "images", "app_transparent.png"
-        )
+        self._icon_path = os.path.join(SCRIPT_PATH, "assets", "images", "app_transparent.png")
 
         # Construct container
         self._widget_container_layout = QHBoxLayout()
@@ -255,9 +239,7 @@ class ServerMonitor(BaseWidget):
         # Add the container to the main widget layout
         self.widget_layout.addWidget(self._widget_container)
 
-        build_widget_label(
-            self, self._label_content, self._label_alt_content, self._label_shadow
-        )
+        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("toggle_menu", self._toggle_menu)
@@ -270,9 +252,7 @@ class ServerMonitor(BaseWidget):
 
         # Setup worker thread
         self._worker = ServerCheckWorker.get_instance()
-        self._worker.set_servers(
-            self._servers, self._ssl_verify, self._ssl_check, self._timeout
-        )
+        self._worker.set_servers(self._servers, self._ssl_verify, self._ssl_check, self._timeout)
         self._worker.status_updated.connect(self._handle_status_update)
 
         # Create and start update timer
@@ -285,11 +265,7 @@ class ServerMonitor(BaseWidget):
     def _handle_status_update(self, status_data):
         online_count = sum(1 for s in status_data if s.get("status") == "Online")
         offline_count = sum(1 for s in status_data if s.get("status") == "Offline")
-        min_ssl = (
-            min((s["ssl"] for s in status_data if isinstance(s["ssl"], int)), default=0)
-            if status_data
-            else 0
-        )
+        min_ssl = min((s["ssl"] for s in status_data if isinstance(s["ssl"], int)), default=0) if status_data else 0
         status_data.append(
             {
                 "online_count": online_count,
@@ -333,17 +309,13 @@ class ServerMonitor(BaseWidget):
 
     def _toggle_menu(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
         self.show_menu()
 
     def _update_label(self):
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
         active_widgets_len = len(active_widgets)
-        active_label_content = (
-            self._label_alt_content if self._show_alt_label else self._label_content
-        )
+        active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
 
         try:
             online_count = self._server_status_data[-1]["online_count"]
@@ -503,9 +475,7 @@ class ServerMonitor(BaseWidget):
             if not self._loading_label.isVisible():
                 return
             try:
-                self._loading_label.setText(
-                    f"<br>Checking {updated}/{total} servers<br><b>{server}</b><br>"
-                )
+                self._loading_label.setText(f"<br>Checking {updated}/{total} servers<br><b>{server}</b><br>")
             except RuntimeError:
                 self._worker.progress_updated.disconnect(update_progress)
 
@@ -620,9 +590,7 @@ class ServerMonitor(BaseWidget):
             loading_layout.setContentsMargins(0, 0, 0, 0)
 
             # Create a label to show real-time progress
-            self._loading_label_menu = QLabel(
-                f"Checking 0/{len(self._servers)} servers<br><b>please wait...</b>"
-            )
+            self._loading_label_menu = QLabel(f"Checking 0/{len(self._servers)} servers<br><b>please wait...</b>")
             self._loading_label_menu.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self._loading_label_menu.setProperty("class", "placeholder")
 
@@ -633,9 +601,7 @@ class ServerMonitor(BaseWidget):
             def update_progress(server, updated, total):
                 if not self._loading_label_menu.isVisible():
                     return
-                self._loading_label_menu.setText(
-                    f"Checking {updated}/{total} servers<br><b>{server}</b>"
-                )
+                self._loading_label_menu.setText(f"Checking {updated}/{total} servers<br><b>{server}</b>")
 
             self._worker.progress_updated.connect(update_progress)
 
@@ -665,17 +631,13 @@ class ServerMonitor(BaseWidget):
                     server_data_response_time = ""
                     class_name = "offline"
 
-                if (
-                    server_data["ssl"] is not None
-                    and server_data["ssl"] < self._ssl_warning
-                ):
+                if server_data["ssl"] is not None and server_data["ssl"] < self._ssl_warning:
                     server_data_status = self._icons["warning"]
                     class_name += " warning"
 
-                if (
-                    server_data["ssl"] is not None
-                    and server_data["ssl"] < self._ssl_warning
-                ) or server_data["status"] == "Offline":
+                if (server_data["ssl"] is not None and server_data["ssl"] < self._ssl_warning) or server_data[
+                    "status"
+                ] == "Offline":
                     # Add opacity effect for animation
                     opacity_effect = QGraphicsOpacityEffect()
                     server_status.setGraphicsEffect(opacity_effect)
@@ -707,16 +669,13 @@ class ServerMonitor(BaseWidget):
                 h_layout.addWidget(server_status)
 
                 if self._ssl_check:
-                    ssl_status = (
-                        f", SSL certificate expires in {server_data['ssl']} days"
-                    )
+                    ssl_status = f", SSL certificate expires in {server_data['ssl']} days"
                 else:
                     ssl_status = ""
 
                 if server_data["status"] == "Online":
                     details_text = (
-                        f"{server_data_response_time}{ssl_status}, "
-                        f"response code: {server_data['response_code']}"
+                        f"{server_data_response_time}{ssl_status}, response code: {server_data['response_code']}"
                     )
                 else:
                     details_text = "Server is offline"

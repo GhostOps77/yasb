@@ -5,7 +5,6 @@ import ssl
 import subprocess
 import sys
 import urllib.request
-from typing import Dict
 
 import certifi
 from PyQt6.QtCore import QPropertyAnimation, Qt, QThread, QTimer, QUrl, pyqtSignal
@@ -42,9 +41,7 @@ class ImageLoader(QThread):
     def run(self):
         try:
             context = ssl.create_default_context(cafile=certifi.where())
-            with urllib.request.urlopen(
-                self.url, context=context, timeout=15
-            ) as response:
+            with urllib.request.urlopen(self.url, context=context, timeout=15) as response:
                 data = response.read()
             self.finished.emit(self.theme_id, data)
         except Exception:
@@ -111,9 +108,7 @@ class ThemeCard(QFrame):
         top_layout.addWidget(download_btn)
         download_btn.clicked.connect(
             lambda: QDesktopServices.openUrl(
-                QUrl(
-                    f"https://github.com/amnweb/yasb-themes/tree/main/themes/{self.theme_data['id']}"
-                )
+                QUrl(f"https://github.com/amnweb/yasb-themes/tree/main/themes/{self.theme_data['id']}")
             )
         )
 
@@ -181,9 +176,7 @@ class ThemeCard(QFrame):
                 screen = QApplication.primaryScreen()
                 dpr = screen.devicePixelRatio()
                 target_width = int(screen.geometry().width() * dpr)
-                resized_pixmap = pixmap.scaledToWidth(
-                    target_width, Qt.TransformationMode.SmoothTransformation
-                )
+                resized_pixmap = pixmap.scaledToWidth(target_width, Qt.TransformationMode.SmoothTransformation)
                 resized_pixmap.setDevicePixelRatio(dpr)
                 display_size = resized_pixmap.size() / dpr
                 self.scroll.setFixedHeight(display_size.height())
@@ -206,9 +199,7 @@ class ThemeCard(QFrame):
     def mouseMoveEvent(self, event):
         if self.dragging:
             delta = self.last_x - event.pos().x()
-            self.scroll.horizontalScrollBar().setValue(
-                self.scroll.horizontalScrollBar().value() + delta
-            )
+            self.scroll.horizontalScrollBar().setValue(self.scroll.horizontalScrollBar().value() + delta)
             self.last_x = event.pos().x()
 
     def install_theme(self):
@@ -225,9 +216,7 @@ class ThemeCard(QFrame):
         icon = QIcon(icon_path)
         self.dialog.setWindowIcon(QIcon(icon.pixmap(48, 48)))
 
-        self.dialog.setWindowFlags(
-            self.dialog.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint
-        )
+        self.dialog.setWindowFlags(self.dialog.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
         # Apply styles to the dialog
         self.dialog.setStyleSheet(
             """
@@ -243,16 +232,12 @@ class ThemeCard(QFrame):
         confirmation_message = QLabel(
             f"Are you sure you want to install the theme <b>{self.theme_data['name']}</b>?<br>This will overwrite your current config and styles files."
         )
-        confirmation_message.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
-        )
+        confirmation_message.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         layout.addWidget(confirmation_message)
 
         self.compat_label = QLabel("Checking compatibility...")
         layout.addWidget(self.compat_label)
-        QTimer.singleShot(
-            1000, lambda: self._check_font_families(self.theme_data["id"])
-        )
+        QTimer.singleShot(1000, lambda: self._check_font_families(self.theme_data["id"]))
         # Add Yes and No buttons
         button_layout = QHBoxLayout()
         self.yes_button = QPushButton("Install")
@@ -279,8 +264,7 @@ class ThemeCard(QFrame):
                 subprocess.run(
                     ["yasbc", "stop"],
                     creationflags=subprocess.CREATE_NO_WINDOW,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
+                    capture_output=True,
                 )
                 # Define the URLs for the files
                 base_url = f"https://raw.githubusercontent.com/amnweb/yasb-themes/main/themes/{self.theme_data['id']}"
@@ -299,30 +283,23 @@ class ThemeCard(QFrame):
 
                 context = ssl.create_default_context(cafile=certifi.where())
                 # Download and save the styles.css file
-                with urllib.request.urlopen(
-                    styles_url, context=context
-                ) as styles_response:
+                with urllib.request.urlopen(styles_url, context=context) as styles_response:
                     styles_data = styles_response.read()
                 with open(styles_path, "wb") as styles_file:
                     styles_file.write(styles_data)
 
                 # Download and save the config.yaml file
-                with urllib.request.urlopen(
-                    config_url, context=context
-                ) as config_response:
+                with urllib.request.urlopen(config_url, context=context) as config_response:
                     config_data = config_response.read()
                 with open(config_path, "wb") as config_file:
                     config_file.write(config_data)
                 subprocess.run(
                     ["yasbc", "start"],
                     creationflags=subprocess.CREATE_NO_WINDOW,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
+                    capture_output=True,
                 )
             except Exception as e:
-                QMessageBox.critical(
-                    self, "Error", f"Failed to install theme: {str(e)}"
-                )
+                QMessageBox.critical(self, "Error", f"Failed to install theme: {str(e)}")
 
     def _check_font_families(self, theme_id):
         try:
@@ -334,9 +311,7 @@ class ThemeCard(QFrame):
             available_fonts = set(QFontDatabase.families())
             font_families = set()
             missing_fonts = set()
-            matches = re.findall(
-                r"font-family\s*:\s*([^;}\n]+)\s*[;}]+", css, flags=re.IGNORECASE
-            )
+            matches = re.findall(r"font-family\s*:\s*([^;}\n]+)\s*[;}]+", css, flags=re.IGNORECASE)
             for match in matches:
                 fonts = [f.strip(" '\"\t\r\n") for f in match.split(",")]
                 for font in fonts:
@@ -361,9 +336,7 @@ class ThemeCard(QFrame):
                     }
                 """
                 )
-                self.compat_label.setText(
-                    f"{missing_fonts_label}<br><b>{'<br>'.join(sorted(missing_fonts))}</b>"
-                )
+                self.compat_label.setText(f"{missing_fonts_label}<br><b>{'<br>'.join(sorted(missing_fonts))}</b>")
                 self.yes_button.setText("Install anyway")
             else:
                 self.compat_label.hide()
@@ -389,7 +362,7 @@ class ThemeCard(QFrame):
 
     def _extract_and_replace_variables(self, css: str) -> str:
         # Extract variables from :root
-        root_vars: Dict[str, str] = {}
+        root_vars: dict[str, str] = {}
 
         def root_replacer(match):
             content = match.group(1)
@@ -444,9 +417,7 @@ class ThemeViewer(QMainWindow):
         layout.setContentsMargins(0, 0, 0, 0)
 
         # Add the placeholder label
-        self.placeholder_label = QLabel(
-            "<span style='font-weight:700'>YASB</span> Reborn"
-        )
+        self.placeholder_label = QLabel("<span style='font-weight:700'>YASB</span> Reborn")
         self.placeholder_label.setFont(QFont("Segoe UI", 64, QFont.Weight.Normal))
         self.placeholder_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.placeholder_label)
@@ -465,13 +436,9 @@ class ThemeViewer(QMainWindow):
         row_layout.setContentsMargins(20, 10, 20, 10)
 
         # Create backup_info
-        self.backup_info = QLabel(
-            "Backup your current config files before installing a new theme."
-        )
+        self.backup_info = QLabel("Backup your current config files before installing a new theme.")
         self.backup_info.setWordWrap(True)
-        self.backup_info.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum
-        )
+        self.backup_info.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
         row_layout.addWidget(self.backup_info)
 
         # Horizontal layout for buttons
@@ -546,9 +513,7 @@ class ThemeViewer(QMainWindow):
         apply_button_style(self.load_more_button, "secondary")
         self.load_more_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.load_more_button.clicked.connect(self.display_next_batch)
-        self.container_layout.addWidget(
-            self.load_more_button, alignment=Qt.AlignmentFlag.AlignHCenter
-        )
+        self.container_layout.addWidget(self.load_more_button, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.load_more_button.hide()
 
         # Initialize flags for minimum display time
@@ -589,9 +554,7 @@ class ThemeViewer(QMainWindow):
             if hasattr(self, "load_error_message"):
                 self.placeholder_label.setText("Failed to load themes.")
                 self.placeholder_label.setFont(QFont("Segoe UI", 14))
-                QMessageBox.critical(
-                    self, "Error", f"Error loading themes: {self.load_error_message}"
-                )
+                QMessageBox.critical(self, "Error", f"Error loading themes: {self.load_error_message}")
             else:
                 # Fade out placeholder_label
                 self.placeholder_opacity = QGraphicsOpacityEffect()
@@ -701,9 +664,7 @@ class ThemeViewer(QMainWindow):
                 self.backup_button.setText("Backup complete!")
                 apply_button_style(self.backup_button, "primary")
             else:
-                QMessageBox.critical(
-                    self, "Error", "Backup failed: Backup file(s) missing."
-                )
+                QMessageBox.critical(self, "Error", "Backup failed: Backup file(s) missing.")
                 return
 
             QTimer.singleShot(
@@ -731,20 +692,15 @@ class ThemeViewer(QMainWindow):
         backup_config_path = os.path.join(config_home, "config.yaml.backup")
         backup_styles_path = os.path.join(config_home, "styles.css.backup")
         try:
-            if not os.path.exists(backup_config_path) or not os.path.exists(
-                backup_styles_path
-            ):
+            if not os.path.exists(backup_config_path) or not os.path.exists(backup_styles_path):
                 self.restore_button.setText("Restore")
-                QMessageBox.warning(
-                    self, "Error", "Restore failed: Backup file(s) missing."
-                )
+                QMessageBox.warning(self, "Error", "Restore failed: Backup file(s) missing.")
                 return
 
             subprocess.run(
                 ["yasbc", "stop"],
                 creationflags=subprocess.CREATE_NO_WINDOW,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
             )
 
             shutil.copy2(backup_config_path, config_path)
@@ -760,16 +716,13 @@ class ThemeViewer(QMainWindow):
             if restore_ok:
                 self.restore_button.setText("Restore complete!")
             else:
-                QMessageBox.warning(
-                    self, "Error", "Restore failed: Backup file(s) missing."
-                )
+                QMessageBox.warning(self, "Error", "Restore failed: Backup file(s) missing.")
                 return
 
             subprocess.run(
                 ["yasbc", "start"],
                 creationflags=subprocess.CREATE_NO_WINDOW,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
             )
             QTimer.singleShot(2000, lambda: self.restore_button.setText("Restore"))
         except Exception as e:
