@@ -23,13 +23,13 @@ bars:
       left: [
         "komorebi_workspaces",
         "komorebi_active_layout",
-        "clipboard_listener"
+        "clipboard_listener",
+        "file_watcher",
       ]
       center: [
         "clock",
       ]
       right: [
-        "file_watcher",
         "traffic",
         "media",
         "wifi",

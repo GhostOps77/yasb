@@ -159,9 +159,6 @@ class MicrophoneWidget(BaseWidget):
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         active_label_content = active_label_content.format(icon=min_icon, level=min_level)
 
-        # label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
-        # widget_index = 0
-
         # if self._progress_bar["enabled"] and self.progress_widget:
         #     if self._widget_container_layout.indexOf(self.progress_widget) == -1:
         #         self._widget_container_layout.insertWidget(
@@ -192,13 +189,13 @@ class MicrophoneWidget(BaseWidget):
         else:
             progress_widget_idx = self._widget_container_layout.count()
 
-        self._widget_container_layout.insertWidget(progress_widget_idx, self.progress_widget)
         match = re.search(r"\d+", min_level)
         if match:
             numeric_value = int(match.group())
         else:
             numeric_value = 0
 
+        self._widget_container_layout.insertWidget(progress_widget_idx, self.progress_widget)
         self.progress_widget.set_value(numeric_value)
 
     def _initialize_microphone_interface(self):

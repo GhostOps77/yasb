@@ -218,7 +218,7 @@ class FileWatcherWidget(BaseWidget):
                 path["ignore_directories"],
                 path["read_file_contents"],
                 path["read_max_bytes"],
-                path['labels']
+                path["labels"],
             )
 
             self._observer.schedule(handler, expand_path(path["directory"]), recursive=not path["ignore_directories"])

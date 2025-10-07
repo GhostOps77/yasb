@@ -133,15 +133,14 @@ class BrightnessWidget(BaseWidget):
         monitor_info = self.get_monitor_handle()
         if not monitor_info:
             return
+
         current = self.get_brightness()
         if not self._brightness_toggle_level:
             return
+
         levels = self._brightness_toggle_level
-        next_levels = [level for level in levels if level > current]
-        if next_levels:
-            self.set_brightness(next_levels[0], monitor_info["device_id"])
-        else:
-            self.set_brightness(levels[0], monitor_info["device_id"])
+        next_level = next((level for level in levels if level > current), levels[0])
+        self.set_brightness(next_level, monitor_info["device_id"])
 
     def _toggle_level_prev(self):
         monitor_info = self.get_monitor_handle()
@@ -153,13 +152,8 @@ class BrightnessWidget(BaseWidget):
             return
 
         levels = self._brightness_toggle_level
-        brightness_level = levels[-1]
 
-        for level in reversed(levels):
-            if level < current:
-                brightness_level = level
-                break
-
+        brightness_level = next((level for level in reversed(levels) if level < current), levels[-1])
         self.set_brightness(brightness_level, monitor_info["device_id"])
 
     def _toggle_brightness_menu(self):
@@ -175,8 +169,10 @@ class BrightnessWidget(BaseWidget):
             if percent is None:
                 if self._hide_unsupported:
                     self.hide()
-                    return
+                    # return
+                # return
                 percent, icon = 0, "not supported"
+
             else:
                 icon = self.get_brightness_icon(percent)
                 if self._tooltip:
@@ -187,12 +183,9 @@ class BrightnessWidget(BaseWidget):
         active_label_content = active_label_content.format(icon=icon, percent=percent)
 
         add_progress_widget = False
-        if (
-            self._progress_bar["enabled"]
-            and self.progress_widget
-            and self._widget_container_layout.indexOf(self.progress_widget) != -1
-        ):
-            self._widget_container_layout.removeWidget(self.progress_widget)
+        if self._progress_bar["enabled"] and self.progress_widget:
+            if self._widget_container_layout.indexOf(self.progress_widget) != -1:
+                self._widget_container_layout.removeWidget(self.progress_widget)
             add_progress_widget = True
 
         for _ in iterate_label_as_parts(
@@ -202,14 +195,16 @@ class BrightnessWidget(BaseWidget):
         ):
             pass
 
-        if add_progress_widget:
-            if self._progress_bar["position"] == "left":
-                progress_widget_idx = 0
-            else:
-                progress_widget_idx = self._widget_container_layout.count()
+        if not add_progress_widget:
+            return
 
-            self._widget_container_layout.insertWidget(progress_widget_idx, self.progress_widget)
-            self.progress_widget.set_value(percent)
+        if self._progress_bar["position"] == "left":
+            progress_widget_idx = 0
+        else:
+            progress_widget_idx = self._widget_container_layout.count()
+
+        self._widget_container_layout.insertWidget(progress_widget_idx, self.progress_widget)
+        self.progress_widget.set_value(percent)
 
     def show_brightness_menu(self):
         self.dialog = PopupWidget(
@@ -314,7 +309,7 @@ class BrightnessWidget(BaseWidget):
         monitor_info = self.get_monitor_handle()
         try:
             if DEBUG:
-                logging.info(f"{k} = {v}" for k, v in monitor_info.items())
+                logging.info(", ".join(f"{k} = {v}" for k, v in monitor_info.items()))
             brightness = sbc.get_brightness(display=monitor_info["device_id"])[0]
             return brightness
         except Exception as e:

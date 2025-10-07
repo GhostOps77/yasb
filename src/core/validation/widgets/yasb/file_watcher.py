@@ -37,11 +37,7 @@ DEFAULTS = {
 
 
 VALIDATION_SCHEMA = {
-    "class_name": {
-        "type": "string",
-        "required": False,
-        "default": DEFAULTS["class_name"]
-    },
+    "class_name": {"type": "string", "required": False, "default": DEFAULTS["class_name"]},
     "listen_paths": {
         "type": "list",
         "required": True,
@@ -100,8 +96,8 @@ VALIDATION_SCHEMA = {
                                 "moved": {
                                     "type": "string",
                                     "default": DEFAULTS["listen_paths"][0]["labels"]["file"]["moved"],
-                                }
-                            }
+                                },
+                            },
                         },
                         "folder": {
                             "type": "dict",
@@ -121,13 +117,13 @@ VALIDATION_SCHEMA = {
                                 "moved": {
                                     "type": "string",
                                     "default": DEFAULTS["listen_paths"][0]["labels"]["folder"]["moved"],
-                                }
-                            }
-                        }
-                    }
+                                },
+                            },
+                        },
+                    },
                     # "description": "Templates for labels; templates may include {action}, {path}, {name}, {content}"
-                }
-            }
+                },
+            },
         },
     },
     "clear_labels_after_interval": {
