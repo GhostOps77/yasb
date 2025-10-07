@@ -92,12 +92,10 @@ class KomorebiAnimation:
                 if getattr(widget, "_yasb_width_anim", None) is not anim:
                     return
                 widget.setFixedWidth(int(target_width))
-                QTimer.singleShot(
-                    0,
-                    lambda: (
+                QTimer.singleShot(0, lambda: (
                         widget.setMinimumWidth(0),
                         widget.setMaximumWidth(16777215),
-                    ),
+                    )
                 )
                 try:
                     setattr(widget, "_yasb_width_anim", None)

@@ -138,12 +138,14 @@ class ObsWidget(BaseWidget):
             self.record_button.setProperty("class", "recording")
             self.show_widget()
             QMetaObject.invokeMethod(self.blink_timer, "start", Q_ARG(int, 200))
+
         elif state == "OBS_WEBSOCKET_OUTPUT_PAUSED":
             self.is_recording = False
             self.record_button.setText(self._icons["paused"])
             self.record_button.setProperty("class", "paused")
             self.show_widget()
             QMetaObject.invokeMethod(self.blink_timer, "stop")
+
         else:
             self.is_recording = False
             self.record_button.setText(self._icons["stopped"])
@@ -157,16 +159,18 @@ class ObsWidget(BaseWidget):
         self.record_button.repaint()
 
     def blink_record_button(self):
-        if self.is_recording:
-            self.blink_state = not self.blink_state
-            if self.blink_state:
-                self.opacity_effect.setOpacity(1.0)
-            else:
-                self.opacity_effect.setOpacity(0.4)
-            self.record_button.update()
-            self.record_button.repaint()
-        else:
+        if not self.is_recording:
             self.opacity_effect.setOpacity(1.0)
+            return
+
+        self.blink_state = not self.blink_state
+        if self.blink_state:
+            self.opacity_effect.setOpacity(1.0)
+        else:
+            self.opacity_effect.setOpacity(0.4)
+
+        self.record_button.update()
+        self.record_button.repaint()
 
     def stop_recording(self):
         if self.worker and self.worker.ws:

@@ -194,7 +194,7 @@ class GlazewmClient(QObject):
                 Monitor(
                     name=monitor_name,
                     hwnd=handle,
-                    workspaces=workspaces_data,
+                    workspaces=workspaces_data
                 )
             )
         return monitors
@@ -205,7 +205,7 @@ class GlazewmClient(QObject):
 
         return BindingMode(
             name=data[0].get("name", None),
-            display_name=data[0].get("displayName", None),
+            display_name=data[0].get("displayName", None)
         )
 
     def _read_windows(self, parent):

@@ -1,0 +1,195 @@
+watch_stylesheet: false
+watch_config: false
+update_check: false
+komorebi:
+  start_command: "komorebic start --ahk"
+  stop_command: "komorebic stop --ahk"
+  reload_command: "komorebic stop --ahk && komorebic start --ahk"
+bars:
+  primary-bar:
+    animation:
+      enabled: false
+    window_flags:
+      windows_app_bar: true
+    dimensions:
+      height: 24
+    padding:
+      top: 0
+      left: 0
+      bottom: 2
+      right: 0
+    context_menu: false
+    widgets:
+      left: [
+        "komorebi_workspaces",
+        "komorebi_active_layout",
+        "clipboard_listener"
+      ]
+      center: [
+        "clock",
+      ]
+      right: [
+        "file_watcher",
+        "traffic",
+        "media",
+        "wifi",
+        "microphone",
+        "volume",
+        "battery"
+      ]
+widgets:
+  file_watcher:
+    type: "yasb.file_watcher.FileWatcherWidget"
+    options:
+      paths: 
+        - directory: "~\\.config\\yasb"
+          patterns: [
+            "*\\clipboard_reading_status.txt"
+          ]
+          ignore_directories: true                   # we only care about files
+          read_file_contents: true                   # read file contents on create/modify
+          read_max_bytes: 8                          # optional limit
+          labels:
+            file:
+              created: "{data.src.content}"                   # show file contents when created
+              modified: "{data.src.content}"                  # update if modified
+              deleted: ""                            # show nothing when deleted
+              moved: ""                              # treat moved as creation
+            folder:
+              created: ""                            # folders not relevant
+              modified: ""
+              deleted: ""
+              moved: ""
+  media:
+    type: "yasb.media.MediaWidget"
+    options:
+      label: "{title}"
+      label_alt: "{artist} - {title}"
+      max_field_size:
+        label: 24
+        label_alt: 24
+      thumbnail_alpha: 80
+      thumbnail_padding: 24
+      thumbnail_edge_fade: true
+      hide_empty: true
+      animation:
+        enabled: false
+      media_menu:
+        max_title_size: 60
+        show_source: true
+        show_volume_slider: true
+      icons:
+        prev_track: "\ue892"
+        next_track: "\ue893"
+        play: "\ue768"
+        pause: "\ue769"
+      callbacks:
+        on_left: toggle_media_menu
+        on_right: toggle_label
+  clock:
+    type: "yasb.clock.ClockWidget"
+    options:
+      label: "{timedata:%a, %d %b %I:%M %p}"
+      label_alt: "{timedata:%A, %d %B %Y %H:%M:%S}"
+      tooltip: false
+      animation:
+        enabled: false
+      callbacks:
+        on_left: "do_nothing"
+        on_middle: "toggle_label"
+  clipboard_listener:
+    type: "yasb.custom.CustomWidget"
+    options:
+      class_name: "clipboard-listener"
+      label: "{data}"
+      label_alt: ""
+      animation:
+        enabled: false
+      exec_options:
+        run_cmd: type C:\Users\Mouhsen\.config\yasb\clipboard_reading_status.txt
+        run_interval: 2000
+        return_format: "string"
+        hide_empty: true
+  komorebi_workspaces:
+    type: "komorebi.workspaces.WorkspaceWidget"
+    options:
+      animation: false
+      label_default_name: "{index}"
+      hide_empty_workspaces: true
+      hide_if_offline: true
+  komorebi_active_layout:
+    type: "komorebi.active_layout.ActiveLayoutWidget"
+    options:
+      animation:
+        enabled: false
+      layout_icons:
+        bsp: "BSP"
+        columns: "COLS"
+        rows: "ROWS"
+        grid: "GRID"
+        scrolling: "SC"
+        vertical_stack: "V-STACK"
+        horizontal_stack: "H-STACK"
+        ultrawide_vertical_stack: "UW-STACK"
+        right_main_vertical_stack: "RMV-STACK"
+        monocle: "MONOCLE"
+        maximised: "MAX"
+        floating: "FLOAT"
+        paused: "PAUSED"
+  volume:
+    type: "yasb.volume.VolumeWidget"
+    options:
+      animation:
+        enabled: false
+      label: "<span>{icon}</span>"
+      label_alt: "<span>{icon}</span> {level}"
+      callbacks:
+        on_left: "toggle_mute"
+        on_middle: "toggle_label"
+        on_right: "do_nothing"
+  traffic:
+    type: "yasb.traffic.TrafficWidget"
+    options:
+      animation:
+        enabled: false
+      label: "\ueab4 {download_speed} \ueab7 {upload_speed}"
+      hide_if_offline: True
+      update_interval: 1500
+    callbacks:
+      on_left: do_nothing
+  microphone:
+    type: "yasb.microphone.MicrophoneWidget"
+    options:
+      animation:
+        enabled: false
+      label: "<span>{icon}</span>"
+      label_alt: "<span>{icon}</span> {level}"
+      icons:
+        normal: "\udb80\udf6c"
+        muted: "<span class=\"mute\">\udb80\udf6d</span>"
+      callbacks:
+        on_left: "toggle_mute"
+  wifi:
+    type: "yasb.wifi.WifiWidget"
+    options:
+      animation:
+        enabled: false
+      label_alt: "{wifi_icon} {wifi_name} {wifi_strength}%"
+      update_interval: 4000
+      callbacks:
+        on_left: "do_nothing"
+        on_middle: "toggle_label"
+  battery:
+    type: "yasb.battery.BatteryWidget"
+    options:
+      animation:
+        enabled: false
+      label: "<span>{icon}</span>"
+      label_alt: "<span>{icon}</span> {percent}% remaining {time_remaining}"
+      callbacks:
+        on_left: "do_nothing"
+        on_middle: "toggle_label"
+      charging_options:
+        icon_format: "{charging_icon}"
+      status_thresholds:
+        medium: 60

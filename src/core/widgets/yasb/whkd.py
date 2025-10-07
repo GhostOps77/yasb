@@ -129,21 +129,23 @@ class KeybindsDialog(QDialog):
         # Inspect all keybind rows to find the widest one
         for i in range(self.container_layout.count()):
             item = self.container_layout.itemAt(i)
-            if item and item.widget():
-                # Get the sizeHint width of each row
-                row_width = item.widget().sizeHint().width()
-                min_width = max(min_width, row_width + 50)
+            if not (item and item.widget()):
+                continue
 
-                # If this is a keybind row with buttons and command, check their widths too
-                if isinstance(item.widget(), QWidget) and hasattr(item.widget(), "layout"):
-                    row_layout = item.widget().layout()
-                    if row_layout:
-                        width_sum = 0
-                        for j in range(row_layout.count()):
-                            child_item = row_layout.itemAt(j)
-                            if child_item and child_item.widget():
-                                width_sum += child_item.widget().sizeHint().width()
-                        min_width = max(min_width, width_sum + 70)
+            # Get the sizeHint width of each row
+            row_width = item.widget().sizeHint().width()
+            min_width = max(min_width, row_width + 50)
+
+            # If this is a keybind row with buttons and command, check their widths too
+            if isinstance(item.widget(), QWidget) and hasattr(item.widget(), "layout"):
+                row_layout = item.widget().layout()
+                if row_layout:
+                    width_sum = 0
+                    for j in range(row_layout.count()):
+                        child_item = row_layout.itemAt(j)
+                        if child_item and child_item.widget():
+                            width_sum += child_item.widget().sizeHint().width()
+                    min_width = max(min_width, width_sum + 70)
 
         # Add margins to account for the dialog's layout
         margins = self.main_layout.contentsMargins()
@@ -176,78 +178,81 @@ class KeybindsDialog(QDialog):
                 self.header.setProperty("class", "keybind-header")
 
                 self.container_layout.addWidget(self.header)
-            else:
-                # Render keybind row
-                self.row = QWidget()
-                self.row.setProperty("class", "keybind-row")
-                self.row_layout = QHBoxLayout(self.row)
+                continue
 
-                self.row_layout.setContentsMargins(5, 5, 5, 5)
-                self.row_layout.setSpacing(0)
-                self.row_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+            # Render keybind row
+            self.row = QWidget()
+            self.row.setProperty("class", "keybind-row")
+            self.row_layout = QHBoxLayout(self.row)
 
-                # Create a container widget for buttons
-                # Create a container widget for buttons
-                buttons_container = QWidget(self.row)
-                buttons_container.setProperty("class", "keybind-buttons-container")
+            self.row_layout.setContentsMargins(5, 5, 5, 5)
+            self.row_layout.setSpacing(0)
+            self.row_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
-                buttons_layout = QHBoxLayout(buttons_container)
-                buttons_layout.setContentsMargins(0, 0, 0, 0)
+            # Create a container widget for buttons
+            # Create a container widget for buttons
+            buttons_container = QWidget(self.row)
+            buttons_container.setProperty("class", "keybind-buttons-container")
 
-                buttons_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+            buttons_layout = QHBoxLayout(buttons_container)
+            buttons_layout.setContentsMargins(0, 0, 0, 0)
 
-                def create_key_button(key_text):
-                    btn = QPushButton(self._friendly_key_text(key_text.lower()))
-                    if key_text.lower() in self.special_keys:
-                        btn.setProperty("class", "keybind-button special")
-                    else:
-                        btn.setProperty("class", "keybind-button")
-                    btn.setFixedHeight(28)
-                    btn.setMinimumWidth(28)
-                    btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-                    buttons_layout.addWidget(btn)
-                    btn.style().unpolish(btn)
-                    btn.style().polish(btn)
-                    return btn
+            buttons_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
-                if " + " in keybind:
-                    groups = keybind.split(" + ")
-                    for idx, group in enumerate(groups):
-                        keys = group.split()
-                        for key in keys:
-                            create_key_button(key)
-
-                        # Add plus button between groups if needed
-                        if idx < len(groups) - 1:
-                            next_keys = groups[idx + 1].split()
-                            if not (
-                                keys
-                                and next_keys
-                                and (
-                                    keys[-1].lower() in no_plus_modifiers and next_keys[0].lower() in no_plus_modifiers
-                                )
-                            ):
-                                plus_btn = QPushButton("+")
-                                plus_btn.setEnabled(False)
-                                plus_btn.setProperty("class", "plus-separator")
-                                plus_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-                                buttons_layout.addWidget(plus_btn)
+            def create_key_button(key_text):
+                btn = QPushButton(self._friendly_key_text(key_text.lower()))
+                if key_text.lower() in self.special_keys:
+                    btn.setProperty("class", "keybind-button special")
                 else:
-                    keys = [k.strip() for k in keybind.split("+")]
+                    btn.setProperty("class", "keybind-button")
+
+                btn.setFixedHeight(28)
+                btn.setMinimumWidth(28)
+                btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+                buttons_layout.addWidget(btn)
+                btn.style().unpolish(btn)
+                btn.style().polish(btn)
+                return btn
+
+            if " + " in keybind:
+                groups = keybind.split(" + ")
+                for idx, group in enumerate(groups):
+                    keys = group.split()
                     for key in keys:
                         create_key_button(key)
 
-                # Add the buttons container to the row
-                self.row_layout.addWidget(buttons_container)
+                    # Add plus button between groups if needed
+                    if idx < len(groups) - 1:
+                        next_keys = groups[idx + 1].split()
+                        if not (
+                            keys
+                            and next_keys
+                            and (
+                                keys[-1].lower() in no_plus_modifiers
+                                and next_keys[0].lower() in no_plus_modifiers
+                            )
+                        ):
+                            plus_btn = QPushButton("+")
+                            plus_btn.setEnabled(False)
+                            plus_btn.setProperty("class", "plus-separator")
+                            plus_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+                            buttons_layout.addWidget(plus_btn)
+            else:
+                keys = (k.strip() for k in keybind.split("+"))
+                for key in keys:
+                    create_key_button(key)
 
-                # The command label
-                self.command_label = QLabel(command)
-                self.command_label.setProperty("class", "keybind-command")
-                self.row_layout.addWidget(self.command_label)
+            # Add the buttons container to the row
+            self.row_layout.addWidget(buttons_container)
 
-                self.container_layout.addWidget(self.row)
-                self.row.style().unpolish(self.row)
-                self.row.style().polish(self.row)
+            # The command label
+            self.command_label = QLabel(command)
+            self.command_label.setProperty("class", "keybind-command")
+            self.row_layout.addWidget(self.command_label)
+
+            self.container_layout.addWidget(self.row)
+            self.row.style().unpolish(self.row)
+            self.row.style().polish(self.row)
 
     def _friendly_key_text(self, k: str) -> str:
         return self.special_keys.get(k.lower(), k)

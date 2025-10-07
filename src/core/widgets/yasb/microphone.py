@@ -1,12 +1,7 @@
 import logging
 import re
 
-from comtypes import (
-    CLSCTX_ALL,
-    CoInitialize,
-    COMObject,
-    CoUninitialize,
-)
+from comtypes import CLSCTX_ALL, CoInitialize, COMObject, CoUninitialize
 from pycaw.callbacks import MMNotificationClient
 from pycaw.pycaw import (
     AudioUtilities,
@@ -15,7 +10,7 @@ from pycaw.pycaw import (
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QWheelEvent
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QSlider, QVBoxLayout
+from PyQt6.QtWidgets import QFrame, QHBoxLayout, QSlider, QVBoxLayout
 
 from core.utils.tooltip import set_tooltip
 from core.utils.utilities import (
@@ -23,6 +18,7 @@ from core.utils.utilities import (
     add_shadow,
     build_progress_widget,
     build_widget_label,
+    iterate_label_as_parts,
 )
 from core.utils.widgets.animation_manager import AnimationManager
 from core.validation.widgets.yasb.microphone import VALIDATION_SCHEMA
@@ -159,12 +155,12 @@ class MicrophoneWidget(BaseWidget):
             self.hide()
 
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_widgets_len = len(active_widgets)
+        # active_widgets_len = len(active_widgets)
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         active_label_content = active_label_content.format(icon=min_icon, level=min_level)
 
-        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
-        widget_index = 0
+        # label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
+        # widget_index = 0
 
         if self._progress_bar["enabled"] and self.progress_widget:
             if self._widget_container_layout.indexOf(self.progress_widget) == -1:
@@ -175,17 +171,32 @@ class MicrophoneWidget(BaseWidget):
             numeric_value = int(re.search(r"\d+", min_level).group()) if re.search(r"\d+", min_level) else 0
             self.progress_widget.set_value(numeric_value)
 
-        for part in label_parts:
-            part = part.strip()
-            if not part:
-                continue
+        add_progress_widget = False
+        if self._progress_bar["enabled"] and self.progress_widget:
+            if self._widget_container_layout.indexOf(self.progress_widget) != -1:
+                self._widget_container_layout.removeWidget(self.progress_widget)
+            add_progress_widget = True
 
-            if widget_index >= active_widgets_len or not isinstance(active_widgets[widget_index], QLabel):
-                continue
+        for label in iterate_label_as_parts(
+            active_widgets, active_label_content,
+            # self._widget_container_layout
+        ):
+            self._set_muted_class(label, mute_status == 1)
 
-            active_widgets[widget_index].setText(part)
-            self._set_muted_class(active_widgets[widget_index], mute_status == 1)
-            widget_index += 1
+        if add_progress_widget:
+            if self._progress_bar["position"] == "left":
+                progress_widget_idx = 0
+            else:
+                progress_widget_idx = self._widget_container_layout.count()
+
+            self._widget_container_layout.insertWidget(progress_widget_idx, self.progress_widget)
+            match = re.search(r"\d+", min_level)
+            if match:
+                numeric_value = int(match.group())
+            else:
+                numeric_value = 0
+
+            self.progress_widget.set_value(numeric_value)
 
     def _initialize_microphone_interface(self):
         CoInitialize()
@@ -217,16 +228,20 @@ class MicrophoneWidget(BaseWidget):
     def _get_mic_icon(self):
         if not self.audio_endpoint:
             return self._icons["normal"]
+
         current_mute_status = self.audio_endpoint.GetMute()
         current_level = round(self.audio_endpoint.GetMasterVolumeLevelScalar() * 100)
+
         if current_mute_status == 1:
             mic_icon = self._icons["muted"]
             tooltip = f"Muted: Volume {current_level}"
         else:
             mic_icon = self._icons["normal"]
             tooltip = f"Volume {current_level}"
+
         if self._tooltip:
             set_tooltip(self, tooltip)
+
         return mic_icon
 
     def toggle_mute(self):

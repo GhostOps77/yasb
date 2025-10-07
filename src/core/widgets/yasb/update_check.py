@@ -1,15 +1,14 @@
 import logging
-import re
 import shutil
 import subprocess
 import threading
 
 import win32com.client
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel
+from PyQt6.QtWidgets import QFrame, QHBoxLayout
 
 from core.utils.tooltip import set_tooltip
-from core.utils.utilities import add_shadow
+from core.utils.utilities import add_shadow, iterate_label_as_parts
 from core.validation.widgets.yasb.update_check import VALIDATION_SCHEMA
 from core.widgets.base import BaseWidget
 from settings import DEBUG
@@ -33,10 +32,9 @@ class UpdateWorker(QThread):
             if update_type == "winget":
                 filtered_ids = [u["id"] for u in updates]
                 return len(updates), names, filtered_ids
-            else:
-                return len(updates), names
+            return len(updates), names
 
-        valid_excludes = [x.lower() for x in self.exclude_list if x and x.strip()]
+        valid_excludes = [x.strip().lower() for x in self.exclude_list if x.strip()]
         filtered_names = []
         filtered_ids = []
 
@@ -49,6 +47,7 @@ class UpdateWorker(QThread):
                     filtered_names.append(name)
                     filtered_ids.append(update["id"])
             return len(filtered_names), filtered_names, filtered_ids
+
         else:
             for name in names:
                 if not any(excluded in name.lower() for excluded in valid_excludes):
@@ -127,12 +126,17 @@ class UpdateWorker(QThread):
                             fl = i
                             detected_language = lang
                             break
+
                     if fl >= 0:
                         break
+
                 # Skip if language is not supported
                 if fl < 0 or detected_language not in WINGET_COLUMN_HEADERS:
                     if DEBUG:
-                        logging.warning("Could not identify header row in any supported language. Skipping processing.")
+                        logging.warning(
+                            "Could not identify header row in any supported language. "
+                            "Skipping processing."
+                        )
                     self.winget_update_signal.emit({"count": 0, "names": []})
                     return
 
@@ -148,8 +152,9 @@ class UpdateWorker(QThread):
                 upgrade_list = []
                 for line in lines[fl + 1 :]:
                     # Check for known terminators in the detected language
-                    if detected_language in WINGET_SECTION_HEADERS and line.startswith(
-                        WINGET_SECTION_HEADERS[detected_language]
+                    if (
+                        detected_language in WINGET_SECTION_HEADERS
+                        and line.startswith(WINGET_SECTION_HEADERS[detected_language])
                     ):
                         break
 
@@ -177,6 +182,7 @@ class UpdateWorker(QThread):
                                 "available_version": available,
                             }
                             upgrade_list.append(software)
+
                     except Exception as e:
                         if DEBUG:
                             logging.warning(f"Error parsing winget line: {line}, {e}")
@@ -189,13 +195,11 @@ class UpdateWorker(QThread):
                 count, filtered_names, filtered_app_ids = self.filter_updates(
                     upgrade_list, update_names, self.update_type
                 )
-                self.winget_update_signal.emit(
-                    {
-                        "count": count,
-                        "names": filtered_names,
-                        "app_ids": filtered_app_ids,
-                    }
-                )
+                self.winget_update_signal.emit({
+                    "count": count,
+                    "names": filtered_names,
+                    "app_ids": filtered_app_ids,
+                })
 
         except Exception as e:
             logging.error(f"Error in {self.update_type} worker: {e}")
@@ -236,9 +240,13 @@ class UpdateManager:
         if update_type not in self._workers:
             worker = UpdateWorker(update_type, exclude_list)
             if update_type == "windows":
-                worker.windows_update_signal.connect(lambda x: self.notify_subscribers("windows_update", x))
+                worker.windows_update_signal.connect(
+                    lambda x: self.notify_subscribers("windows_update", x)
+                )
             else:
-                worker.winget_update_signal.connect(lambda x: self.notify_subscribers("winget_update", x))
+                worker.winget_update_signal.connect(
+                    lambda x: self.notify_subscribers("winget_update", x)
+                )
             self._workers[update_type] = worker
             worker.start()
 
@@ -250,6 +258,7 @@ class UpdateManager:
     def handle_left_click(self, label_type):
         if label_type == "windows":
             subprocess.Popen("start ms-settings:windowsupdate", shell=True)
+
         elif label_type == "winget":
             powershell_path = shutil.which("pwsh") or shutil.which("powershell") or "powershell.exe"
             # Use stored app_ids
@@ -259,13 +268,14 @@ class UpdateManager:
                 id_args = " ".join([f'"{app_id}"' for app_id in self._winget_app_ids])
                 command = (
                     f'start "Winget Upgrade" "{powershell_path}" -NoExit -Command '
-                    f'"Write-Host \\"=========================================\\"; '
+                     '"Write-Host \\"=========================================\\"; '
                     f'Write-Host \\"YASB FOUND {count} {package_label} READY TO UPDATE\\"; '
-                    f'Write-Host \\"=========================================\\"; '
+                     'Write-Host \\"=========================================\\"; '
                     f'winget upgrade {id_args}"'
                 )
             else:
                 command = f'start "Winget Upgrade" "{powershell_path}" -NoExit -Command "winget upgrade --all"'
+
             subprocess.Popen(command, shell=True)
         self.notify_subscribers(f"{label_type}_hide", {})
 
@@ -274,6 +284,7 @@ class UpdateManager:
         if label_type in self._workers:
             self._workers[label_type].stop()
             del self._workers[label_type]
+
         # Get correct exclude list based on type
         exclude_list = []
         for subscriber in self._subscribers:
@@ -347,38 +358,27 @@ class UpdateCheckWidget(BaseWidget):
 
     def _create_dynamically_label(self, windows_label: str, winget_label: str):
         def process_content(label_text, label_type):
-            container = QFrame()
+            class_name = "windows" if label_type == "windows" else "winget"
+
             container_layout = QHBoxLayout()
             container_layout.setSpacing(0)
             container_layout.setContentsMargins(0, 0, 0, 0)
+
+            container = QFrame()
             container.setLayout(container_layout)
-            class_name = "windows" if label_type == "windows" else "winget"
             container.setProperty("class", f"widget-container {class_name}")
+
             add_shadow(container, self._container_shadow)
             self.widget_layout.addWidget(container)
             container.hide()
-            label_parts = re.split(r"(<span.*?>.*?</span>)", label_text)
-            label_parts = [part for part in label_parts if part]
+
             widgets = []
 
-            for part in label_parts:
-                part = part.strip()
-                if not part:
-                    continue
-                if part.startswith("<span") and part.endswith("</span>"):
-                    class_match = re.search(r'class=(["\'])([^"\']+?)\1', part)
-                    class_result = class_match.group(2) if class_match else "icon"
-                    icon = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
-                    label = QLabel(icon)
-                    label.setProperty("class", class_result)
-                else:
-                    label = QLabel(part)
-                    label.setProperty("class", "label")
-                add_shadow(label, self._label_shadow)
-                label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                container_layout.addWidget(label)
-                widgets.append(label)
+            for label in iterate_label_as_parts(
+                widgets, label_text, layout=container_layout, content_shadow=self._label_shadow
+            ):
                 label.mousePressEvent = self.handle_mouse_events(label_type)
+
             return container, widgets
 
         if self._winget_update_enabled:
@@ -404,32 +404,12 @@ class UpdateCheckWidget(BaseWidget):
 
         container.show()
 
-        active_widgets_len = len(active_widgets)
-        label_parts = re.split(r"(<span.*?>.*?</span>)", active_label_content)
-        widget_index = 0
+        for _ in iterate_label_as_parts(active_widgets, active_label_content):
+            pass
 
-        for part in label_parts:
-            if widget_index >= active_widgets_len:
-                break
-
-            part = part.strip()
-            if not part:
-                continue
-
-            if not isinstance(active_widgets[widget_index], QLabel):
-                continue
-
-            if part.startswith("<span") and part.endswith("</span>"):
-                icon = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
-                active_widgets[widget_index].setText(icon)
-            else:
-                formatted_text = part.format(count=data)
-                active_widgets[widget_index].setText(formatted_text)
-            active_widgets[widget_index].setCursor(Qt.CursorShape.PointingHandCursor)
-            widget_index += 1
-
-        if (widget_type == "windows" and self._windows_update_tooltip) or (
-            widget_type == "winget" and self._winget_update_tooltip
+        if (
+            (widget_type == "windows" and self._windows_update_tooltip)
+            or (widget_type == "winget" and self._winget_update_tooltip)
         ):
             set_tooltip(container, "\n".join(names))
 

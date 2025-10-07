@@ -1,5 +1,4 @@
 import os
-import re
 
 import psutil
 import win32api
@@ -18,6 +17,7 @@ from core.utils.utilities import (
     add_shadow,
     build_progress_widget,
     build_widget_label,
+    iterate_label_as_parts,
 )
 from core.utils.widgets.animation_manager import AnimationManager
 from core.validation.widgets.yasb.disk import VALIDATION_SCHEMA
@@ -118,7 +118,7 @@ class DiskWidget(BaseWidget):
 
     def _update_label(self):
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_widgets_len = len(active_widgets)
+        # active_widgets_len = len(active_widgets)
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
 
         try:
@@ -133,51 +133,52 @@ class DiskWidget(BaseWidget):
             percent_value = float(percent_str.strip("%"))
             # else:
             #     percent_value = float(percent_str)
-            active_label_content = active_label_content.format(space=disk_space, volume_label=self._volume_label)
+            active_label_content = active_label_content.format(
+                space=disk_space, volume_label=self._volume_label
+            )
 
+        add_progress_widget = False
         if self._progress_bar["enabled"] and self.progress_widget:
-            if self._widget_container_layout.indexOf(self.progress_widget) == -1:
-                self._widget_container_layout.insertWidget(
-                    (0 if self._progress_bar["position"] == "left" else self._widget_container_layout.count()),
-                    self.progress_widget,
-                )
-
+            if self._widget_container_layout.indexOf(self.progress_widget) != -1:
+                self._widget_container_layout.removeWidget(self.progress_widget)
+                add_progress_widget = True
             self.progress_widget.set_value(percent_value)
 
-        label_parts = re.split(r"(<span.*?>.*?</span>)", active_label_content)
-        widget_index = 0
+        disk_status_class = f"status-{self._get_disk_threshold(percent_value)}"
 
-        for part in label_parts:
-            part = part.strip()
-            if not part:
-                continue
-
-            if widget_index >= active_widgets_len or not isinstance(active_widgets[widget_index], QLabel):
-                continue
-
-            if part.startswith("<span") and part.endswith("</span>"):
-                # Ensure the icon is correctly set
-                icon = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
-                active_widgets[widget_index].setText(icon)
+        for label in iterate_label_as_parts(
+            active_widgets, active_label_content,
+            "label alt" if self._show_alt_label else "label",
+            # self._widget_container_layout
+        ):
+            # Update label with formatted content
+            class_names = label.property('class').split()
+            for i, class_name in enumerate(class_names):
+                if class_name.startswith("status-"):
+                    class_names[i] = disk_status_class
+                    break
             else:
-                # Update label with formatted content
-                label_class = "label alt" if self._show_alt_label else "label"
-                active_widgets[widget_index].setProperty(
-                    "class",
-                    f"{label_class} status-{self._get_disk_threshold(percent_value)}",
-                )
-                active_widgets[widget_index].setText(part)
-                active_widgets[widget_index].setStyleSheet("")
-            widget_index += 1
+                class_names.append(disk_status_class)
+
+            label.setProperty("class", ' '.join(class_names))
+            label.setStyleSheet("")
+
+        if add_progress_widget:
+            if self._progress_bar["position"] == "left":
+                insert_position = 0
+            else:
+                insert_position = self._widget_container_layout.count()
+
+            self._widget_container_layout.insertWidget(self.progress_widget, insert_position)
 
     def _get_volume_label(self, drive_letter):
         if not self._group_label["show_label_name"]:
-            return None
+            return
+
         try:
-            volume_label = win32api.GetVolumeInformation(f"{drive_letter}:\\")[0]
-            return volume_label
+            return win32api.GetVolumeInformation(f"{drive_letter}:\\")[0]
         except Exception:
-            return None
+            return
 
     def show_group_label(self):
         self.dialog = PopupWidget(
@@ -268,9 +269,13 @@ class DiskWidget(BaseWidget):
             volume_label = self._volume_label
 
         partitions = psutil.disk_partitions()
-        specific_partitions = [partition for partition in partitions if partition.device in f"{volume_label}:\\"]
-        if not specific_partitions:
-            return
+        specific_partitions = (
+            partition
+            for partition in partitions
+            if partition.device in f"{volume_label}:\\"
+        )
+        # if not specific_partitions:
+        #     return
 
         for partition in specific_partitions:
             usage = psutil.disk_usage(partition.mountpoint)
@@ -280,22 +285,23 @@ class DiskWidget(BaseWidget):
                 "total": {
                     "mb": f"{usage.total / (1024**2):.{self._decimal_display}f}MB",
                     "gb": f"{usage.total / (1024**3):.{self._decimal_display}f}GB",
-                    "tb": f"{usage.total / (1024**4):.{self._decimal_display}f}TB",
+                    "tb": f"{usage.total / (1024**4):.{self._decimal_display}f}TB"
                 },
                 "free": {
                     "mb": f"{usage.free / (1024**2):.{self._decimal_display}f}MB",
                     "gb": f"{usage.free / (1024**3):.{self._decimal_display}f}GB",
                     "tb": f"{usage.free / (1024**4):.{self._decimal_display}f}TB",
-                    "percent": f"{percent_free:.{self._decimal_display}f}%",
+                    "percent": f"{percent_free:.{self._decimal_display}f}%"
                 },
                 "used": {
                     "mb": f"{usage.used / (1024**2):.{self._decimal_display}f}MB",
                     "gb": f"{usage.used / (1024**3):.{self._decimal_display}f}GB",
                     "tb": f"{usage.used / (1024**4):.{self._decimal_display}f}TB",
-                    "percent": f"{percent_used:.{self._decimal_display}f}%",
-                },
+                    "percent": f"{percent_used:.{self._decimal_display}f}%"
+                }
             }
-        return None
+
+        return
 
     def _get_disk_threshold(self, disk_percent) -> str:
         if disk_percent <= self._disk_thresholds["low"]:

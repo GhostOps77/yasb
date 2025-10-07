@@ -2,7 +2,6 @@ import ctypes
 import logging
 import os
 import random
-import re
 import subprocess
 import threading
 
@@ -10,14 +9,13 @@ import pythoncom
 import pywintypes
 import win32gui
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QCursor
-from PyQt6.QtWidgets import QFrame, QGraphicsOpacityEffect, QHBoxLayout, QLabel
+from PyQt6.QtWidgets import QFrame, QGraphicsOpacityEffect, QHBoxLayout
 from win32comext.shell import shell, shellcon
 
 from core.event_service import EventService
 from core.utils.alert_dialog import raise_info_alert
 from core.utils.tooltip import set_tooltip
-from core.utils.utilities import add_shadow
+from core.utils.utilities import add_shadow, iterate_label_as_parts
 from core.utils.widgets.animation_manager import AnimationManager
 from core.utils.widgets.wallpapers.wallpapers_gallery import ImageGallery
 from core.utils.win32.utilities import get_foreground_hwnd, set_foreground_hwnd
@@ -104,15 +102,18 @@ class WallpapersWidget(BaseWidget):
 
     def _handle_widget_cli(self, widget: str, screen: str):
         """Handle widget CLI commands"""
-        if widget == "wallpapers":
-            current_screen = self.window().screen() if self.window() else None
-            current_screen_name = current_screen.name() if current_screen else None
-            if not screen or (current_screen_name and screen.lower() == current_screen_name.lower()):
-                self._popup_from_cli = True
-                self._toggle_widget()
+        if widget != "wallpapers":
+            return
+
+        current_screen = self.window().screen() if self.window() else None
+        current_screen_name = current_screen.name() if current_screen else None
+        if not screen or (current_screen_name and screen.lower() == current_screen_name.lower()):
+            self._popup_from_cli = True
+            self._toggle_widget()
 
     def _toggle_widget(self):
         """Toggle the visibility of the widget."""
+
         if self._image_gallery is not None and self._image_gallery.isVisible():
             self._image_gallery.fade_out_and_close_gallery()
             if self._previous_hwnd:
@@ -122,6 +123,7 @@ class WallpapersWidget(BaseWidget):
             if getattr(self, "_popup_from_cli", False):
                 self._previous_hwnd = get_foreground_hwnd()
                 self._popup_from_cli = False
+
             self._image_gallery = ImageGallery(self._image_path, self._gallery)
             self._image_gallery.fade_in_gallery(parent=self)
 
@@ -137,33 +139,19 @@ class WallpapersWidget(BaseWidget):
         """Create labels dynamically based on the provided content."""
 
         def process_content(content, is_alt=False):
-            label_parts = re.split(r"(<span[^>]*?>.*?</span>)", content)
-            label_parts = [part for part in label_parts if part]
             widgets = []
-            for part in label_parts:
-                part = part.strip()  # Remove any leading/trailing whitespace
-                if not part:
-                    continue
-                if part.startswith("<span") and part.endswith("</span>"):
-                    class_name = re.search(r'class=(["\'])([^"\']+?)\1', part)
-                    class_result = class_name.group(2) if class_name else "icon"
-                    icon = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
-                    label = QLabel(icon)
-                    label.setProperty("class", class_result)
-                    label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-                else:
-                    label = QLabel(part)
-                    label.setProperty("class", "label")
-                    label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-
+            for label in iterate_label_as_parts(
+                widgets,
+                content,
+                layout=self._widget_container_layout,
+                content_shadow=self._label_shadow
+            ):
+                # label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
                 label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                if self._tooltip:
-                    set_tooltip(label, "Change Wallpaper")
-                add_shadow(label, self._label_shadow)
-                self._widget_container_layout.addWidget(label)
-                widgets.append(label)
                 label.show()
                 label.mousePressEvent = self.handle_mouse_events
+                if self._tooltip:
+                    set_tooltip(label, "Change Wallpaper")
 
             return widgets
 
@@ -173,24 +161,10 @@ class WallpapersWidget(BaseWidget):
         """Update the label content dynamically."""
 
         active_widgets = self._widgets
-        active_widgets_len = len(active_widgets)
         active_label_content = self._label_content
-        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
-        widget_index = 0
 
-        for part in label_parts:
-            if widget_index >= active_widgets_len:
-                break
-
-            part = part.strip()
-            if not part:
-                continue
-
-            if part.startswith("<span") and part.endswith("</span>"):
-                part = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
-
-            active_widgets[widget_index].setText(part)
-            widget_index += 1
+        for _ in iterate_label_as_parts(active_widgets, active_label_content):
+            pass
 
     def _make_filter(self, class_name: str, title: str):
         """
@@ -209,7 +183,9 @@ class WallpapersWidget(BaseWidget):
 
         return enum_windows
 
-    def find_window_handles(self, parent: int = None, window_class: str = None, title: str = None) -> list[int]:
+    def find_window_handles(
+        self, parent: int = None, window_class: str = None, title: str = None
+    ) -> list[int]:
         """Find window handles based on class name and title."""
         cb = self._make_filter(window_class, title)
         try:
@@ -240,6 +216,7 @@ class WallpapersWidget(BaseWidget):
         """Set the desktop wallpaper to the specified image."""
         if use_activedesktop:
             self.enable_activedesktop()
+
         pythoncom.CoInitialize()
         iad = pythoncom.CoCreateInstance(
             shell.CLSID_ActiveDesktop,
@@ -263,20 +240,24 @@ class WallpapersWidget(BaseWidget):
             )
             return
 
-        if self._gallery["enabled"]:
-            if self._animation["enabled"]:
-                AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
-            if event is None or event.button() == Qt.MouseButton.LeftButton:
-                if self._image_gallery is not None and self._image_gallery.isVisible():
-                    self._image_gallery.fade_out_and_close_gallery()
-                else:
-                    self._image_gallery = ImageGallery(self._image_path, self._gallery)
-                    self._image_gallery.fade_in_gallery(parent=self)
-            if event is None or event.button() == Qt.MouseButton.RightButton:
-                self.change_background()
-        else:
+        if not self._gallery["enabled"]:
             if event is None or event.button() == Qt.MouseButton.LeftButton:
                 self.change_background()
+            return
+
+        if self._animation["enabled"]:
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+
+        if event is None or event.button() == Qt.MouseButton.LeftButton:
+            if self._image_gallery is not None and self._image_gallery.isVisible():
+                self._image_gallery.fade_out_and_close_gallery()
+            else:
+                self._image_gallery = ImageGallery(self._image_path, self._gallery)
+                self._image_gallery.fade_in_gallery(parent=self)
+
+        if event is None or event.button() == Qt.MouseButton.RightButton:
+            self.change_background()
+
 
     def change_background(self, image_path: str = None):
         """Change the desktop wallpaper to a new image."""

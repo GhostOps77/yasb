@@ -1,13 +1,12 @@
 import ctypes
 import logging
-import re
 from ctypes import wintypes
 
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QCursor
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
+from PyQt6.QtWidgets import QFrame, QHBoxLayout, QPushButton, QVBoxLayout
 
-from core.utils.utilities import PopupWidget, add_shadow, build_widget_label
+from core.utils.utilities import PopupWidget, add_shadow, build_widget_label, iterate_label_as_parts
 from core.utils.win32.bindings import (
     PowerEnumerate,
     PowerGetActiveScheme,
@@ -144,31 +143,15 @@ class PowerPlanWidget(BaseWidget):
         """Update the label with the current power plan name."""
 
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_widgets_len = len(active_widgets)
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         active_label_content = active_label_content.format(active_plan=self._active_plan_name)
 
-        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
-        widget_index = 0
-
-        for part in label_parts:
-            if widget_index >= active_widgets_len:
-                break
-
-            part = part.strip()
-            if not part:
-                continue
-
-            if not isinstance(active_widgets[widget_index], QLabel):
-                continue
-
-            active_widgets[widget_index].setText(part)
-            # Get the base class (without any power plan classes)
-            alt_class = "alt" if self._show_alt_label else ""
-            base_class = "icon" if "<span" in part else f"label {alt_class}"
-            active_widgets[widget_index].setProperty("class", f"{base_class} {self._plan_class_name}")
-            active_widgets[widget_index].setStyleSheet("")
-            widget_index += 1
+        for label in iterate_label_as_parts(
+            active_widgets, active_label_content,
+            'label alt' if self._show_alt_label else 'label'
+        ):
+            label.setProperty("class", label.property('class') + ' ' + self._plan_class_name)
+            label.setStyleSheet("")
 
     def _toggle_label(self):
         """Toggle between main and alt labels."""
@@ -216,7 +199,11 @@ class PowerPlanWidget(BaseWidget):
             else:
                 btn.setProperty("class", "button")
 
-            btn.clicked.connect(lambda checked, guid=plan["guid"], name=plan["name"]: self._change_plan(guid, name))
+            btn.clicked.connect(
+                lambda checked,
+                guid=plan["guid"],
+                name=plan["name"]: self._change_plan(guid, name)
+            )
 
             frame_layout.addWidget(btn)
 
@@ -275,6 +262,7 @@ class PowerPlanWidget(BaseWidget):
             res = PowerEnumerate(None, None, None, 16, index, guid_buf, ctypes.byref(size))
             if res != 0:
                 break
+
             guid = GUID.from_buffer_copy(guid_buf)
 
             # Get friendly name

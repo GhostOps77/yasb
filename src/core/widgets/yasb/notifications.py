@@ -1,11 +1,10 @@
 import logging
-import re
 
 from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel
+from PyQt6.QtWidgets import QFrame, QHBoxLayout
 
 from core.event_service import EventService
-from core.utils.utilities import add_shadow, build_widget_label, is_windows_10
+from core.utils.utilities import add_shadow, build_widget_label, is_windows_10, iterate_label_as_parts
 from core.utils.widgets.animation_manager import AnimationManager
 from core.utils.win32.system_function import notification_center, quick_settings
 from core.validation.widgets.yasb.notifications import VALIDATION_SCHEMA
@@ -83,7 +82,9 @@ class NotificationsWidget(BaseWidget):
 
         # Register the WindowsNotificationUpdate event
         self.event_service = EventService()
-        self.event_service.register_event("WindowsNotificationUpdate", self.windows_notification_update_signal)
+        self.event_service.register_event(
+            "WindowsNotificationUpdate", self.windows_notification_update_signal
+        )
         self.windows_notification_update_signal.connect(self._on_windows_notification_update)
 
         self._update_label()
@@ -126,42 +127,25 @@ class NotificationsWidget(BaseWidget):
             return
 
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_widgets_len = len(active_widgets)
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         active_label_content = active_label_content.format(
             count=self._notification_count,
             icon=(self._icons["new"] if self._notification_count > 0 else self._icons["default"]),
         )
 
-        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
-        widget_index = 0
-
-        for part in label_parts:
-            if widget_index >= active_widgets_len:
-                break
-
-            part = part.strip()
-            if not part:
-                continue
-
-            if not isinstance(active_widgets[widget_index], QLabel):
-                continue
-
-            if part.startswith("<span") and part.endswith("</span>"):
-                part = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
-
-            active_widgets[widget_index].setText(part)
-
+        for label in iterate_label_as_parts(
+            active_widgets, active_label_content,
+            layout=self._widget_container_layout
+        ):
             # Update class based on notification count
-            current_class = active_widgets[widget_index].property("class")
+            current_class = label.property("class")
             if self._notification_count > 0:
                 if "new-notification" not in current_class:
-                    current_class += " new-notification"
-            else:
-                current_class = current_class.replace(" new-notification", "")
+                    current_class.append("new-notification")
+            elif "new-notification" in current_class:
+                current_class.remove("new-notification")
 
-            active_widgets[widget_index].setProperty("class", current_class.strip())
-            widget_index += 1
+            label.setProperty("class", ' '.join(current_class))
 
         for widget in active_widgets:
             widget.style().unpolish(widget)

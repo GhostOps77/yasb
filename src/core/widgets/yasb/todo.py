@@ -25,7 +25,7 @@ from PyQt6.QtWidgets import (
 
 from core.config import HOME_CONFIGURATION_DIR
 from core.utils.tooltip import set_tooltip
-from core.utils.utilities import PopupWidget, add_shadow, build_widget_label
+from core.utils.utilities import PopupWidget, add_shadow, build_widget_label, iterate_label_as_parts
 from core.utils.widgets.animation_manager import AnimationManager
 from core.utils.win32.utilities import qmenu_rounded_corners
 from core.validation.widgets.yasb.todo import VALIDATION_SCHEMA
@@ -108,12 +108,12 @@ class TodoWidget(BaseWidget):
     def _load_tasks(self):
         try:
             tasks_file = self._get_tasks_file_path()
-            if os.path.exists(tasks_file):
-                with open(tasks_file, encoding="utf-8") as f:
-                    self._tasks = json.load(f)
-                self._tasks.sort(key=lambda t: t["order"], reverse=True)
-            else:
-                self._tasks = []
+            # if os.path.exists(tasks_file):
+            with open(tasks_file, encoding="utf-8") as f:
+                self._tasks = json.load(f)
+            self._tasks.sort(key=lambda t: t["order"], reverse=True)
+            # else:
+            #     self._tasks = []
         except Exception as e:
             logging.error(f"Error loading tasks: {e}")
             self._tasks = []
@@ -131,6 +131,7 @@ class TodoWidget(BaseWidget):
         description = self._desc_input.toPlainText().strip() if self._desc_input else ""
         if not title:
             return
+
         task_data = {
             "id": int(datetime.datetime.now().timestamp()),
             "title": title,
@@ -140,6 +141,7 @@ class TodoWidget(BaseWidget):
             "completed": False,
             "order": len(self._tasks),
         }
+
         self._tasks.insert(0, task_data)
         self._save_tasks()
         TodoWidget.update_all()
@@ -152,12 +154,14 @@ class TodoWidget(BaseWidget):
         description = self._desc_input.toPlainText().strip() if self._desc_input else ""
         if not title:
             return
+
         for t in self._tasks:
             if t["id"] == task["id"]:
                 t["title"] = title
                 t["description"] = description
                 t["category"] = self._selected_category
                 break
+
         self._save_tasks()
         TodoWidget.update_all()
         dialog.accept()
@@ -242,7 +246,9 @@ class TodoWidget(BaseWidget):
         save_button = QPushButton(save_button_text)
         save_button.setProperty("class", "button add")
         save_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        save_button.clicked.connect(lambda: on_save(dialog, task) if task else on_save(dialog))
+        save_button.clicked.connect(
+            lambda: on_save(dialog, task) if task else on_save(dialog)
+        )
         button_layout.addWidget(save_button)
 
         dialog_layout.addWidget(button_container)
@@ -275,7 +281,6 @@ class TodoWidget(BaseWidget):
 
     def _update_label(self):
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_widgets_len = len(active_widgets)
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
 
         active_tasks = self._get_filtered_tasks(completed=False)
@@ -285,35 +290,25 @@ class TodoWidget(BaseWidget):
         completed_count = len(completed_tasks)
 
         active_label_content = active_label_content.format(
-            count=active_count,
-            total=total_tasks,
-            completed=completed_count,
+            count=active_count, total=total_tasks, completed=completed_count
         )
 
-        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
-        widget_index = 0
-
-        for part in label_parts:
-            if widget_index >= active_widgets_len:
-                break
-
-            if not isinstance(active_widgets[widget_index], QLabel):
-                continue
-
-            if part.startswith("<span") and part.endswith("</span>"):
-                part = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
-
-            widget_index += 1
+        for _ in iterate_label_as_parts(active_widgets, active_label_content):
+            pass
 
         # Tooltip: show number of tasks per category, skip 0s
         category_counts = {}
         for cat_key, cat_conf in self._categories.items():
-            count = sum(1 for t in self._tasks if t.get("category") == cat_key and not t.get("completed", False))
+            count = sum(
+                1
+                for t in self._tasks
+                if t.get("category") == cat_key and not t.get("completed", False)
+            )
             if count > 0:
                 category_counts[cat_conf["label"]] = count
 
         if category_counts:
-            tooltip_lines = [f"{label}: {count}" for label, count in category_counts.items()]
+            tooltip_lines = (f"{label}: {count}" for label, count in category_counts.items())
             tooltip_text = "\n".join(tooltip_lines)
         else:
             tooltip_text = "No tasks."
@@ -553,7 +548,9 @@ class TodoWidget(BaseWidget):
             return
 
         # Use filtered tasks for refresh
-        tasks = self._get_filtered_tasks(completed=self._show_completed, category=self._category_filter)
+        tasks = self._get_filtered_tasks(
+            completed=self._show_completed, category=self._category_filter
+        )
         self._refresh_task_list(scroll_widget.layout(), tasks)
 
     def _expand_task(self, task_id):
@@ -713,6 +710,7 @@ class TodoWidget(BaseWidget):
                 if completed:
                     desc_label.setProperty("class", "description completed")
                 text_layout.addWidget(desc_label)
+
             try:
                 created_at = datetime.datetime.fromisoformat(task["created_at"])
                 now = datetime.datetime.now()
@@ -783,6 +781,7 @@ class TodoWidget(BaseWidget):
             if existing_task["id"] == task["id"]:
                 self._tasks[i]["completed"] = False
                 break
+
         self._save_tasks()
         TodoWidget.update_all()
         self._refresh_menu_task_list()
@@ -792,6 +791,7 @@ class TodoWidget(BaseWidget):
             if existing_task["id"] == task["id"]:
                 self._tasks[i]["completed"] = True
                 break
+
         self._save_tasks()
         TodoWidget.update_all()
         self._remove_task_widget_from_menu(task["id"])
@@ -828,7 +828,10 @@ class TodoWidget(BaseWidget):
             widget_to_remove.setParent(None)
 
         # Only refresh if no task items left after removal
-        task_items_left = any(hasattr(layout.itemAt(i).widget(), "_task_id") for i in range(layout.count()))
+        task_items_left = any(
+            hasattr(layout.itemAt(i).widget(), "_task_id")
+            for i in range(layout.count())
+        )
 
         if task_items_left:
             self._refresh_menu_task_list()

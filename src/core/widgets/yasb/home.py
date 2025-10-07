@@ -112,9 +112,7 @@ class HomeWidget(BaseWidget):
             self._menu._add_separator(main_layout)
 
             self._add_menu_item(
-                main_layout,
-                self._menu_labels["system"],
-                lambda: os.startfile("ms-settings:"),
+                main_layout, self._menu_labels["system"], lambda: os.startfile("ms-settings:"),
             )
 
             self._add_menu_item(
@@ -128,12 +126,15 @@ class HomeWidget(BaseWidget):
         # Custom menu items
         if isinstance(self._menu_list, list):
             for menu_item in self._menu_list:
-                if "title" in menu_item and "path" in menu_item:
-                    self._add_menu_item(
-                        main_layout,
-                        menu_item["title"],
-                        self.create_menu_action(menu_item["path"]),
-                    )
+                if "title" not in menu_item or "path" not in menu_item:
+                    continue
+
+                self._add_menu_item(
+                    main_layout,
+                    menu_item["title"],
+                    self.create_menu_action(menu_item["path"]),
+                )
+
         if self._menu_list is not None and len(self._menu_list) > 0 and self._power_menu:
             self._menu._add_separator(main_layout)
 

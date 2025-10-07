@@ -51,7 +51,10 @@ class KomorebiClient:
                 return add_index(screen, i)
 
     def get_workspaces(self, screen: dict) -> list:
-        return [add_index(workspace, i) for i, workspace in enumerate(screen["workspaces"]["elements"])]
+        return [
+            add_index(workspace, i)
+            for i, workspace in enumerate(screen["workspaces"]["elements"])
+        ]
 
     def get_workspace_by_index(self, screen: dict, workspace_index: int) -> dict | None:
         try:
@@ -103,12 +106,8 @@ class KomorebiClient:
                         return add_index(workspace, i)
 
     def activate_workspace(self, m_idx: int, ws_idx: int, wait: bool = False) -> None:
-        args = [
-            self._komorebic_path,
-            "focus-monitor-workspace",
-            str(m_idx),
-            str(ws_idx),
-        ]
+        args = [self._komorebic_path, "focus-monitor-workspace", str(m_idx), str(ws_idx)]
+
         if wait:
             try:
                 subprocess.run(args, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, shell=True)

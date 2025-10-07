@@ -121,10 +121,10 @@ def add_shadow(el: QWidget, options: dict[str, Any]) -> None:
 
 
 def iterate_label_as_parts(
-    layout: QBoxLayout,
     widgets: list[QLabel],
     content: str,
-    class_name: str,
+    class_name: str = 'label',
+    layout: QBoxLayout | None = None,
     content_shadow: dict = None
 ) -> Generator[QLabel, None, None]:
     label_parts = CAPTURE_SPAN_TAG_REGEX.split(content)
@@ -142,14 +142,22 @@ def iterate_label_as_parts(
             class_result += ' ' + (class_name.group(2) if class_name else "icon")
             part = REPLACE_SPAN_TAG_REGEX.sub("", part).strip()
 
+        while widgets_idx < widgets_len and not isinstance(widgets[widgets_idx], QLabel):
+            widgets_idx += 1
+
         if widgets_idx < widgets_len:
             label = widgets[widgets_idx]
-            widgets_idx += 1
+            # if not isinstance(label, QLabel):
+            #     continue
             label.setText(part)
+            widgets_idx += 1
         else:
             label = QLabel(part)
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            label.setCursor(Qt.CursorShape.PointingHandCursor)
             widgets.append(label)
-            layout.addWidget(label)
+            if layout is not None:
+                layout.addWidget(label)
 
         label.setProperty('class', class_result)
         if content_shadow:
@@ -170,10 +178,10 @@ def build_widget_label(self, content: str, content_alt: str = None, content_shad
         widgets = []
 
         label_parts_gen = iterate_label_as_parts(
-            self._widget_container_layout,
             widgets,
             content,
             "label alt" if is_alt else "label",
+            self._widget_container_layout,
             content_shadow
         )
 

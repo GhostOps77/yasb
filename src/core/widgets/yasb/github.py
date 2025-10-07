@@ -22,7 +22,7 @@ from PyQt6.QtWidgets import (
 )
 
 from core.utils.tooltip import set_tooltip
-from core.utils.utilities import PopupWidget, add_shadow
+from core.utils.utilities import PopupWidget, add_shadow, iterate_label_as_parts
 from core.utils.widgets.animation_manager import AnimationManager
 from core.validation.widgets.yasb.github import VALIDATION_SCHEMA
 from core.widgets.base import BaseWidget
@@ -96,7 +96,9 @@ class NotificationLabel(QLabel):
                 x = self.width() - radius - margin_x
                 y = self.height() - radius - margin_y
 
-            painter.drawEllipse(QPoint(x + radius // 2, y + radius // 2), radius // 2, radius // 2)
+            painter.drawEllipse(
+                QPoint(x + radius // 2, y + radius // 2), radius // 2, radius // 2
+            )
 
 
 class GithubWidget(BaseWidget):
@@ -189,12 +191,13 @@ class GithubWidget(BaseWidget):
     def _create_dynamically_label(self, content: str, content_alt: str):
         def process_content(content, is_alt=False):
             label_parts = re.split(r"(<span[^>]*?>.*?</span>)", content)
-            label_parts = [part for part in label_parts if part]
             widgets = []
+
             for part in label_parts:
                 part = part.strip()  # Remove any leading/trailing whitespace
                 if not part:
                     continue
+
                 if part.startswith("<span") and part.endswith("</span>"):
                     class_name = re.search(r'class=(["\'])([^"\']+?)\1', part)
                     class_result = class_name.group(2) if class_name else "icon"
@@ -213,16 +216,19 @@ class GithubWidget(BaseWidget):
                 else:
                     label = QLabel(part)
                     label.setProperty("class", "label")
+
                 label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
                 label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 add_shadow(label, self._label_shadow)
                 self._widget_container_layout.addWidget(label)
 
                 widgets.append(label)
-                if is_alt:
-                    label.hide()
-                else:
-                    label.show()
+                # if is_alt:
+                #     label.hide()
+                # else:
+                #     label.show()
+                label.setVisible(not is_alt)
+
             return widgets
 
         self._widgets = process_content(content)
@@ -231,12 +237,12 @@ class GithubWidget(BaseWidget):
     def _update_label(self):
         notification_count = sum(1 for notification in self._github_data if notification["unread"])
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_widgets_len = len(active_widgets)
+        # active_widgets_len = len(active_widgets)
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         active_label_content = active_label_content.format(data=notification_count)
 
         # Split label content and filter out empty parts
-        label_parts = re.split(r"(<span.*?>.*?</span>)", active_label_content)
+        # label_parts = re.split(r"(<span.*?>.*?</span>)", active_label_content)
 
         # Setting the notification dot if enabled and the label exists
         if self._notification_dot["enabled"]:
@@ -246,36 +252,25 @@ class GithubWidget(BaseWidget):
             elif self._notification_label_alt is not None:
                 self._notification_label_alt.show_dot(notification_count > 0)
 
-        for widget_index, part in enumerate(label_parts):
-            part = part.strip()
-            if not part:
-                continue
+        new_notification_class = "new-notification"
 
-            if widget_index >= active_widgets_len or not isinstance(active_widgets[widget_index], QLabel):
-                continue
+        for label in iterate_label_as_parts(
+            active_widgets, active_label_content,
+            # layout=self._widget_container_layout
+        ):
+            # Update class based on notification count
+            class_names = label.property("class").split()
+            if notification_count > 0 and new_notification_class not in class_names:
+                class_names.append(new_notification_class)
+            elif new_notification_class in class_names:
+                class_names.remove(new_notification_class)
 
-            current_widget = active_widgets[widget_index]
-            icon = ""
+            label.setProperty("class", " ".join(class_names))
 
-            if part.startswith("<span") and part.endswith("</span>"):
-                icon = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
-                current_widget.setText(icon)
-                if self._tooltip:
-                    set_tooltip(current_widget, f"Notifications {notification_count}")
+            if self._tooltip:
+                set_tooltip(label, f"Notifications {notification_count}")
 
-                # Update class based on notification count
-                current_classes = current_widget.property("class").split()
-                notification_class = "new-notification"
-                if notification_count > 0:
-                    current_classes.append(notification_class)
-                else:
-                    current_classes = (cls for cls in current_classes if cls != notification_class)
-                current_widget.setProperty("class", " ".join(current_classes))
-
-            else:
-                current_widget.setText(part)
-
-            current_widget.style().unpolish(current_widget)
+            label.style().unpolish(label)
 
     def mark_as_read(self, notification_id, container_label):
         for notification in self._github_data:
@@ -309,7 +304,8 @@ class GithubWidget(BaseWidget):
             logging.error(f"HTTP Error occurred: {e.code} - {e.reason}")
         except Exception as e:
             logging.error(
-                f"An unexpected error occurred: {e!s}, in most cases this error when there is no internet connection."
+                f"An unexpected error occurred: {e!s}, " \
+                 "in most cases this error when there is no internet connection."
             )
 
     def _handle_mouse_press_event(self, event, notification_id, url, container_label):
@@ -326,7 +322,9 @@ class GithubWidget(BaseWidget):
 
     def show_menu(self):
         notifications_count = len(self._github_data)
-        notifications_unread_count = sum(1 for notification in self._github_data if notification["unread"])
+        notifications_unread_count = sum(
+            1 for notification in self._github_data if notification["unread"]
+        )
 
         self._menu = PopupWidget(
             self,
@@ -381,13 +379,17 @@ class GithubWidget(BaseWidget):
                 if len(repo_description) > self._max_field_size:
                     repo_description = repo_description[: self._max_field_size - 3] + "..."
 
-                icon_type = {
-                    "Issue": self._icons["issue"],
-                    "PullRequest": self._icons["pull_request"],
-                    "Release": self._icons["release"],
-                    "Discussion": self._icons["discussion"],
-                    "CheckSuite": self._icons["checksuite"],
-                }.get(notification["type"], self._icons["default"])
+                # icon_type = {
+                #     "Issue": self._icons["issue"],
+                #     "PullRequest": self._icons["pull_request"],
+                #     "Release": self._icons["release"],
+                #     "Discussion": self._icons["discussion"],
+                #     "CheckSuite": self._icons["checksuite"],
+                # }.get(notification["type"], self._icons["default"])
+                icon_type = self._icons.get(
+                    notification['type'].replace('_', ' ').title().replace(' ', ''),
+                    notification['default']
+                )
 
                 new_item_class = "new" if notification["unread"] else ""
 
@@ -513,16 +515,14 @@ class GithubWidget(BaseWidget):
                 else:
                     github_url = notification["repository"]["html_url"]
 
-                result.append(
-                    {
-                        "id": notification["id"],
-                        "repository": repo_full_name,
-                        "title": notification["subject"]["title"],
-                        "type": subject_type,
-                        "url": github_url,
-                        "unread": notification["unread"],
-                    }
-                )
+                result.append({
+                    "id": notification["id"],
+                    "repository": repo_full_name,
+                    "title": notification["subject"]["title"],
+                    "type": subject_type,
+                    "url": github_url,
+                    "unread": notification["unread"],
+                })
             return result
 
         except urllib.error.URLError:

@@ -1,12 +1,11 @@
 import ctypes
 import logging
-import re
 from datetime import datetime
 
 import screen_brightness_control as sbc
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QWheelEvent
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QSlider, QVBoxLayout
+from PyQt6.QtWidgets import QFrame, QHBoxLayout, QSlider, QVBoxLayout
 
 from core.utils.tooltip import set_tooltip
 from core.utils.utilities import (
@@ -14,6 +13,7 @@ from core.utils.utilities import (
     add_shadow,
     build_progress_widget,
     build_widget_label,
+    iterate_label_as_parts,
 )
 from core.utils.widgets.animation_manager import AnimationManager
 from core.utils.win32.utilities import get_monitor_info
@@ -77,9 +77,8 @@ class BrightnessWidget(BaseWidget):
         self._animation = animation
         self._label_shadow = label_shadow
         self._container_shadow = container_shadow
-        self._progress_bar = progress_bar
 
-        self.progress_widget = None
+        self._progress_bar = progress_bar
         self.progress_widget = build_progress_widget(self, self._progress_bar)
 
         self._widget_container_layout = QHBoxLayout()
@@ -148,15 +147,20 @@ class BrightnessWidget(BaseWidget):
         monitor_info = self.get_monitor_handle()
         if not monitor_info:
             return
+
         current = self.get_brightness()
         if not self._brightness_toggle_level:
             return
+
         levels = self._brightness_toggle_level
-        prev_levels = [level for level in levels if level < current]
-        if prev_levels:
-            self.set_brightness(prev_levels[-1], monitor_info["device_id"])
-        else:
-            self.set_brightness(levels[-1], monitor_info["device_id"])
+        brightness_level = levels[-1]
+
+        for level in reversed(levels):
+            if level < current:
+                brightness_level = level
+                break
+
+        self.set_brightness(brightness_level, monitor_info["device_id"])
 
     def _toggle_brightness_menu(self):
         if self._animation["enabled"]:
@@ -171,51 +175,40 @@ class BrightnessWidget(BaseWidget):
             if percent is None:
                 if self._hide_unsupported:
                     self.hide()
-                return
-            if percent is not None:
+                    return
+                percent, icon = 0, "not supported"
+            else:
                 icon = self.get_brightness_icon(percent)
                 if self._tooltip:
                     set_tooltip(self, f"Brightness {percent}%")
-            else:
-                percent, icon = 0, "not supported"
         except Exception:
             percent, icon = 0, "not supported"
 
         active_label_content = active_label_content.format(icon=icon, percent=percent)
-        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
 
-        if self._progress_bar["enabled"] and self.progress_widget:
-            if self._widget_container_layout.indexOf(self.progress_widget) == -1:
-                self._widget_container_layout.insertWidget(
-                    (0 if self._progress_bar["position"] == "left" else self._widget_container_layout.count()),
-                    self.progress_widget,
-                )
+        add_progress_widget = False
+        if (
+            self._progress_bar["enabled"]
+            and self.progress_widget
+            and self._widget_container_layout.indexOf(self.progress_widget) != -1
+        ):
+            self._widget_container_layout.removeWidget(self.progress_widget)
+            add_progress_widget = True
+
+        for _ in iterate_label_as_parts(
+            active_widgets, active_label_content,
+            # layout=self._widget_container_layout
+        ):
+            pass
+
+        if add_progress_widget:
+            if self._progress_bar["position"] == "left":
+                progress_widget_idx = 0
+            else:
+                progress_widget_idx = self._widget_container_layout.count()
+
+            self._widget_container_layout.insertWidget(progress_widget_idx, self.progress_widget)
             self.progress_widget.set_value(percent)
-
-        active_widgets_len = len(active_widgets)
-        widget_index = 0
-
-        for part in label_parts:
-            if widget_index >= active_widgets_len:
-                break
-
-            part = part.strip()
-            if not part:
-                continue
-
-            if not isinstance(active_widgets[widget_index], QLabel):
-                continue
-
-            active_widgets[widget_index].setText(part)
-
-            # if part.startswith("<span") and part.endswith("</span>"):
-            #     if widget_index < active_widgets_len and isinstance(active_widgets[widget_index], QLabel):
-            #         active_widgets[widget_index].setText(part)
-            # else:
-            #     if widget_index < active_widgets_len and isinstance(active_widgets[widget_index], QLabel):
-            #         active_widgets[widget_index].setText(part)
-
-            widget_index += 1
 
     def show_brightness_menu(self):
         self.dialog = PopupWidget(
@@ -287,7 +280,7 @@ class BrightnessWidget(BaseWidget):
         except (IndexError, ValueError):
             if DEBUG:
                 logging.warning(f"Failed to extract display number from {device_path}")
-            return None
+            return
 
     def get_monitor_handle(self):
         try:
@@ -298,12 +291,12 @@ class BrightnessWidget(BaseWidget):
             if not monitor_info:
                 if DEBUG:
                     logging.warning("Failed to get monitor info")
-                return None
+                return
 
             if not isinstance(self.extract_display_number(monitor_info["device"]), int):
                 if DEBUG:
                     logging.warning("Failed to get monitor number")
-                return None
+                return
 
             return {
                 "device_name": self.screen().name(),
@@ -314,7 +307,7 @@ class BrightnessWidget(BaseWidget):
         except Exception as e:
             if DEBUG:
                 logging.warning(f"Failed to get monitor handle: {e}")
-            return None
+            return
 
     def get_brightness(self):
         monitor_info = self.get_monitor_handle()

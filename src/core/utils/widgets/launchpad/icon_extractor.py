@@ -41,12 +41,13 @@ class IconExtractorUtil:
                 largest.save(temp_png, format="PNG")
                 return temp_png
             except Exception:
-                return None
+                return
 
         mun_candidate = None
         system32 = os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "System32")
         sysres = os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "SystemResources")
         basename = os.path.basename(file_path)
+
         if file_path.lower().startswith(system32.lower()) and basename.lower().endswith(".exe"):
             mun_candidate = os.path.join(sysres, f"{basename}.mun")
 
@@ -65,8 +66,8 @@ class IconExtractorUtil:
                     img.save(temp_png, format="PNG")
                     return temp_png
                 except Exception:
-                    return None
-            return None
+                    return
+            return
 
     def extract_uwp_icon(appid, install_location=None):
         import ctypes
@@ -77,11 +78,11 @@ class IconExtractorUtil:
         from pathlib import Path
 
         if not install_location or not os.path.isdir(install_location):
-            return None
+            return
 
         manifest_path = os.path.join(install_location, "AppxManifest.xml")
         if not os.path.isfile(manifest_path):
-            return None
+            return
 
         try:
             tree = ET.parse(manifest_path)
@@ -90,20 +91,20 @@ class IconExtractorUtil:
             if velement is None:
                 velement = root.find(".//{http://schemas.microsoft.com/appx/manifest/uap/windows10}VisualElements")
             if velement is None or "Square44x44Logo" not in velement.attrib:
-                return None
+                return
 
             logofile = Path(velement.attrib["Square44x44Logo"])
             logopattern = str(logofile.parent / "**") + "\\" + str(logofile.stem) + "*" + str(logofile.suffix)
             package_path = Path(install_location)
             logofiles = glob(logopattern, recursive=True, root_dir=package_path)
-            logofiles = [x.lower() for x in logofiles]
             if not logofiles:
-                return None
+                return
 
+            logofiles = [x.lower() for x in logofiles]
             def filter_logos(logofiles, qualifiers, values):
                 for qualifier in qualifiers:
                     for value in values:
-                        filtered_files = list(filter(lambda x: (qualifier + "-" + value in x), logofiles))
+                        filtered_files = [x for x in logofiles if (qualifier + "-" + value) in x]
                         if filtered_files:
                             return filtered_files
                 return logofiles
@@ -114,11 +115,13 @@ class IconExtractorUtil:
                 current_lang = locale.windows_locale[current_lang_code].lower().replace("_", "-")
                 current_lang_short = current_lang.split("-", 1)[0]
                 langs += [current_lang, current_lang_short]
+
             if "en" not in langs:
                 langs += ["en", "en-us"]
 
             if langs:
                 logofiles = filter_logos(logofiles, ["lang", "language"], langs)
+
             logofiles = filter_logos(logofiles, ["contrast"], ["standard"])
             logofiles = filter_logos(logofiles, ["alternateform", "altform"], ["unplated"])
             logofiles = filter_logos(logofiles, ["contrast"], ["standard"])
@@ -133,11 +136,11 @@ class IconExtractorUtil:
 
             logofiles.sort(key=get_size, reverse=True)
             if not logofiles:
-                return None
+                return
             return str(package_path / logofiles[0])
         except Exception as e:
             logging.error(f"Failed to parse manifest or find logo: {e}")
-            return None
+            return
 
 
 class UrlExtractorUtil:
@@ -158,7 +161,10 @@ class UrlExtractorUtil:
             try:
                 with urllib.request.urlopen(url, timeout=3) as resp:
                     html = resp.read().decode("utf-8", errors="ignore")
-                title_match = re.search(r"<title\b[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
+
+                title_match = re.search(
+                    r"<title\b[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL
+                )
 
                 if title_match:
                     page_title = title_match.group(1).strip()
@@ -179,6 +185,7 @@ class UrlExtractorUtil:
             manifest_urls = []
             if manifest_url:
                 manifest_urls.append(manifest_url)
+
             manifest_urls += [
                 urljoin(base_url, "manifest.webmanifest"),
                 urljoin(base_url, "manifest.json"),
@@ -195,6 +202,7 @@ class UrlExtractorUtil:
                             break
                 except Exception:
                     continue
+
             if not manifest or "icons" not in manifest:
                 return None, page_title
 
@@ -207,8 +215,10 @@ class UrlExtractorUtil:
                 if purpose == "monochrome":
                     continue
                 sizes = icon.get("sizes", "")
+
                 if not sizes:
                     continue
+
                 for size in sizes.split():
                     try:
                         w, h = map(int, size.lower().split("x"))
@@ -220,6 +230,7 @@ class UrlExtractorUtil:
                             best_size = w * h
                     except Exception:
                         continue
+
                 if best_icon:
                     break
 
@@ -233,7 +244,11 @@ class UrlExtractorUtil:
                 return None, page_title
 
             # Use the manifest's URL as the base for relative icon URLs
-            icon_url = urljoin(manifest_base_url, icon_src) if manifest_base_url else urljoin(base_url, icon_src)
+            if manifest_base_url:
+                icon_url = urljoin(manifest_base_url, icon_src)
+            else:
+                icon_url = urljoin(base_url, icon_src)
+
             try:
                 with urllib.request.urlopen(icon_url, timeout=5) as icon_resp:
                     if icon_resp.status != 200:

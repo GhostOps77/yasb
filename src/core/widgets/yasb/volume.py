@@ -27,7 +27,6 @@ from PyQt6.QtGui import QWheelEvent
 from PyQt6.QtWidgets import (
     QFrame,
     QHBoxLayout,
-    QLabel,
     QPushButton,
     QSlider,
     QVBoxLayout,
@@ -40,6 +39,7 @@ from core.utils.utilities import (
     add_shadow,
     build_progress_widget,
     build_widget_label,
+    iterate_label_as_parts,
 )
 from core.utils.widgets.animation_manager import AnimationManager
 from core.validation.widgets.yasb.volume import VALIDATION_SCHEMA
@@ -481,7 +481,6 @@ class VolumeWidget(BaseWidget):
 
     def _update_label(self):
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_widgets_len = len(active_widgets)
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
 
         try:
@@ -489,37 +488,41 @@ class VolumeWidget(BaseWidget):
             mute_status = self.volume.GetMute()
             icon_volume = self._get_volume_icon()
             level_volume = (
-                self._mute_text if mute_status == 1 else f"{round(self.volume.GetMasterVolumeLevelScalar() * 100)}%"
+                self._mute_text
+                if mute_status == 1
+                else f"{round(self.volume.GetMasterVolumeLevelScalar() * 100)}%"
             )
         except Exception:
             mute_status, icon_volume, level_volume = None, "", "No Device"
 
         active_label_content = active_label_content.format(icon=icon_volume, level=level_volume)
-        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
-        widget_index = 0
 
+        add_progress_widget = False
         if self._progress_bar["enabled"] and self.progress_widget:
-            if self._widget_container_layout.indexOf(self.progress_widget) == -1:
-                self._widget_container_layout.insertWidget(
-                    (0 if self._progress_bar["position"] == "left" else self._widget_container_layout.count()),
-                    self.progress_widget,
-                )
-            numeric_value = int(re.search(r"\d+", level_volume).group()) if re.search(r"\d+", level_volume) else 0
+            if self._widget_container_layout.indexOf(self.progress_widget) != -1:
+                self._widget_container_layout.removeWidget(self.progress_widget)
+            add_progress_widget = True
+
+        for _ in iterate_label_as_parts(
+            active_widgets, active_label_content,
+            'label alt' if self._show_alt_label else 'label'
+        ):
+            pass
+
+        if add_progress_widget:
+            if self._progress_bar["position"] == "left":
+                progress_widget_idx = 0
+            else:
+                progress_widget_idx = self._widget_container_layout.count()
+
+            match = re.search(r"\d+", level_volume)
+            if match:
+                numeric_value = int(match.group())
+            else:
+                numeric_value = 0
+
             self.progress_widget.set_value(numeric_value)
-
-        for part in label_parts:
-            if widget_index >= active_widgets_len:
-                break
-
-            part = part.strip()
-            if not part:
-                continue
-
-            if not isinstance(active_widgets[widget_index], QLabel):
-                continue
-
-            active_widgets[widget_index].setText(part)
-            widget_index += 1
+            self._widget_container_layout.insertWidget(progress_widget_idx, self.progress_widget)
 
     def _set_muted_class(self, widget, muted: bool):
         """Set or remove the 'muted' class on the widget."""

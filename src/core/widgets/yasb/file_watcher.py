@@ -262,7 +262,8 @@ class FileWatcherWidget(BaseWidget):
 
     def _update_label(self, content: str):
         for _ in iterate_label_as_parts(
-            self._widget_container_layout, self._widgets, content, 'label'
+            self._widgets, content,
+            # layout=self._widget_container_layout
         ):
             pass
 

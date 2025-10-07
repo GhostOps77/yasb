@@ -74,7 +74,9 @@ class WorkspaceButton(QPushButton):
         try:
             VirtualDesktop(self.workspace_index).go()
             if isinstance(self.parent_widget, WorkspaceWidget):
-                self.parent_widget._event_service.emit_event("virtual_desktop_changed", {"index": self.workspace_index})
+                self.parent_widget._event_service.emit_event(
+                    "virtual_desktop_changed", {"index": self.workspace_index}
+                )
         except Exception:
             logging.exception(f"Failed to focus desktop at index {self.workspace_index}")
 
@@ -83,7 +85,8 @@ class WorkspaceButton(QPushButton):
             self._initial_width = self.sizeHint().width()
 
         target_width = self.sizeHint().width()
-        current_width = self.width() if self.width() > 0 else self._initial_width
+        # current_width = self.width() if self.width() > 0 else self._initial_width
+        current_width = self.width() or self._initial_width
 
         if self._width_animation is not None:
             try:
@@ -197,7 +200,11 @@ class WorkspaceButton(QPushButton):
 
     def rename_desktop(self):
         dialog = QInputDialog(self)
-        dialog.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint | Qt.WindowType.WindowTitleHint)
+        dialog.setWindowFlags(
+            Qt.WindowType.Dialog
+            | Qt.WindowType.CustomizeWindowHint
+            | Qt.WindowType.WindowTitleHint
+        )
         dialog.setWindowTitle("Rename This Desktop")
         dialog.setProperty("class", "rename-dialog")
         dialog.setLabelText("Enter name for this desktop")
@@ -205,23 +212,26 @@ class WorkspaceButton(QPushButton):
         current_name = VirtualDesktop(self.workspace_index).name.strip()
         if not current_name:
             current_name = str(self.workspace_index)
+
         dialog.setTextValue(current_name)
         dialog.move(QCursor.pos())
+
         ok = dialog.exec()
         new_name = dialog.textValue().strip()
-        if ok and new_name:
-            try:
-                VirtualDesktop(self.workspace_index).rename(new_name)
-                if isinstance(self.parent_widget, WorkspaceWidget):
-                    self.parent_widget._event_service.emit_event(
-                        "virtual_desktop_update",
-                        {"index": self.workspace_index},
-                        {"update_buttons": True},
-                    )
-            except Exception as e:
-                logging.exception(f"Failed to rename desktop: {e}")
-        else:
+        if not (ok and new_name):
             logging.info("No name entered. Rename cancelled.")
+            return
+
+        try:
+            VirtualDesktop(self.workspace_index).rename(new_name)
+            if isinstance(self.parent_widget, WorkspaceWidget):
+                self.parent_widget._event_service.emit_event(
+                    "virtual_desktop_update",
+                    {"index": self.workspace_index},
+                    {"update_buttons": True},
+                )
+        except Exception as e:
+            logging.exception(f"Failed to rename desktop: {e}")
 
     def delete_desktop(self):
         try:
@@ -310,7 +320,11 @@ class WorkspaceWidget(BaseWidget):
 
         try:
             self.destroyed.connect(
-                lambda _=None: (WorkspaceWidget._instances.remove(self) if self in WorkspaceWidget._instances else None)
+                lambda _=None: (
+                    WorkspaceWidget._instances.remove(self)
+                    if self in WorkspaceWidget._instances
+                    else None
+                )
             )
         except Exception:
             pass
@@ -329,11 +343,19 @@ class WorkspaceWidget(BaseWidget):
 
         # Update only affected buttons (previous and current) and animate both simultaneously
         prev_btn = next(
-            (b for b in self._workspace_buttons if b.workspace_index == self._prev_workspace_index),
+            (
+                b
+                for b in self._workspace_buttons
+                if b.workspace_index == self._prev_workspace_index
+            ),
             None,
         )
         curr_btn = next(
-            (b for b in self._workspace_buttons if b.workspace_index == self._curr_workspace_index),
+            (
+                b
+                for b in self._workspace_buttons
+                if b.workspace_index == self._curr_workspace_index
+            ),
             None,
         )
 
@@ -385,7 +407,7 @@ class WorkspaceWidget(BaseWidget):
                     pass
 
     def _clear_container_layout(self):
-        for i in reversed(range(self._workspace_container_layout.count())):
+        for i in range(self._workspace_container_layout.count() - 1, -1, -1):
             old_workspace_widget = self._workspace_container_layout.itemAt(i).widget()
             self._workspace_container_layout.removeWidget(old_workspace_widget)
             old_workspace_widget.setParent(None)
@@ -427,13 +449,16 @@ class WorkspaceWidget(BaseWidget):
                 (btn for btn in self._workspace_buttons if btn.workspace_index == desktop_index),
                 None,
             )
+
             if existing_button:
                 self._update_button(existing_button)
             else:
                 new_button = self._try_add_workspace_button(desktop_index)
                 self._update_button(new_button)
+
             self._workspace_buttons.sort(key=lambda btn: btn.workspace_index)
             self._clear_container_layout()
+
             for workspace_btn in self._workspace_buttons:
                 self._workspace_container_layout.addWidget(workspace_btn)
                 add_shadow(workspace_btn, self._btn_shadow)
@@ -456,8 +481,9 @@ class WorkspaceWidget(BaseWidget):
             ws_name = VirtualDesktop(workspace_index).name
         except Exception:
             ws_name = ""
-        if not ws_name or not ws_name.strip():
+        if not ws_name.strip():
             ws_name = f"{workspace_index}"
+
         label = self._label_workspace_btn.format(index=workspace_index, name=ws_name)
         active_label = self._label_workspace_active_btn.format(index=workspace_index, name=ws_name)
         return label, active_label

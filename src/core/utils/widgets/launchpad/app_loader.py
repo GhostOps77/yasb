@@ -1,9 +1,6 @@
 import os
 
-from PyQt6.QtCore import (
-    QThread,
-    pyqtSignal,
-)
+from PyQt6.QtCore import QThread, pyqtSignal
 
 _APPS_CACHE = None
 
@@ -58,6 +55,7 @@ class AppListLoader(QThread):
                 name = os.path.splitext(os.path.basename(lnk))[0]
                 if should_filter_app(name):
                     continue
+
                 key = (name.lower(), lnk.lower())
                 if key not in seen_keys:
                     apps.append((name, lnk, None))

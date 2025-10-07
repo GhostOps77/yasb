@@ -1,5 +1,4 @@
 import json
-import re
 from collections import deque
 from urllib.parse import quote
 
@@ -19,7 +18,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from core.utils.utilities import PopupWidget, add_shadow, build_widget_label
+from core.utils.utilities import PopupWidget, add_shadow, build_widget_label, iterate_label_as_parts
 from core.utils.widgets.animation_manager import AnimationManager
 from core.validation.widgets.yasb.libre_monitor import VALIDATION_SCHEMA
 from core.widgets.base import BaseWidget
@@ -209,20 +208,23 @@ class LibreHardwareMonitorWidget(BaseWidget):
 
     def _update_menu_content(self):
         """Update only the values in the existing labels if popup is open"""
-        if self._is_menu_visible():
-            for sensor in self._libre_menu["sensors"]:
-                sensor_id = sensor["id"]
-                value_label = self.sensor_value_labels.get(sensor_id)
-                if value_label is not None and isinstance(value_label, QLabel):
-                    try:
-                        self._update_sensor_value(sensor_id, value_label)
-                    except RuntimeError:
-                        continue
+        if not self._is_menu_visible():
+            return
+
+        for sensor in self._libre_menu["sensors"]:
+            sensor_id = sensor["id"]
+            value_label = self.sensor_value_labels.get(sensor_id)
+            if value_label is not None and isinstance(value_label, QLabel):
+                try:
+                    self._update_sensor_value(sensor_id, value_label)
+                except RuntimeError:
+                    continue
 
     def _update_sensor_value(self, sensor_id, value_label):
         """Update just the value for a specific sensor"""
         if not self._is_menu_visible():
             return
+
         url = QUrl(f"http://{self._server_host}:{self._server_port}/Sensor?action=Get&id={quote(sensor_id)}")
         request = QNetworkRequest(url)
         request.setHeader(
@@ -235,9 +237,11 @@ class LibreHardwareMonitorWidget(BaseWidget):
         loop = QEventLoop()
         reply.finished.connect(loop.quit)
         loop.exec()
+
         if reply.error() == QNetworkReply.NetworkError.NoError:
             bytes_string = reply.readAll().data()
             data = json.loads(bytes_string.decode("utf-8"))
+
             if data.get("result") == "ok":
                 value = data.get("value", "N/A")
                 unit = data.get("format", "").split(" ")[-1]
@@ -245,13 +249,17 @@ class LibreHardwareMonitorWidget(BaseWidget):
             else:
                 # Sensor missing or not found
                 value_label.setText("N/A")
+
         reply.deleteLater()
 
     def _is_menu_visible(self):
         """Check if the popup menu is visible"""
         try:
-            if getattr(self, "_menu", None) is not None and isinstance(self._menu, QWidget) and self._menu.isVisible():
-                return True
+            return (
+                getattr(self, "_menu", None) is not None
+                and isinstance(self._menu, QWidget)
+                and self._menu.isVisible()
+            )
         except (RuntimeError, AttributeError):
             return False
 
@@ -275,8 +283,10 @@ class LibreHardwareMonitorWidget(BaseWidget):
 
             self._history.append(float_value)
             self._history_long.append(float_value)
+
             history_min_value = min(self._history_long)
             history_max_value = max(self._history_long)
+
             min_val = history_min_value if self._histogram_fixed_min is None else self._histogram_fixed_min
             max_val = history_max_value if self._histogram_fixed_max is None else self._histogram_fixed_max
 
@@ -285,33 +295,25 @@ class LibreHardwareMonitorWidget(BaseWidget):
             info["max"] = f"{history_max_value:.{self._precision}f}"
             info["unit"] = self._data.get("format", "Error Error").split(" ")[-1]
             info["histogram"] = (
-                "".join(self._get_histogram_bar(val, min_val, max_val) for val in self._history)
+                "".join(
+                    self._get_histogram_bar(val, min_val, max_val) for val in self._history
+                )
                 .encode("utf-8")
                 .decode("unicode_escape")
             )
+
         elif self._data:
             info["value"] = self._data.get("status", "")
 
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_widgets_len = len(active_widgets)
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         active_label_content = active_label_content.format(info=info)
-        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
-        widget_index = 0
 
-        for part in label_parts:
-            part = part.strip()
-            if not part:
-                continue
-
-            if widget_index >= active_widgets_len or not isinstance(active_widgets[widget_index], QLabel):
-                continue
-
-            if part.startswith("<span") and part.endswith("</span>"):
-                part = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
-
-            active_widgets[widget_index].setText(part)
-            widget_index += 1
+        for _ in iterate_label_as_parts(
+            active_widgets, active_label_content,
+            # layout=self._widget_container_layout
+        ):
+            pass
 
         # Update popup menu if it's visible
         if self._is_menu_visible():
@@ -326,6 +328,7 @@ class LibreHardwareMonitorWidget(BaseWidget):
         Handles the network response from the QNetworkAccessManager.
         Handles the potential error codes and populates the data dict with the result.
         """
+
         if reply.error() == QNetworkReply.NetworkError.NoError:
             bytes_string = reply.readAll().data()
             self._data = json.loads(bytes_string.decode("utf-8"))
@@ -334,6 +337,7 @@ class LibreHardwareMonitorWidget(BaseWidget):
             else:
                 self._data["status"] = self._sensor_id_error_label
                 self._data["histogram"] = self._sensor_id_error_label
+
         elif reply.error() == QNetworkReply.NetworkError.AuthenticationRequiredError:
             self._data = {
                 "status": self._auth_error_label,
@@ -341,6 +345,7 @@ class LibreHardwareMonitorWidget(BaseWidget):
                 "value": "",
                 "histogram": self._auth_error_label,
             }
+
         else:
             self._data = {
                 "status": self._connection_error_label,
@@ -348,6 +353,7 @@ class LibreHardwareMonitorWidget(BaseWidget):
                 "value": "",
                 "histogram": self._auth_error_label,
             }
+
         reply.deleteLater()
 
     def _handle_authentication(self, _: QNetworkReply, auth: QAuthenticator):

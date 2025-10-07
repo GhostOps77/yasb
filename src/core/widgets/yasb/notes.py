@@ -20,7 +20,7 @@ from PyQt6.QtWidgets import (
 )
 
 from core.config import HOME_CONFIGURATION_DIR
-from core.utils.utilities import PopupWidget, add_shadow, build_widget_label
+from core.utils.utilities import PopupWidget, add_shadow, build_widget_label, iterate_label_as_parts
 from core.utils.widgets.animation_manager import AnimationManager
 from core.validation.widgets.yasb.notes import VALIDATION_SCHEMA
 from core.widgets.base import BaseWidget
@@ -127,29 +127,14 @@ class NotesWidget(BaseWidget):
         notes_count = len(self._notes)
 
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_widgets_len = len(active_widgets)
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         active_label_content = active_label_content.format(count=notes_count)
 
-        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
-        widget_index = 0
-
-        for part in label_parts:
-            if widget_index >= active_widgets_len:
-                break
-
-            part = part.strip()
-            if not part:
-                continue
-
-            if not isinstance(active_widgets[widget_index], QLabel):
-                continue
-
-            if part.startswith("<span") and part.endswith("</span>"):
-                part = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
-
-            active_widgets[widget_index].setText(part)
-            widget_index += 1
+        for _ in iterate_label_as_parts(
+            active_widgets, active_label_content,
+            layout=self._widget_container_layout
+        ):
+            pass
 
     def _show_menu(self):
         self._menu = PopupWidget(
@@ -234,6 +219,7 @@ class NotesWidget(BaseWidget):
         if self._notes:
             for note in self._notes:
                 self._add_note_to_menu(note, scroll_layout)
+
         else:
             # Show empty state
             empty_label = QLabel(f"{self._icons['note']}  No notes yet!")
@@ -337,7 +323,9 @@ class NotesWidget(BaseWidget):
         container_layout.addWidget(text_container)
 
         # Spacer to push buttons to the right
-        container_layout.addItem(QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
+        container_layout.addItem(
+            QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        )
 
         # Create vertical layout for the buttons
         buttons_container = QWidget()

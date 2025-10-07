@@ -1,9 +1,8 @@
-import re
 
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel
+from PyQt6.QtWidgets import QFrame, QHBoxLayout
 
 from core.utils.tooltip import set_tooltip
-from core.utils.utilities import add_shadow, build_widget_label
+from core.utils.utilities import add_shadow, build_widget_label, iterate_label_as_parts
 from core.utils.widgets.animation_manager import AnimationManager
 from core.utils.widgets.recycle_bin.recycle_bin_monitor import RecycleBinMonitor
 from core.validation.widgets.yasb.recycle_bin import VALIDATION_SCHEMA
@@ -87,10 +86,9 @@ class RecycleBinWidget(BaseWidget):
 
     def _update_label(self):
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_widgets_len = len(active_widgets)
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
 
-        class_name = "bin-filled" if self._bin_info["num_items"] > 0 else "bin-empty"
+        bin_class_name = "bin-filled" if self._bin_info["num_items"] > 0 else "bin-empty"
 
         active_label_content = active_label_content.format(
             items_count=self._bin_info["num_items"],
@@ -98,34 +96,21 @@ class RecycleBinWidget(BaseWidget):
             icon=self._get_current_icon(),
         )
 
-        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
-        widget_index = 0
-
-        for part in label_parts:
-            if widget_index >= active_widgets_len:
-                break
-
-            part = part.strip()
-            if not part:
-                continue
-
-            if not isinstance(active_widgets[widget_index], QLabel):
-                continue
-
-            class_names = ""
-
-            if part.startswith("<span") and part.endswith("</span>"):
-                # base class
-                class_names += active_widgets[widget_index].property("class").split()[0]
+        for label in iterate_label_as_parts(
+            active_widgets, active_label_content,
+            "label alt" if self._show_alt_label else "label",
+            # self._widget_container_layout
+        ):
+            class_names = label.property('class').split()
+            for i, cn in enumerate(class_names):
+                if cn.startswith("bin-"):
+                    class_names[i] = bin_class_name
+                    break
             else:
-                class_names += "label"  # base class
-                class_names += "alt" if self._show_alt_label else ""  # alt class
+                class_names.append(bin_class_name)
 
-            class_names += " " + class_name
-            active_widgets[widget_index].setProperty("class", class_names)
-            active_widgets[widget_index].setStyleSheet("")
-            active_widgets[widget_index].setText(part)
-            widget_index += 1
+            label.setProperty("class", ' '.join(class_names))
+            label.setStyleSheet("")
 
         if self._tooltip:
             set_tooltip(
@@ -136,9 +121,10 @@ class RecycleBinWidget(BaseWidget):
     def _get_current_icon(self):
         """Get the icon based on the bin state"""
         if self._bin_info["num_items"] > 0:
-            return self._icons["bin_filled"]
+            bin_class_name = "bin_filled"
         else:
-            return self._icons["bin_empty"]
+            bin_class_name = "bin_empty"
+        return self._icons[bin_class_name]
 
     def _on_bin_update(self, bin_info):
         self._bin_info = bin_info

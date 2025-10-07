@@ -111,18 +111,20 @@ class ApplicationsWidget(BaseWidget):
         try:
             if data in function_map:
                 function_map[data]()
-            else:
-                try:
-                    if not any(param in data for param in ["-new-tab", "-new-window", "-private-window"]):
-                        data = data.split()
-                    subprocess.Popen(
-                        data,
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL,
-                        shell=True,
-                    )
-                except Exception as e:
-                    logging.error(f"Error starting app: {str(e)}")
+                return
+
+            try:
+                if not any(param in data for param in ["-new-tab", "-new-window", "-private-window"]):
+                    data = data.split()
+
+                subprocess.Popen(
+                    data,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    shell=True,
+                )
+            except Exception as e:
+                logging.error(f"Error starting app: {str(e)}")
         except Exception as e:
             logging.error(f'Exception occurred: {str(e)} "{data}"')
 

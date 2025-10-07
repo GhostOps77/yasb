@@ -1,9 +1,7 @@
 import logging
-import re
 import socket
 from typing import Any
 
-from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -14,7 +12,7 @@ from winrt.windows.networking.connectivity import (
     NetworkInformation,
 )
 
-from core.utils.utilities import add_shadow
+from core.utils.utilities import add_shadow, iterate_label_as_parts
 from core.utils.widgets.animation_manager import AnimationManager
 from core.utils.widgets.wifi.wifi_managers import NetworkInfo
 from core.utils.widgets.wifi.wifi_widgets import WifiMenu
@@ -127,32 +125,18 @@ class WifiWidget(BaseWidget):
 
     def _create_dynamically_label(self, content: str, content_alt: str, is_ethernet: bool = False):
         def process_content(content: str, is_alt: bool = False, is_ethernet: bool = False) -> list[QLabel]:
-            label_parts = re.split(
-                r"(<span[^>]*?>.*?</span>)", content
-            )  # Filters out empty parts before entering the loop
-            label_parts = [part for part in label_parts if part]
+            # Filters out empty parts before entering the loop
             widgets: list[QLabel] = []
-            for part in label_parts:
-                part = part.strip()  # Remove any leading/trailing whitespace
-                if not part:
-                    continue
-                if part.startswith("<span") and part.endswith("</span>"):
-                    class_name = re.search(r'class=(["\'])([^"\']+?)\1', part)
-                    class_result = class_name.group(2) if class_name else "icon"
-                    icon = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
-                    label = QLabel(icon)
-                    label.setProperty("class", class_result)
-                else:
-                    label = QLabel(part)
-                    label.setProperty("class", "label alt" if is_alt else "label")
-                label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                add_shadow(label, self._label_shadow)
-                self._widget_container_layout.addWidget(label)
-                widgets.append(label)
+
+            for label in iterate_label_as_parts(
+                widgets, content, 'label alt' if is_alt else 'label',
+                self._widget_container_layout, self._label_shadow
+            ):
                 if is_alt or is_ethernet:
                     label.hide()
                 else:
                     label.show()
+
             return widgets
 
         if is_ethernet:
@@ -214,20 +198,11 @@ class WifiWidget(BaseWidget):
             ip_addr=ip_addr,
         )
 
-        active_widgets_len = len(active_widgets)
-        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
-        widget_index = 0
-
-        for part in label_parts:
-            if widget_index >= active_widgets_len:
-                break
-
-            part = part.strip()
-            if not part:
-                continue
-
-            active_widgets[widget_index].setText(part)
-            widget_index += 1
+        for _ in iterate_label_as_parts(
+            active_widgets, active_label_content,
+            'label alt' if self._show_alt_label else 'label'
+        ):
+            pass
 
     def _get_wifi_strength_safe(self) -> int:
         """Get the WiFi signal bars safely, not requiring location permissions"""

@@ -12,7 +12,6 @@ class NotificationKinds(IntFlag):
     """
     Enum for notification kinds (toast, tile, badge, proto)
     """
-
     toast = 1
     tile = 2
     badge = 4
@@ -56,16 +55,17 @@ class WindowsNotificationEventListener(QThread):
             listener = management.UserNotificationListener.current
             access_result = await listener.request_access_async()
 
-            if access_result == management.UserNotificationListenerAccessStatus.ALLOWED:
-                while self.running:
-                    current_count = await self.update_count(listener)
-                    if current_count is not None and current_count != self.total_notifications:
-                        self.total_notifications = current_count
-                        self.event_service.emit_event("WindowsNotificationUpdate", self.total_notifications)
-
-                    await asyncio.sleep(2)
-            else:
+            if access_result != management.UserNotificationListenerAccessStatus.ALLOWED:
                 logging.warning(f"Access denied to notifications, access status: {access_result}")
+                return
+
+            while self.running:
+                current_count = await self.update_count(listener)
+                if current_count is not None and current_count != self.total_notifications:
+                    self.total_notifications = current_count
+                    self.event_service.emit_event("WindowsNotificationUpdate", self.total_notifications)
+
+                await asyncio.sleep(2)
         except Exception as e:
             logging.error(f"Error in notification listener: {e}")
             await asyncio.sleep(10)

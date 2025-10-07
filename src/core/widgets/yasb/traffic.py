@@ -1,5 +1,4 @@
 import logging
-import re
 
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import (
@@ -12,7 +11,7 @@ from PyQt6.QtWidgets import (
 )
 
 from core.utils.tooltip import set_tooltip
-from core.utils.utilities import PopupWidget, add_shadow, build_widget_label
+from core.utils.utilities import PopupWidget, add_shadow, build_widget_label, iterate_label_as_parts
 from core.utils.widgets.animation_manager import AnimationManager
 from core.utils.widgets.traffic.connection_monitor import InternetChecker
 from core.utils.widgets.traffic.traffic_manager import TrafficDataManager
@@ -261,44 +260,26 @@ class TrafficWidget(BaseWidget):
         """Update label with provided data"""
 
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets  # type: ignore
-        active_widgets_len = len(active_widgets)
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
-
         active_label_content = active_label_content.format_map(shared_data)
-        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
-        widget_index = 0
 
-        for part in label_parts:
-            if widget_index >= active_widgets_len:
-                break
-
-            part = part.strip()
-            if not part:
-                continue
-
-            if not isinstance(active_widgets[widget_index], QLabel):
-                continue
-
-            if part.startswith("<span") and part.endswith("</span>"):
-                part = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
-
-            active_widgets[widget_index].setText(part)
-
+        for label in iterate_label_as_parts(
+            active_widgets, active_label_content,
+            'label alt' if self._show_alt_label else 'label',
+            self._widget_container_layout
+        ):
             # Update CSS class based on internet connection status
-            current_class = active_widgets[widget_index].property("class") or ""
+            class_names = label.property("class").split()
             if not self._is_internet_connected:
-                if "offline" not in current_class:
-                    new_class = f"{current_class} offline".strip()
-                    active_widgets[widget_index].setProperty("class", new_class)
+                if "offline" not in class_names:
+                    class_names.append('offline')
 
-            elif "offline" in current_class:
+            elif "offline" in class_names:
                 # Remove offline class if connected
-                new_class = current_class.replace("offline", "").strip()
-                new_class = " ".join(new_class.split())
-                active_widgets[widget_index].setProperty("class", new_class)
+                class_names.remove('offline')
 
-            active_widgets[widget_index].setStyleSheet("")
-            widget_index += 1
+            label.setProperty("class", " ".join(class_names.split()))
+            label.setStyleSheet("")
 
     def _on_connection_changed(self, is_connected: bool):
         """Handle internet connection status changes"""
@@ -308,7 +289,6 @@ class TrafficWidget(BaseWidget):
             current_visibility = self.isVisible()
             if current_visibility == is_connected:
                 return
-
             self.setVisible(is_connected)
 
         # Update menu if it's visible
@@ -318,15 +298,17 @@ class TrafficWidget(BaseWidget):
     def _update_internet_info_in_menu(self):
         """Update only the internet info in the menu"""
 
-        if "internet-info" in self.menu_labels:
-            try:
-                net_status = "connected" if self._is_internet_connected else "disconnected"
-                status_text = f"Internet {net_status.capitalize()}"
-                self.menu_labels["internet-info"].setText(status_text)
-                self.menu_labels["internet-info"].setProperty("class", f"internet-info {net_status}")
-                self.menu_labels["internet-info"].setStyleSheet("")
-            except (RuntimeError, AttributeError):
-                pass
+        if "internet-info" not in self.menu_labels:
+            return
+
+        try:
+            net_status = "connected" if self._is_internet_connected else "disconnected"
+            status_text = f"Internet {net_status.capitalize()}"
+            self.menu_labels["internet-info"].setText(status_text)
+            self.menu_labels["internet-info"].setProperty("class", f"internet-info {net_status}")
+            self.menu_labels["internet-info"].setStyleSheet("")
+        except (RuntimeError, AttributeError):
+            pass
 
     def _toggle_label(self):
         if self._animation["enabled"]:
@@ -533,6 +515,7 @@ class TrafficWidget(BaseWidget):
 
     def _update_menu_content(self, data: dict | None = None):
         """Update the content of the popup menu with fresh data"""
+
         if not self._is_menu_visible():
             return
 
@@ -645,12 +628,11 @@ class TrafficWidget(BaseWidget):
     def _is_menu_visible(self):
         """Check if the popup menu is visible"""
         try:
-            if (
-                getattr(self, "_menu_widget", None) is not None
-                and isinstance(self._menu_widget, QWidget)
-                and self._menu_widget.isVisible()
-            ):
-                return True
+            menu_widget = getattr(self, "_menu_widget", None)
+            return (
+                menu_widget is not None
+                and isinstance(menu_widget, QWidget)
+                and menu_widget.isVisible()
+            )
         except (RuntimeError, AttributeError):
             return False
-        return False

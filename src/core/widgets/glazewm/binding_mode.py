@@ -1,11 +1,10 @@
 import logging
-import re
 from typing import Any, cast
 
 from PyQt6.QtCore import pyqtSlot
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QStyle
 
-from core.utils.utilities import add_shadow, build_widget_label
+from core.utils.utilities import add_shadow, build_widget_label, iterate_label_as_parts
 from core.utils.widgets.animation_manager import AnimationManager
 from core.utils.widgets.glazewm.client import BindingMode, GlazewmClient
 from core.validation.widgets.glazewm.binding_mode import VALIDATION_SCHEMA
@@ -111,50 +110,30 @@ class GlazewmBindingModeWidget(BaseWidget):
 
     def _update_label(self):
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_widgets_len = len(active_widgets)
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
-        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
-        label_parts = [part for part in label_parts if part]
-        widget_index = 0
 
-        label_options = {
-            "{binding_mode}": self._active_binding_mode.display_name
-            or self._active_binding_mode.name
-            or self._label_if_no_active,
-            "{icon}": self._icons.get(self._active_binding_mode.name or "none", self._default_icon),
-        }
+        active_label_content = active_label_content.format(
+            binding_mode=(
+                self._active_binding_mode.display_name
+                or self._active_binding_mode.name
+                or self._label_if_no_active
+            ),
+            icon=self._icons.get(self._active_binding_mode.name or "none", self._default_icon),
+        )
 
-        for part in label_parts:
-            part = part.strip()
-            if not part:
-                continue
-
-            if widget_index >= active_widgets_len or not isinstance(active_widgets[widget_index], QLabel):
-                continue
-
-            formatted_text = part
-            for option, value in label_options.items():
-                formatted_text = formatted_text.replace(option, str(value))
-
-            if part.startswith("<span") and part.endswith("</span>"):
-                icon = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
-                if icon in label_options:
-                    active_widgets[widget_index].setProperty(
-                        "class", f"icon {self._active_binding_mode.name or 'none'}"
-                    )
-                    active_widgets[widget_index].setText(formatted_text)
-                else:
-                    active_widgets[widget_index].setText(icon)
+        for label in iterate_label_as_parts(
+            active_widgets, active_label_content,
+            # layout=self._widget_container_layout
+        ):
+            class_name: str = label.property("class")
+            if self._active_binding_mode.name:
+                if class_name.find("label-offline") != -1:
+                    class_name = class_name.replace('label-offline', 'label')
+                class_name += ' ' + self._active_binding_mode.name
             else:
-                if widget_index >= active_widgets_len and isinstance(active_widgets[widget_index], QLabel):
-                    active_widgets[widget_index].setText(formatted_text)
-                    if active_widgets[widget_index].property("class") == "label-offline":
-                        active_widgets[widget_index].setProperty("class", "label")
-                    if not self._active_binding_mode.name:
-                        active_widgets[widget_index].setProperty("class", "label-offline")
+                class_name = class_name.replace('label', "label-offline")
 
-            self._reload_css(active_widgets[widget_index])
-            widget_index += 1
+            self._reload_css(label)
 
     @pyqtSlot()
     def _disable_binding_mode(self):

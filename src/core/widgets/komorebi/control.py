@@ -145,6 +145,7 @@ class KomorebiControlWidget(BaseWidget):
                 if child.property("class") == "text version":
                     child.setText(self._version_text)
                     break
+
         # Also update stored label if we created it on the dialog
         if hasattr(self, "_version_label") and self._show_version:
             self._version_label.setText(self._version_text if self._version_text else "")

@@ -1,11 +1,10 @@
 import logging
-import re
 
 from humanize import naturalsize
 from PyQt6.QtCore import QTimer
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel
+from PyQt6.QtWidgets import QFrame, QHBoxLayout
 
-from core.utils.utilities import add_shadow, build_progress_widget, build_widget_label
+from core.utils.utilities import add_shadow, build_progress_widget, build_widget_label, iterate_label_as_parts
 from core.utils.widgets.animation_manager import AnimationManager
 from core.validation.widgets.yasb.memory import VALIDATION_SCHEMA
 from core.widgets.base import BaseWidget
@@ -126,13 +125,15 @@ class MemoryWidget(BaseWidget):
         """Update label using shared memory data."""
 
         _round = lambda value: round(value) if self._hide_decimal else value
-        _naturalsize = lambda value: naturalsize(value, True, True, "%.0f" if self._hide_decimal else "%.1f")
+        _naturalsize = lambda value: naturalsize(
+            value, True, True, "%.0f" if self._hide_decimal else "%.1f"
+        )
 
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_widgets_len = len(active_widgets)
+        # active_widgets_len = len(active_widgets)
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
-        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
-        widget_index = 0
+        # label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
+        # widget_index = 0
 
         active_label_content = active_label_content.format(
             virtual_mem_free=_naturalsize(virtual_mem.free),
@@ -147,35 +148,38 @@ class MemoryWidget(BaseWidget):
             histogram="".join(self._get_histogram_bar(virtual_mem.percent, 0, 100)),
         )
 
+        add_progress_widget = False
         if self._progress_bar["enabled"] and self.progress_widget:
-            if self._widget_container_layout.indexOf(self.progress_widget) == -1:
-                self._widget_container_layout.insertWidget(
-                    (0 if self._progress_bar["position"] == "left" else self._widget_container_layout.count()),
-                    self.progress_widget,
-                )
-            self.progress_widget.set_value(virtual_mem.percent)
+            if self._widget_container_layout.indexOf(self.progress_widget) != -1:
+                self._widget_container_layout.removeWidget(self.progress_widget)
+            add_progress_widget = True
 
-        for part in label_parts:
-            part = part.strip()
-            if not part:
-                continue
+        threshold_class = f"status-{self._get_virtual_memory_threshold(virtual_mem.percent)}"
 
-            if widget_index >= active_widgets_len or not isinstance(active_widgets[widget_index], QLabel):
-                continue
-
-            if part.startswith("<span") and part.endswith("</span>"):
-                part = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
+        for label in iterate_label_as_parts(
+            active_widgets, active_label_content,
+            "label alt" if self._show_alt_label else "label",
+            # self._widget_container_layout
+        ):
+            class_names = label.property('class').split()
+            for i, class_name in enumerate(class_names):
+                if class_name.startswith("status-"):
+                    class_names[i] = threshold_class
+                    break
             else:
-                # Set memory threshold as property
-                label_class = "label alt" if self._show_alt_label else "label"
-                active_widgets[widget_index].setProperty(
-                    "class",
-                    f"{label_class} status-{self._get_virtual_memory_threshold(virtual_mem.percent)}",
-                )
-                active_widgets[widget_index].setStyleSheet("")
+                class_names.append(threshold_class)
 
-            active_widgets[widget_index].setText(part)
-            widget_index += 1
+            label.setProperty("class", ' '.join(class_names))
+            label.setStyleSheet("")
+
+        if add_progress_widget:
+            if self._progress_bar["position"] == "left":
+                progress_widget_idx = 0
+            else:
+                progress_widget_idx = self._widget_container_layout.count()
+
+            self._widget_container_layout.insertWidget(progress_widget_idx, self.progress_widget)
+            self.progress_widget.set_value(virtual_mem.percent)
 
     def _toggle_label(self):
         if self._animation["enabled"]:
@@ -200,6 +204,7 @@ class MemoryWidget(BaseWidget):
     def _get_histogram_bar(self, num, num_min, num_max):
         if num_max == num_min:
             return self._histogram_icons[0]
+
         bar_index = int((num - num_min) / (num_max - num_min) * (len(self._histogram_icons) - 1))
         bar_index = min(max(bar_index, 0), len(self._histogram_icons) - 1)
         return self._histogram_icons[bar_index]

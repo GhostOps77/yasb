@@ -1,7 +1,6 @@
 import ctypes
 import logging
 import os
-import re
 import winreg
 
 from PyQt6.QtCore import Qt
@@ -9,12 +8,9 @@ from PyQt6.QtGui import QCursor
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout
 from win32con import WM_INPUTLANGCHANGEREQUEST
 
-from core.utils.utilities import PopupWidget, add_shadow, build_widget_label
+from core.utils.utilities import PopupWidget, add_shadow, build_widget_label, iterate_label_as_parts
 from core.utils.widgets.animation_manager import AnimationManager
-from core.utils.win32.bindings import (
-    kernel32,
-    user32,
-)
+from core.utils.win32.bindings import kernel32, user32
 from core.utils.win32.constants import (
     LOCALE_NAME_MAX_LENGTH,
     LOCALE_SCOUNTRY,
@@ -46,7 +42,7 @@ class LanguageWidget(BaseWidget):
         label_shadow: dict = None,
         container_shadow: dict = None,
     ):
-        super().__init__(int(update_interval * 1000), class_name=f"language-widget {class_name}")
+        super().__init__(update_interval * 1000, class_name=f"language-widget {class_name}")
 
         self._show_alt_label = False
         self._label_content = label
@@ -110,32 +106,20 @@ class LanguageWidget(BaseWidget):
 
     def _update_label(self):
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_widgets_len = len(active_widgets)
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
 
         try:
-            active_label_content = active_label_content.format(lang=self._get_current_keyboard_language())
+            active_label_content = active_label_content.format(
+                lang=self._get_current_keyboard_language()
+            )
         except:
             pass
 
-        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
-        widget_index = 0
-
-        for part in label_parts:
-            part = part.strip()
-            if not part:
-                continue
-
-            if widget_index >= active_widgets_len or not isinstance(active_widgets[widget_index], QLabel):
-                continue
-
-            if part.startswith("<span") and part.endswith("</span>"):
-                # Ensure the icon is correctly set
-                part = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
-
-            # Update label with formatted content
-            active_widgets[widget_index].setText(part)
-            widget_index += 1
+        for _ in iterate_label_as_parts(
+            active_widgets, active_label_content,
+            # layout=self._widget_container_layout
+        ):
+            pass
 
     def _on_settings_click(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
@@ -285,21 +269,17 @@ class LanguageWidget(BaseWidget):
                 kernel32.GetLocaleInfoW(lang_id, LOCALE_SLANGUAGE, lang_name_buf, LOCALE_NAME_MAX_LENGTH)
                 # get the ISO-639-2 three-letter code (e.g. "ENG")
                 if not kernel32.GetLocaleInfoW(
-                    lang_id,
-                    LOCALE_SISO639LANGNAME2,
-                    lang_code_buf,
-                    LOCALE_NAME_MAX_LENGTH,
+                    lang_id, LOCALE_SISO639LANGNAME2, lang_code_buf, LOCALE_NAME_MAX_LENGTH,
                 ):
                     kernel32.GetLocaleInfoW(
-                        lang_id,
-                        LOCALE_SISO639LANGNAME,
-                        lang_code_buf,
-                        LOCALE_NAME_MAX_LENGTH,
+                        lang_id, LOCALE_SISO639LANGNAME, lang_code_buf, LOCALE_NAME_MAX_LENGTH,
                     )
 
                 lang_name = lang_name_buf.value
                 lang_code = (
-                    self._menu_config["layout_icon"] if self._menu_config["show_layout_icon"] else lang_code_buf.value
+                    self._menu_config["layout_icon"]
+                    if self._menu_config["show_layout_icon"]
+                    else lang_code_buf.value
                 )
                 k_layouts = None
 
@@ -309,38 +289,38 @@ class LanguageWidget(BaseWidget):
 
                     # Get the KLID string for the now-active layout
                     klid_buf = ctypes.create_unicode_buffer(9)
-                    if user32.GetKeyboardLayoutNameW(klid_buf):
-                        klid = klid_buf.value.upper()
+                    if not user32.GetKeyboardLayoutNameW(klid_buf):
+                        continue
 
-                        # Look up in registry
-                        reg_path = rf"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\{klid}"
+                    klid = klid_buf.value.upper()
+
+                    # Look up in registry
+                    reg_path = rf"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\{klid}"
+                    # try:
+                    with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, reg_path) as key:
+                        # Try Layout Text first
                         try:
-                            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, reg_path) as key:
-                                # Try Layout Text first
-                                try:
-                                    k_layouts, _ = winreg.QueryValueEx(key, "Layout Text")
-                                except FileNotFoundError:
-                                    # Try Layout Display Name
-                                    try:
-                                        k_layouts, _ = winreg.QueryValueEx(key, "Layout Display Name")
-                                    except FileNotFoundError:
-                                        pass
-                        except OSError:
-                            pass
-                except:
-                    pass
-
-                if lang_name and lang_code:
-                    languages.append(
-                        {
+                            k_layouts, _ = winreg.QueryValueEx(key, "Layout Text")
+                        except FileNotFoundError:
+                            # Try Layout Display Name
+                            try:
+                                k_layouts, _ = winreg.QueryValueEx(key, "Layout Display Name")
+                            except FileNotFoundError:
+                                pass
+                        # except OSError:
+                        #     pass
+                # except Exception:
+                #     pass
+                finally:
+                    if lang_name and lang_code:
+                        languages.append({
                             "id": lang_id,
                             "handle": layout_handle,
                             "name": lang_name,
                             "code": lang_code,
                             "layouts": k_layouts or lang_name,  # fallback to lang_name
-                        }
-                    )
-            except:
+                        })
+            except Exception:
                 continue
 
         # Restore original layout

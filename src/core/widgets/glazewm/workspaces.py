@@ -4,11 +4,7 @@ from enum import StrEnum, auto
 from typing import Any, override
 
 from PIL import Image
-from PyQt6.QtCore import (
-    Qt,
-    QTimer,
-    pyqtSlot,  # type: ignore
-)
+from PyQt6.QtCore import Qt, QTimer, pyqtSlot
 from PyQt6.QtGui import QCursor, QImage, QMouseEvent, QPixmap, QShowEvent, QWheelEvent
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QWidget
 
@@ -89,8 +85,8 @@ class GlazewmWorkspaceButton(QPushButton):
 
     def _update_label(self):
         replacements = {
-            "name": str(self.workspace_name or ""),
-            "display_name": str(self.display_name or ""),
+            "name": self.workspace_name or "",
+            "display_name": self.display_name or ""
         }
 
         # Label priority: YASB config -> display_name from GlazeWM -> name from GlazeWM
@@ -239,39 +235,38 @@ class GlazewmWorkspaceButtonWithIcons(QFrame):
             pid = process["pid"]
 
             if self.parent_widget.workspace_app_icons["hide_duplicates"]:
-                if pid not in self._unique_pids:
-                    self._unique_pids.add(pid)
-                else:
-                    return None
+                if pid in self._unique_pids:
+                    return
+                self._unique_pids.add(pid)
 
             self.dpi = self.screen().devicePixelRatio()
             cache_key = (hwnd, pid, self.dpi)
 
             if cache_key in self.parent_widget.icon_cache and not ignore_cache:
                 return self.parent_widget.icon_cache[cache_key]
-            else:
-                icon_img = get_window_icon(hwnd)
-                if icon_img:
-                    icon_img = icon_img.resize(
-                        (
-                            int(self.parent_widget.workspace_app_icons["size"] * self.dpi),
-                            int(self.parent_widget.workspace_app_icons["size"] * self.dpi),
-                        ),
-                        Image.LANCZOS,
-                    ).convert("RGBA")
-                    qimage = QImage(
-                        icon_img.tobytes(),
-                        icon_img.width,
-                        icon_img.height,
-                        QImage.Format.Format_RGBA8888,
-                    )
-                    pixmap = QPixmap.fromImage(qimage)
-                    pixmap.setDevicePixelRatio(self.dpi)
-                    pixmap.glazewm_id = window.id
-                    self.parent_widget.icon_cache[cache_key] = pixmap
-                    return pixmap
-                else:
-                    return None
+
+            icon_img = get_window_icon(hwnd)
+            if not icon_img:
+                return
+
+            icon_img = icon_img.resize(
+                (
+                    int(self.parent_widget.workspace_app_icons["size"] * self.dpi),
+                    int(self.parent_widget.workspace_app_icons["size"] * self.dpi),
+                ),
+                Image.LANCZOS,
+            ).convert("RGBA")
+            qimage = QImage(
+                icon_img.tobytes(),
+                icon_img.width,
+                icon_img.height,
+                QImage.Format.Format_RGBA8888,
+            )
+            pixmap = QPixmap.fromImage(qimage)
+            pixmap.setDevicePixelRatio(self.dpi)
+            pixmap.glazewm_id = window.id
+            self.parent_widget.icon_cache[cache_key] = pixmap
+            return pixmap
 
         except Exception:
             if DEBUG:
@@ -287,7 +282,8 @@ class GlazewmWorkspaceButtonWithIcons(QFrame):
         ):
             icons_list = []
         elif (
-            not self.parent_widget.workspace_app_icons["enabled_populated"] and self.status == WorkspaceStatus.POPULATED
+            not self.parent_widget.workspace_app_icons["enabled_populated"]
+            and self.status == WorkspaceStatus.POPULATED
         ):
             icons_list = []
         else:

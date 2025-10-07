@@ -209,7 +209,9 @@ class ActiveLayoutWidget(BaseWidget):
             ("Toggle Pause", lambda: self._komorebic.toggle("pause")),
         ]
         for label, func in toggle_actions:
-            main_layout.addWidget(create_menu_item(toggle_icons.get(label, ""), label, make_toggle_handler(func)))
+            main_layout.addWidget(
+                create_menu_item(toggle_icons.get(label, ""), label, make_toggle_handler(func))
+            )
 
         self._menu.adjustSize()
         self._menu.setPosition(
@@ -239,22 +241,28 @@ class ActiveLayoutWidget(BaseWidget):
             self.change_layout(self._layouts[0])
 
     def _next_layout(self):
-        if self._is_shift_layout_allowed():
-            self._layouts.rotate(1)
-            self.change_layout(self._layouts[0])
-            if self._animation["enabled"]:
-                AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
-        else:
+        if not self._is_shift_layout_allowed():
             self._toggle_blocking_state()
+            return
+
+        self._layouts.rotate(1)
+        self.change_layout(self._layouts[0])
+        if self._animation["enabled"]:
+            AnimationManager.animate(
+                self, self._animation["type"], self._animation["duration"]
+            )
 
     def _prev_layout(self):
-        if self._is_shift_layout_allowed():
-            self._layouts.rotate(-1)
-            self.change_layout(self._layouts[0])
-            if self._animation["enabled"]:
-                AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
-        else:
+        if not self._is_shift_layout_allowed():
             self._toggle_blocking_state()
+            return
+
+        self._layouts.rotate(-1)
+        self.change_layout(self._layouts[0])
+        if self._animation["enabled"]:
+            AnimationManager.animate(
+                self, self._animation["type"], self._animation["duration"]
+            )
 
     def _is_shift_layout_allowed(self):
         return not bool(

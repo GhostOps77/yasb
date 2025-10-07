@@ -56,7 +56,6 @@ class GrouperWidget(BaseWidget):
         try:
             config = get_config()
             widets_config = config.get("widgets", {})
-
             widget_builder = WidgetBuilder(widets_config)
 
             for widget_name in self._widgets_list:
@@ -71,12 +70,15 @@ class GrouperWidget(BaseWidget):
                             child_widget.parent_layout_type = getattr(self, "parent_layout_type", None)
                         except Exception:
                             pass
+
                         self._child_widgets.append(child_widget)
                         self._widget_container_layout.addWidget(child_widget)
                     else:
                         logging.warning(f"GrouperWidget failed to create child widget '{widget_name}'")
+
                 except Exception as e:
                     logging.error(f"GrouperWidget error creating child widget '{widget_name}': {e}")
+
                 if self._hide_empty and child_widget:
                     try:
                         child_widget.installEventFilter(self)
@@ -125,10 +127,10 @@ class GrouperWidget(BaseWidget):
         return super().eventFilter(obj, event)
 
     def _update_grouper_visibility(self):
-        try:
-            if not self._hide_empty:
-                return
+        if not self._hide_empty:
+            return
 
+        try:
             pruned_children: list[Any] = []
             any_visible = False
 

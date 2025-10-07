@@ -4,9 +4,9 @@ from datetime import timedelta
 import humanize
 import psutil
 from PyQt6.QtCore import QTimer
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel
+from PyQt6.QtWidgets import QFrame, QHBoxLayout
 
-from core.utils.utilities import add_shadow, build_widget_label
+from core.utils.utilities import add_shadow, build_widget_label, iterate_label_as_parts
 from core.utils.widgets.animation_manager import AnimationManager
 from core.validation.widgets.yasb.battery import VALIDATION_SCHEMA
 from core.widgets.base import BaseWidget
@@ -145,10 +145,8 @@ class BatteryWidget(BaseWidget):
 
     def _update_label(self):
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_widgets_len = len(active_widgets)
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         self._battery_state = psutil.sensors_battery()
-        widget_index = 0
 
         if self._battery_state is None:
             if self._hide_unsupported:
@@ -156,23 +154,12 @@ class BatteryWidget(BaseWidget):
                 self.timer.stop()
                 return
 
-            label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
-            for part in label_parts:
-                if widget_index >= active_widgets_len:
-                    break
+            active_label_content = "Battery info not available"
 
-                part = part.strip()
-                if not part:
-                    continue
-
-                if not isinstance(active_widgets[widget_index], QLabel):
-                    continue
-
-                if part.startswith("<span") and part.endswith("</span>"):
-                    active_widgets[widget_index].hide()
-
-                active_widgets[widget_index].setText("Battery info not available")
-                widget_index += 1
+            for _ in iterate_label_as_parts(
+                self._widget_container_layout, active_widgets, active_label_content
+            ):
+                pass
 
             return
 
@@ -188,51 +175,35 @@ class BatteryWidget(BaseWidget):
             is_charging=is_charging_str,
             icon=charging_icon,
         )
-        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
 
-        for part in label_parts:
-            if widget_index >= active_widgets_len:
-                break
+        threshold_class_name = f'status-{threshold}'
 
-            part = part.strip()
-            if not part:
-                continue
-
-            if not isinstance(active_widgets[widget_index], QLabel):
-                continue
-
-            if part.startswith("<span") and part.endswith("</span>"):
-                # icon-only QLabel
-                widget_label = active_widgets[widget_index]
-                icon = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
-                widget_label.setText(icon)
-
-                # apply status‐class
-                existing_classes = widget_label.property("class")
-                new_classes = re.sub(r"status-\w+", "", existing_classes).strip()
-                widget_label.setProperty("class", f"{new_classes} status-{threshold}")
-                widget_label.setStyleSheet("")
-
-                # only blink when plugged AND blink_enabled
-                if self._battery_state.power_plugged and self._icon_charging_blink:
-                    self._charging_icon_label = widget_label
-                    if not self._charging_blink_timer.isActive():
-                        self._charging_blink_timer.start()
-                else:
-                    if self._charging_blink_timer.isActive():
-                        self._charging_blink_timer.stop()
-                    self._charging_icon_label = None
-                    current_classes = widget_label.property("class") or ""
-                    if "blink" in current_classes:
-                        new_classes = current_classes.replace("blink", "").strip()
-                        new_classes = re.sub(r"\s{2,}", " ", new_classes)
-                        widget_label.setProperty("class", new_classes)
-                        widget_label.setStyleSheet("")
+        for label in iterate_label_as_parts(
+            active_widgets, active_label_content,
+            "label alt" if self._show_alt_label else "label",
+            # self._widget_container_layout, 
+        ):
+            # apply status‐class
+            class_names = label.property("class").split()
+            for i, class_name in enumerate(class_names):
+                if class_name.startswith("status-"):
+                    class_names[i] = threshold_class_name
+                    break
             else:
-                alt_class = "alt" if self._show_alt_label else ""
-                part = part.format(part)
-                active_widgets[widget_index].setText(part)
-                active_widgets[widget_index].setProperty("class", f"label {alt_class} status-{threshold}")
-                active_widgets[widget_index].setStyleSheet("")
+                class_names.append(threshold_class_name)
 
-            widget_index += 1
+            # only blink when plugged AND blink_enabled
+            if self._battery_state.power_plugged and self._icon_charging_blink:
+                self._charging_icon_label = label
+                if not self._charging_blink_timer.isActive():
+                    self._charging_blink_timer.start()
+            else:
+                if self._charging_blink_timer.isActive():
+                    self._charging_blink_timer.stop()
+                self._charging_icon_label = None
+
+                if "blink" in class_names:
+                    class_names.remove("blink")
+
+            label.setProperty('class', ' '.join(class_names))
+            label.setStyleSheet("")

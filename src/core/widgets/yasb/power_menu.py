@@ -70,7 +70,11 @@ class AnimatedWidget(QWidget):
 class OverlayWidget(BaseStyledWidget, AnimatedWidget):
     def __init__(self, animation_duration, uptime):
         super().__init__(animation_duration)
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool)
+        self.setWindowFlags(
+            Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.WindowStaysOnTopHint
+            | Qt.WindowType.Tool
+        )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         if uptime:
             self.boot_time()
@@ -457,7 +461,7 @@ class MainWindow(BaseStyledWidget, AnimatedWidget):
         self.current_focus_index = index
 
         # First, remove hover from all buttons
-        for i, button in enumerate(self.buttons_list):
+        for button in self.buttons_list:
             # Parse class components
             class_parts = button.property("class").split()
             # Remove any hover class if present

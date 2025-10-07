@@ -226,14 +226,17 @@ class SystrayWidget(BaseWidget):
 
     def show_context_menu(self, pos: QPoint):
         """Show the context menu for the unpinned visibility button"""
+
         menu = QMenu(self)
         menu.setProperty("class", "context-menu")
         qmenu_rounded_corners(menu)
         menu.setContentsMargins(0, 0, 0, 0)
         menu.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+
         refresh_action = menu.addAction("Refresh Systray")  # pyright: ignore [reportUnknownMemberType]
         if not refresh_action:
             return
+
         refresh_action.triggered.connect(self.refresh_systray)  # pyright: ignore [reportUnknownMemberType]
 
         def _on_menu_about_to_hide():
@@ -255,11 +258,13 @@ class SystrayWidget(BaseWidget):
 
     def refresh_systray(self):
         """Refresh the icons by sending a message to the tray monitor"""
+
         TrayMonitor.send_taskbar_created()
         logger.debug("Systray icons refreshed")
 
     def setup_client(self):
         """Setup the tray monitor client and connect signals"""
+
         self.load_state()
         systray_client, systray_thread, tasks_service, tasks_thread = SystrayWidget.get_client_instance()
         systray_client.icon_modified.connect(self.on_icon_modified)  # type: ignore
@@ -277,8 +282,11 @@ class SystrayWidget(BaseWidget):
 
     def set_containers_visibility(self):
         """Update the containers visibility based on the show_unpinned_button setting"""
+        
         self.unpinned_vis_btn.setChecked(self.show_unpinned)
-        self.unpinned_vis_btn.setText(self.label_expanded if self.show_unpinned else self.label_collapsed)
+        self.unpinned_vis_btn.setText(
+            self.label_expanded if self.show_unpinned else self.label_collapsed
+        )
         self.unpinned_widget.setVisible(self.show_unpinned or not self.show_unpinned_button)
 
     def on_thread_started(self):
@@ -300,6 +308,7 @@ class SystrayWidget(BaseWidget):
     @pyqtSlot(IconData)
     def on_icon_modified(self, data: IconData):
         """Handle icon modified signal sent by the tray monitor"""
+
         if data.guid in self.filtered_guids:
             return
 
@@ -365,10 +374,11 @@ class SystrayWidget(BaseWidget):
     @pyqtSlot(object)
     def on_icon_moved(self, icon: IconWidget):
         """Handle icon moved signal"""
-        if icon.parent() is self.unpinned_widget:
-            icon.is_pinned = False
-        else:
-            icon.is_pinned = True
+        # if icon.parent() is self.unpinned_widget:
+        #     icon.is_pinned = False
+        # else:
+        #     icon.is_pinned = True
+        icon.is_pinned = icon.parent() is not self.unpinned_widget
 
         self.unpinned_widget.refresh_styles()
         self.pinned_widget.refresh_styles()
@@ -376,6 +386,7 @@ class SystrayWidget(BaseWidget):
 
     def find_icon(self, uuid: UUID | None, hwnd: int, uID: int) -> IconWidget | None:
         """Find an icon by its uuid or hwnd and uID"""
+
         if uuid is not None:
             for icon in self.icons:
                 if icon.data is None or icon.data.guid is None:
@@ -391,6 +402,7 @@ class SystrayWidget(BaseWidget):
 
     def check_icons(self):
         """Check if any icons are still valid and have actual process attached"""
+
         icons_changed = False
         for icon in self.icons[:]:
             if icon.data is not None and not IsWindow(icon.data.hWnd):
@@ -470,7 +482,10 @@ class SystrayWidget(BaseWidget):
             w.unpolish(self.pinned_widget)
             w.polish(self.pinned_widget)
 
-        elif self.pinned_widget.property("forceshow") and not is_empty and (w := self.pinned_widget.style()):
+        elif (
+            self.pinned_widget.property("forceshow")
+            and not is_empty and (w := self.pinned_widget.style())
+        ):
             logger.debug(f"Is empty: {is_empty}, force show: {force_show}")
             self.pinned_widget.setProperty("forceshow", False)
             w.unpolish(self.pinned_widget)
@@ -519,8 +534,7 @@ class SystrayWidget(BaseWidget):
                 index = self.pinned_layout.indexOf(w)
             uuid = None if w.data.guid is None else str(w.data.guid)
             widgets_state[uuid or w.data.exe_path] = IconState(
-                is_pinned=w.is_pinned,
-                index=index,
+                is_pinned=w.is_pinned, index=index,
             )
         self.current_state |= widgets_state
 

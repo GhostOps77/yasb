@@ -1,11 +1,10 @@
 import logging
-import re
 from collections import deque
 
 from PyQt6.QtCore import QTimer
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel
+from PyQt6.QtWidgets import QFrame, QHBoxLayout
 
-from core.utils.utilities import add_shadow, build_progress_widget, build_widget_label
+from core.utils.utilities import add_shadow, build_progress_widget, build_widget_label, iterate_label_as_parts
 from core.utils.widgets.animation_manager import AnimationManager
 from core.validation.widgets.yasb.cpu import VALIDATION_SCHEMA
 from core.widgets.base import BaseWidget
@@ -61,6 +60,7 @@ class CpuWidget(BaseWidget):
             self._padding["right"],
             self._padding["bottom"],
         )
+
         # Initialize container
         self._widget_container = QFrame()
         self._widget_container.setLayout(self._widget_container_layout)
@@ -166,55 +166,60 @@ class CpuWidget(BaseWidget):
             },
             "histograms": {
                 "cpu_freq": "".join(
-                    [self._get_histogram_bar(freq, cpu_freq.min, cpu_freq.max) for freq in self._cpu_freq_history]
+                    self._get_histogram_bar(freq, cpu_freq.min, cpu_freq.max)
+                    for freq in self._cpu_freq_history
                 ),
                 "cpu_percent": "".join(
-                    [self._get_histogram_bar(percent, 0, 100) for percent in self._cpu_perc_history]
+                    self._get_histogram_bar(percent, 0, 100)
+                    for percent in self._cpu_perc_history
                 ),
                 "cores": "".join([self._get_histogram_bar(percent, 0, 100) for percent in cores_perc]),
             },
         }
 
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_widgets_len = len(active_widgets)
+        # active_widgets_len = len(active_widgets)
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         active_label_content = active_label_content.format(info=cpu_info)
-        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
-        widget_index = 0
 
+        add_progress_widget = False
         if self._progress_bar["enabled"] and self.progress_widget:
-            if self._widget_container_layout.indexOf(self.progress_widget) == -1:
-                self._widget_container_layout.insertWidget(
-                    (0 if self._progress_bar["position"] == "left" else self._widget_container_layout.count()),
-                    self.progress_widget,
-                )
+            if self._widget_container_layout.indexOf(self.progress_widget) != -1:
+                self._widget_container_layout.removeWidget(self.progress_widget)
+                add_progress_widget = True
             self.progress_widget.set_value(current_perc)
 
-        for part in label_parts:
-            part = part.strip()
-            if not part:
-                continue
+        cpu_status_class = f"status-{self._get_cpu_threshold(current_perc)}"
 
-            if widget_index >= active_widgets_len or not isinstance(active_widgets[widget_index], QLabel):
-                continue
-
-            if part.startswith("<span") and part.endswith("</span>"):
-                part = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
-                active_widgets[widget_index].setText(part)
+        for label in iterate_label_as_parts(
+            active_widgets,
+            active_label_content,
+            "label alt" if self._show_alt_label else "label",
+            # self._widget_container_layout,
+        ):
+            class_names = label.property('class').split()
+            for i, class_name in enumerate(class_names):
+                if class_name.startswith("status-"):
+                    class_names[i] = cpu_status_class
+                    break
             else:
-                label_class = "label alt" if self._show_alt_label else "label"
-                active_widgets[widget_index].setText(part)
-                active_widgets[widget_index].setProperty("class", label_class)
-                active_widgets[widget_index].setProperty(
-                    "class",
-                    f"{label_class} status-{self._get_cpu_threshold(current_perc)}",
-                )
-                active_widgets[widget_index].setStyleSheet("")
-            widget_index += 1
+                class_names.append(cpu_status_class)
+
+            label.setProperty("class", ' '.join(class_names))
+            label.setStyleSheet("")
+
+        if add_progress_widget:
+            if self._progress_bar["position"] == "left":
+                insert_position = 0
+            else:
+                insert_position = self._widget_container_layout.count()
+
+            self._widget_container_layout.insertWidget(self.progress_widget, insert_position)
 
     def _toggle_label(self):
         if self._animation["enabled"]:
             AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+
         self._show_alt_label = not self._show_alt_label
         for widget in self._widgets:
             widget.setVisible(not self._show_alt_label)

@@ -104,6 +104,7 @@ def get_process_name_for_aumid(aumid: str) -> str | None:
         hProc = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
         if not hProc:
             continue
+
         try:
             length = ctypes.c_uint32(0)
             res = GetApplicationUserModelId(hProc, byref(length), None)

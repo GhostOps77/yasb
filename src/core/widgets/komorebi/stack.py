@@ -100,10 +100,11 @@ class WindowButton(QFrame):
         self.setStyleSheet("")
 
         if self.parent_widget._show_icons == "focused":
-            if self.status == WINDOW_STATUS_ACTIVE:
-                self.icon_label.show()
-            else:
-                self.icon_label.hide()
+            # if self.status == WINDOW_STATUS_ACTIVE:
+            #     self.icon_label.show()
+            # else:
+            #     self.icon_label.hide()
+            self.icon_label.setVisible(self.status == WINDOW_STATUS_ACTIVE)
 
     def update_icon(self, pixmap: QPixmap = None, ignore_cache: bool = False):
         if self.parent_widget._show_icons != "never":
@@ -230,21 +231,25 @@ class StackWidget(BaseWidget):
             KomorebiEvent.StackWindow.value,
             KomorebiEvent.UnstackWindow.value,
         ]
+
         # Disable default mouse event handling inherited from BaseWidget
         self.mousePressEvent = None
         if self._hide_if_offline:
             self.hide()
+
         # Status text shown when komorebi state can't be retrieved
         self._offline_text = QLabel()
         self._offline_text.setText(label_offline)
         add_shadow(self._offline_text, self._label_shadow)
         self._offline_text.setProperty("class", "offline-status")
+
         # Status text shown when there is no active window
         self._no_window_text = QLabel()
         self._no_window_text.setText(label_no_window)
         add_shadow(self._no_window_text, self._label_shadow)
         self._no_window_text.setProperty("class", "no-window")
         self._rewrite_rules = rewrite
+
         # Construct container which holds windows buttons
         self._widget_container_layout = QHBoxLayout()
         self._widget_container_layout.setSpacing(0)
@@ -256,14 +261,17 @@ class StackWidget(BaseWidget):
         )
         self._widget_container_layout.addWidget(self._offline_text)
         self._widget_container_layout.addWidget(self._no_window_text)
+
         self._widget_container = QFrame()
         self._widget_container.setLayout(self._widget_container_layout)
         self._widget_container.setProperty("class", "widget-container")
         add_shadow(self._widget_container, self._container_shadow)
         self._widget_container.hide()
+
         self.widget_layout.addWidget(self._offline_text)
         self.widget_layout.addWidget(self._no_window_text)
         self.widget_layout.addWidget(self._widget_container)
+
         self._enable_scroll_switching = enable_scroll_switching
         self._reverse_scroll_direction = reverse_scroll_direction
         self._icon_cache = dict()
@@ -348,54 +356,55 @@ class StackWidget(BaseWidget):
             self.hide()
 
     def _on_komorebi_update_event(self, event: dict, state: dict) -> None:
-        if self._update_komorebi_state(state):
-            self._hide_no_window_text()
-
-            if event["type"] in self._window_focus_events or self._has_active_window_index_changed():
-                try:
-                    prev_window_button = self._window_buttons[self._prev_window_index]
-                    self._update_button_status(prev_window_button)
-                    new_window_button = self._window_buttons[self._curr_window_index]
-                    self._update_button_status(new_window_button)
-                    if (
-                        self._komorebi_windows[self._curr_window_index]["exe"] == "ApplicationFrameHost.exe"
-                        and not new_window_button.icon
-                    ):
-                        new_window_button.update_icon(ignore_cache=True)
-                except (IndexError, TypeError):
-                    pass
-
-            elif (
-                event["type"] in self._reset_buttons_events
-                or self._has_active_container_changed()
-                or self._has_active_workspace_index_changed()
-                or self._prev_num_windows != self._curr_num_windows
-                or self._prev_workspace_layer != self._curr_workspace_layer
-            ):
-                while len(self._window_buttons) > len(self._komorebi_windows):
-                    self._try_remove_window_button(self._window_buttons[-1].window_index)
-                self._add_or_update_buttons()
-
-            elif self._curr_workspace_layer == "Floating" and event["type"] == KomorebiEvent.FocusChange.value:
-                for window_btn in self._window_buttons:
-                    self._update_button_label(window_btn)
-                    window_btn.update_icon()
-
-            elif event["type"] == KomorebiEvent.TitleUpdate.value:
-                hwnd = event["content"][1]["hwnd"]
-                for window_btn in self._window_buttons:
-                    window_btn_hwnd = self._komorebi_windows[window_btn.window_index]["hwnd"]
-                    if window_btn_hwnd == hwnd:
-                        self._update_button_label(window_btn)
-                        window_btn.update_icon(ignore_cache=True)
-
-            if self._show_only_stack and len(self._window_buttons) <= 1:
-                self.hide()
-            else:
-                self.show()
-
-        else:
+        if not self._update_komorebi_state(state):
             self._show_no_window_text()
+            return
+
+        self._hide_no_window_text()
+
+        if event["type"] in self._window_focus_events or self._has_active_window_index_changed():
+            try:
+                prev_window_button = self._window_buttons[self._prev_window_index]
+                self._update_button_status(prev_window_button)
+                new_window_button = self._window_buttons[self._curr_window_index]
+                self._update_button_status(new_window_button)
+                if (
+                    self._komorebi_windows[self._curr_window_index]["exe"] == "ApplicationFrameHost.exe"
+                    and not new_window_button.icon
+                ):
+                    new_window_button.update_icon(ignore_cache=True)
+            except (IndexError, TypeError):
+                pass
+
+        elif (
+            event["type"] in self._reset_buttons_events
+            or self._has_active_container_changed()
+            or self._has_active_workspace_index_changed()
+            or self._prev_num_windows != self._curr_num_windows
+            or self._prev_workspace_layer != self._curr_workspace_layer
+        ):
+            while len(self._window_buttons) > len(self._komorebi_windows):
+                self._try_remove_window_button(self._window_buttons[-1].window_index)
+            self._add_or_update_buttons()
+
+        elif self._curr_workspace_layer == "Floating" and event["type"] == KomorebiEvent.FocusChange.value:
+            for window_btn in self._window_buttons:
+                self._update_button_label(window_btn)
+                window_btn.update_icon()
+
+        elif event["type"] == KomorebiEvent.TitleUpdate.value:
+            hwnd = event["content"][1]["hwnd"]
+            for window_btn in self._window_buttons:
+                window_btn_hwnd = self._komorebi_windows[window_btn.window_index]["hwnd"]
+                if window_btn_hwnd == hwnd:
+                    self._update_button_label(window_btn)
+                    window_btn.update_icon(ignore_cache=True)
+
+        # if self._show_only_stack and len(self._window_buttons) <= 1:
+        #     self.hide()
+        # else:
+        #     self.show()
+        self.setVisible(not (self._show_only_stack and len(self._window_buttons) <= 1))
 
     def _clear_container_layout(self):
         for i in reversed(range(self._widget_container_layout.count())):
@@ -407,38 +416,39 @@ class StackWidget(BaseWidget):
         try:
             self._screen_hwnd = get_monitor_hwnd(int(QWidget.winId(self)))
             self._komorebi_state = komorebi_state
-            if self._komorebi_state:
-                self._komorebi_screen = self._komorebic.get_screen_by_hwnd(self._komorebi_state, self._screen_hwnd)
-                focused_workspace = self._komorebic.get_focused_workspace(self._komorebi_screen)
-                focused_container = self._komorebic.get_focused_container(focused_workspace, get_monocle=True)
-                self._komorebi_windows = []
+            if not self._komorebi_state:
+                return False
 
-                if focused_workspace:
-                    self._prev_workspace_index = self._curr_workspace_index
-                    self._curr_workspace_index = focused_workspace["index"]
-                if focused_container:
-                    self._prev_focus_container = self._curr_focus_container
-                    self._curr_focus_container = focused_container
-                    self._komorebi_windows = self._komorebic.get_windows(focused_container)
-                    focused_window = self._komorebic.get_focused_window(focused_container)
-                    if focused_window:
-                        self._prev_window_index = self._curr_window_index
-                        self._curr_window_index = focused_window["index"]
+            self._komorebi_screen = self._komorebic.get_screen_by_hwnd(self._komorebi_state, self._screen_hwnd)
+            focused_workspace = self._komorebic.get_focused_workspace(self._komorebi_screen)
+            focused_container = self._komorebic.get_focused_container(focused_workspace, get_monocle=True)
+            self._komorebi_windows = []
 
-                self._prev_workspace_layer = self._curr_workspace_layer
-                self._curr_workspace_layer = focused_workspace["layer"]
-                if focused_workspace["layer"] == "Floating":
-                    floating_windows = self._komorebic.get_floating_windows(focused_workspace)
-                    for window in floating_windows:
-                        if window["hwnd"] == win32gui.GetForegroundWindow():
-                            self._komorebi_windows = [window]
-                self._prev_num_windows = self._curr_num_windows
-                self._curr_num_windows = len(self._komorebi_windows)
+            if focused_workspace:
+                self._prev_workspace_index = self._curr_workspace_index
+                self._curr_workspace_index = focused_workspace["index"]
 
-                if len(self._komorebi_windows) == 0:
-                    return False
-                else:
-                    return True
+            if focused_container:
+                self._prev_focus_container = self._curr_focus_container
+                self._curr_focus_container = focused_container
+                self._komorebi_windows = self._komorebic.get_windows(focused_container)
+                focused_window = self._komorebic.get_focused_window(focused_container)
+                if focused_window:
+                    self._prev_window_index = self._curr_window_index
+                    self._curr_window_index = focused_window["index"]
+
+            self._prev_workspace_layer = self._curr_workspace_layer
+            self._curr_workspace_layer = focused_workspace["layer"]
+            if focused_workspace["layer"] == "Floating":
+                floating_windows = self._komorebic.get_floating_windows(focused_workspace)
+                for window in floating_windows:
+                    if window["hwnd"] == win32gui.GetForegroundWindow():
+                        self._komorebi_windows = [window]
+
+            self._prev_num_windows = self._curr_num_windows
+            self._curr_num_windows = len(self._komorebi_windows)
+
+            return len(self._komorebi_windows) > 0
         except TypeError:
             return False
 
@@ -451,7 +461,8 @@ class StackWidget(BaseWidget):
 
     def _has_active_container_changed(self):
         return (
-            self._prev_focus_container != self._curr_focus_container and not self._has_active_workspace_index_changed()
+            self._prev_focus_container != self._curr_focus_container
+            and not self._has_active_workspace_index_changed()
         )
 
     def _has_active_workspace_index_changed(self):
@@ -460,10 +471,10 @@ class StackWidget(BaseWidget):
     def _get_window_new_status(self, window) -> WindowStatus:
         if len(self._window_buttons) == 1:
             return WINDOW_STATUS_ACTIVE
+
         if self._curr_window_index == window["index"]:
             return WINDOW_STATUS_ACTIVE
-        else:
-            return WINDOW_STATUS_INACTIVE
+        return WINDOW_STATUS_INACTIVE
 
     def _update_button_status(self, window_btn: WindowButton) -> None:
         window_index = window_btn.window_index
@@ -514,7 +525,9 @@ class StackWidget(BaseWidget):
         title = self._rewrite_filter(window["title"])
         process_name = self._rewrite_filter(window["exe"])
 
-        default_label = self._label_window.format(index=w_index, title=title, process=process_name, hwnd=window["hwnd"])
+        default_label = self._label_window.format(
+            ndex=w_index, title=title, process=process_name, hwnd=window["hwnd"]
+        )
         active_label = self._label_window_active.format(
             index=w_index, title=title, process=process_name, hwnd=window["hwnd"]
         )
@@ -522,14 +535,16 @@ class StackWidget(BaseWidget):
             calculated_max_length = self._max_length_overall // max(1, len(self._komorebi_windows) - 1)
             if len(default_label) > calculated_max_length:
                 default_label = default_label[:calculated_max_length] + self._max_length_ellipsis
+
         elif self._max_length and len(default_label) > self._max_length:
             default_label = default_label[: self._max_length] + self._max_length_ellipsis
+            
         if self._max_length_active and len(active_label) > self._max_length_active:
             active_label = active_label[: self._max_length_active] + self._max_length_ellipsis
         return default_label, active_label
 
     def _try_add_window_button(self, window_index: int) -> WindowButton:
-        window_button_indexes = [ws_btn.window_index for ws_btn in self._window_buttons]
+        window_button_indexes = {ws_btn.window_index for ws_btn in self._window_buttons}
         if window_index not in window_button_indexes:
             default_label, active_label = self._get_window_label(window_index)
             window_btn = WindowButton(window_index, self, default_label, active_label, self._animation)
@@ -551,11 +566,12 @@ class StackWidget(BaseWidget):
         self._widget_container.show()
 
     def _show_no_window_text(self):
-        if self._no_window_text.text():
-            self._no_window_text.show()
-            self._widget_container.hide()
-        else:
+        if not self._no_window_text.text():
             self.hide()
+            return
+
+        self._no_window_text.show()
+        self._widget_container.hide()
 
     def _hide_no_window_text(self):
         self._no_window_text.hide()
@@ -602,8 +618,10 @@ class StackWidget(BaseWidget):
                         Image.LANCZOS,
                     ).convert("RGBA")
                     self._icon_cache[cache_key] = icon_img
+
             if not icon_img:
                 return None
+
             if icon_img:
                 qimage = QImage(
                     icon_img.tobytes(),

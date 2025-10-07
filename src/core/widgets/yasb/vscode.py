@@ -2,7 +2,6 @@ import datetime
 import json
 import logging
 import os
-import re
 import sqlite3
 import subprocess
 import urllib.parse
@@ -19,7 +18,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from core.utils.utilities import PopupWidget, add_shadow, build_widget_label
+from core.utils.utilities import PopupWidget, add_shadow, build_widget_label, iterate_label_as_parts
 from core.utils.widgets.animation_manager import AnimationManager
 from core.validation.widgets.yasb.vscode import VALIDATION_SCHEMA
 from core.widgets.base import BaseWidget
@@ -106,6 +105,7 @@ class VSCodeWidget(BaseWidget):
         path = urllib.parse.unquote(parsed.path)
         if path.startswith("/"):
             path = path[1:]
+
         if ":" in path:
             drive_part, rest = path.split(":", 1)
             drive_part = drive_part.capitalize()
@@ -115,28 +115,41 @@ class VSCodeWidget(BaseWidget):
     def _load_recent_workspaces(self) -> list[dict]:
         try:
             conn = sqlite3.connect(self._state_file_path)
-            cursor = conn.cursor()
-            cursor.execute("SELECT value FROM ItemTable WHERE key = 'history.recentlyOpenedPathsList'")
-            result = cursor.fetchone()
             result_list = []
-            if result:
+
+            with conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT value FROM ItemTable WHERE key = 'history.recentlyOpenedPathsList'"
+                )
+
+                result = cursor.fetchone()
+                if not result:
+                    logging.error(f"No data found in {self._state_file_path}")
+                    return []
+
                 paths_data = json.loads(result[0]).get("entries", [])
                 for path in paths_data:
-                    if isinstance(path, dict):
-                        if path.get("folderUri"):
-                            folder_path = self._uri_to_windows_path(path.get("folderUri"))
-                            if os.path.exists(folder_path):
-                                result_list.append({"folder": folder_path})
-                        if path.get("fileUri"):
-                            file_path = self._uri_to_windows_path(path.get("fileUri"))
-                            if os.path.exists(file_path):
-                                result_list.append({"file": file_path})
-                    else:
+                    if not isinstance(path, dict):
                         logging.error(f"Unexpected entry type: {type(path)}")
-            else:
-                logging.error(f"No data found in {file_path}")
-            conn.close()
+                        continue
+
+                    if path.get("folderUri"):
+                        folder_path = self._uri_to_windows_path(path.get("folderUri"))
+                        if os.path.exists(folder_path):
+                            result_list.append({"folder": folder_path})
+
+                    if path.get("fileUri"):
+                        file_path = self._uri_to_windows_path(path.get("fileUri"))
+                        if os.path.exists(file_path):
+                            result_list.append({"file": file_path})
+
+                # else:
+                #     logging.error(f"No data found in {file_path}")
+
+            # conn.close()
             return result_list
+
         except Exception as e:
             logging.error(f"Error: {e}")
             return []
@@ -158,27 +171,13 @@ class VSCodeWidget(BaseWidget):
 
     def _update_label(self):
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_widgets_len = len(active_widgets)
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
-        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
-        widget_index = 0
 
-        for part in label_parts:
-            if widget_index >= active_widgets_len:
-                break
-
-            part = part.strip()
-            if not part:
-                continue
-
-            if not isinstance(active_widgets[widget_index], QLabel):
-                continue
-
-            if part.startswith("<span") and part.endswith("</span>"):
-                part = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
-
-            active_widgets[widget_index].setText(part)
-            widget_index += 1
+        for _ in iterate_label_as_parts(
+            active_widgets, active_label_content,
+            'label alt' if self._show_alt_label else 'label'
+        ):
+            pass
 
     def _handle_mouse_press_event(self, event, folder):
         try:
@@ -258,13 +257,14 @@ class VSCodeWidget(BaseWidget):
 
         is_folder = "folder" in workspace_data
 
-        if (is_folder and not self._hide_folder_icon) or (not is_folder and not self._hide_file_icon):
+        # if (is_folder and not self._hide_folder_icon) or (not is_folder and not self._hide_file_icon):
+        if not self._hide_folder_icon:
             icon_label = QLabel(self._folder_icon if is_folder else self._file_icon)
             icon_label.setProperty("class", "folder-icon" if is_folder else "file-icon")
             container_layout.addWidget(icon_label)
 
         path = workspace_data.get("folder" if is_folder else "file")
-        display_path = path.split("/")[-1] if self._truncate_to_root_dir else path
+        display_path = path.rsplit("/", 1)[-1] if self._truncate_to_root_dir else path
         if len(display_path) > self._max_field_size:
             display_path = "..." + display_path[-self._max_field_size + 3 :]
 

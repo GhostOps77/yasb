@@ -113,13 +113,14 @@ class KomorebiEventListener(QThread):
         stderr, proc = self._komorebic.wait_until_subscribed_to_pipe(self.pipe_name)
 
         if stderr and DEBUG:
-            stderr_str = " ".join(stderr.decode("utf-8").replace("\n", " ").replace("\r", " ").split())
+            error_message = " ".join(
+                stderr.decode("utf-8").replace("\n", " ").replace("\r", " ").split()
+            )
 
-            if "(os error 10061)" in stderr_str:
+            if "(os error 10061)" in error_message:
                 error_message = "Komorebi is not running, please start Komorebi."
-                logging.warning(f"Komorebi failed to subscribe named pipe. {error_message}")
-            else:
-                logging.warning(f"Komorebi failed to subscribe named pipe. {stderr_str}")
+
+            logging.warning(f"Komorebi failed to subscribe named pipe. {error_message}")
 
         while self._app_running and proc.returncode != 0:
             time.sleep(5)

@@ -272,14 +272,15 @@ class WindowsMedia(metaclass=Singleton):
     async def _update_media_properties(self, session: Session):
         try:
             media_info = await session.try_get_media_properties_async()
-
             media_info = self._properties_2_dict(media_info)
 
             if media_info["thumbnail"] is not None:
                 media_info["thumbnail"] = await self.get_thumbnail(media_info["thumbnail"])
 
         except Exception as e:
-            self._log.error(f"MediaCallback: Error occurred whilst fetching media properties and thumbnail: {e}")
+            self._log.error(
+                f"MediaCallback: Error occurred whilst fetching media properties and thumbnail: {e}"
+            )
             return
 
         self._media_info = media_info
@@ -334,7 +335,7 @@ class WindowsMedia(metaclass=Singleton):
 
     @staticmethod
     def _is_media_info_empty(media_info: dict[str, Any]) -> bool:
-        keys = [
+        keys = (
             "album_artist",
             "album_title",
             "album_track_count",
@@ -343,7 +344,7 @@ class WindowsMedia(metaclass=Singleton):
             "subtitle",
             "title",
             "track_number",
-        ]
+        )
         # Check if all keys have 'zero' values
         return all(not media_info.get(key) for key in keys)
 
@@ -360,7 +361,10 @@ class WindowsMedia(metaclass=Singleton):
         with self._current_session_lock:
             current_session_idx = -1
             for i, session in enumerate(sessions):
-                if self._current_session is None or self._are_same_sessions(session, self._current_session):
+                if (
+                    self._current_session is None
+                    or self._are_same_sessions(session, self._current_session)
+                ):
                     current_session_idx = i
                     break
 

@@ -5,14 +5,13 @@ This is very experimental and may not work as expected. It uses ctypes to intera
 import ctypes
 import logging
 import os
-import re
 from ctypes import wintypes
 
 from PyQt6.QtCore import QThread, QTimer, pyqtSignal
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel
+from PyQt6.QtWidgets import QFrame, QHBoxLayout
 
 from core.utils.tooltip import set_tooltip
-from core.utils.utilities import add_shadow, build_widget_label
+from core.utils.utilities import add_shadow, build_widget_label, iterate_label_as_parts
 from core.utils.widgets.animation_manager import AnimationManager
 from core.validation.widgets.yasb.bluetooth import VALIDATION_SCHEMA
 from core.widgets.base import BaseWidget
@@ -315,15 +314,19 @@ class BluetoothWidget(BaseWidget):
 
     def _update_label(self, icon, connected_devices=None):
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_widgets_len = len(active_widgets)
+        # active_widgets_len = len(active_widgets)
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
-        widget_index = 0
+        # widget_index = 0
 
         if connected_devices:
             if self._device_aliases:
                 connected_devices = [
                     next(
-                        (alias["alias"] for alias in self._device_aliases if alias["name"].strip() == device.strip()),
+                        (
+                            alias["alias"]
+                            for alias in self._device_aliases
+                            if alias["name"].strip() == device.strip()
+                        ),
                         device,
                     )
                     for device in connected_devices
@@ -341,26 +344,16 @@ class BluetoothWidget(BaseWidget):
         active_label_content = active_label_content.format(
             icon=icon, device_name=device_names, device_count=len(connected_devices)
         )
-        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
+        # label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
 
-        for part in label_parts:
-            if widget_index >= active_widgets_len:
-                break
-
-            part = part.strip()
-            if not part:
-                continue
-
-            if not isinstance(active_widgets[widget_index], QLabel):
-                continue
-
-            if part.startswith("<span") and part.endswith("</span>"):
-                part = re.sub(r"<span[^>]&*>|</span>", "", part)
-            elif self._max_length and len(part) > self._max_length:
-                part = part[: self._max_length] + self._max_length_ellipsis
-
-            active_widgets[widget_index].setText(part)
-            widget_index += 1
+        for label in iterate_label_as_parts(
+            active_widgets, active_label_content,
+            # layout=self._widget_container_layout
+        ):
+            label_text = label.text()
+            if self._max_length and len(label_text) > self._max_length:
+                label_text = label_text[: self._max_length] + self._max_length_ellipsis
+                label.setText(label_text)
 
         if self._tooltip:
             set_tooltip(self._widget_container, tooltip_text)

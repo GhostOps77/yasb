@@ -130,24 +130,31 @@ class WorkspaceButtonWithIcons(QFrame):
             self.activate_workspace()
 
     def update_visible_buttons(self):
-        visible_buttons = [btn for btn in self.parent_widget._workspace_buttons if btn.isVisible()]
-        for index, button in enumerate(visible_buttons):
+        buttons_index = 1
+
+        for button in self.parent_widget._workspace_buttons:
+            if not button.isVisible():
+                continue
+
             current_class = button.property("class")
-            new_class = " ".join([cls for cls in current_class.split() if not cls.startswith("button-")])
-            new_class = f"{new_class} button-{index + 1}"
+            new_class = " ".join(cls for cls in current_class.split() if not cls.startswith("button-"))
+            new_class = f"{new_class} button-{buttons_index}"
             button.setProperty("class", new_class)
             button.setStyleSheet("")
+            buttons_index += 1
 
     def update_and_redraw(self, status: WorkspaceStatus, lock_width: bool = False):
         prev_width = self.width() if lock_width else None
         self.status = status
         self.setProperty("class", f"ws-btn {status.lower()}")
+
         if status == WORKSPACE_STATUS_ACTIVE:
             self.text_label.setText(self.active_label)
         elif status == WORKSPACE_STATUS_POPULATED:
             self.text_label.setText(self.populated_label)
         else:
             self.text_label.setText(self.default_label)
+
         self.setStyleSheet("")
         if lock_width and prev_width is not None:
             self.setFixedWidth(prev_width)
@@ -205,14 +212,18 @@ class WorkspaceButtonWithIcons(QFrame):
                 KomorebiAnimation.animate_width(self)
 
     def update_icon_by_hwnd(self, hwnd: int):
-        if hwnd in self.icons.keys():
-            pixmap = self.parent_widget._get_app_icon(hwnd, self.workspace_index, ignore_cache=True)
-            if pixmap:
-                self.update_icons(icons={hwnd: pixmap})
+        if hwnd not in self.icons.keys():
+            return
+
+        pixmap = self.parent_widget._get_app_icon(hwnd, self.workspace_index, ignore_cache=True)
+        if pixmap:
+            self.update_icons(icons={hwnd: pixmap})
 
     def activate_workspace(self):
         try:
-            self.komorebic.activate_workspace(self.parent_widget._komorebi_screen["index"], self.workspace_index)
+            self.komorebic.activate_workspace(
+                self.parent_widget._komorebi_screen["index"], self.workspace_index
+            )
         except Exception:
             logging.exception(f"Failed to focus workspace at index {self.workspace_index}")
 
@@ -257,7 +268,8 @@ class WorkspaceWidget(BaseWidget):
         self._label_zero_index = label_zero_index
         self._workspace_app_icons = app_icons
         self._workspace_app_icons_enabled = (
-            self._workspace_app_icons["enabled_populated"] or self._workspace_app_icons["enabled_active"]
+            self._workspace_app_icons["enabled_populated"]
+            or self._workspace_app_icons["enabled_active"]
         )
         self._hide_if_offline = hide_if_offline
         self._padding = container_padding
@@ -405,13 +417,14 @@ class WorkspaceWidget(BaseWidget):
             if event["type"] == KomorebiEvent.MoveWorkspaceToMonitorNumber.value:
                 if event["content"] != self._komorebi_screen["index"]:
                     workspaces = self._komorebic.get_workspaces(self._komorebi_screen)
-                    screen_workspace_indexes = list(map(lambda ws: ws["index"], workspaces))
-                    button_workspace_indexes = list(map(lambda ws: ws.workspace_index, self._workspace_buttons))
+                    screen_workspace_indexes = [ws["index"] for ws in workspaces]
+                    button_workspace_indexes = [ws.workspace_index for ws in self._workspace_buttons]
                     unknown_indexes = set(button_workspace_indexes) - set(screen_workspace_indexes)
                     if len(unknown_indexes) >= 0:
                         for workspace_index in unknown_indexes:
                             self._try_remove_workspace_button(workspace_index)
                 self._add_or_update_buttons()
+
             elif event["type"] in self._workspace_focus_events or self._has_active_workspace_index_changed():
                 # send workspace_update event to active_window widgets
                 self._event_service.emit_event("workspace_update", event["type"])
@@ -458,7 +471,7 @@ class WorkspaceWidget(BaseWidget):
             self._event_service.emit_event("workspace_update", event["type"])
 
     def _clear_container_layout(self):
-        for i in reversed(range(self._workspace_container_layout.count())):
+        for i in range(self._workspace_container_layout.count() - 1, -1, -1):
             old_workspace_widget = self._workspace_container_layout.itemAt(i).widget()
             self._workspace_container_layout.removeWidget(old_workspace_widget)
             old_workspace_widget.setParent(None)
@@ -467,23 +480,28 @@ class WorkspaceWidget(BaseWidget):
         try:
             self._screen_hwnd = get_monitor_hwnd(int(QWidget.winId(self)))
             self._komorebi_state = komorebi_state
-            if self._komorebi_state:
-                self._komorebi_screen = self._komorebic.get_screen_by_hwnd(self._komorebi_state, self._screen_hwnd)
-                self._komorebi_workspaces = self._komorebic.get_workspaces(self._komorebi_screen)
-                focused_workspace = self._get_focused_workspace()
-                if focused_workspace:
-                    self._prev_workspace_index = self._curr_workspace_index
-                    self._curr_workspace_index = focused_workspace["index"]
+            if not komorebi_state:
+                return False
 
-                self._curr_num_windows_in_workspaces = self._curr_num_windows_in_workspaces[
-                    : len(self._komorebi_workspaces)
-                ] + [0] * (len(self._komorebi_workspaces) - len(self._curr_num_windows_in_workspaces))
-                self._prev_num_windows_in_workspaces = self._curr_num_windows_in_workspaces.copy()
-                for i in range(len(self._komorebi_workspaces)):
-                    windows = self._get_all_windows_in_workspace(i)
-                    self._curr_num_windows_in_workspaces[i] = len(windows) if windows else 0
+            self._komorebi_screen = self._komorebic.get_screen_by_hwnd(self._komorebi_state, self._screen_hwnd)
+            self._komorebi_workspaces = self._komorebic.get_workspaces(self._komorebi_screen)
+            focused_workspace = self._get_focused_workspace()
+            if focused_workspace:
+                self._prev_workspace_index = self._curr_workspace_index
+                self._curr_workspace_index = focused_workspace["index"]
 
-                return True
+            self._curr_num_windows_in_workspaces = (
+                self._curr_num_windows_in_workspaces[: len(self._komorebi_workspaces)]
+                + [0] * (
+                    len(self._komorebi_workspaces) - len(self._curr_num_windows_in_workspaces)
+                )
+            )
+            self._prev_num_windows_in_workspaces = self._curr_num_windows_in_workspaces.copy()
+            for i in range(len(self._komorebi_workspaces)):
+                windows = self._get_all_windows_in_workspace(i)
+                self._curr_num_windows_in_workspaces[i] = len(windows) if windows else 0
+
+            return True
         except TypeError:
             return False
 
@@ -530,6 +548,7 @@ class WorkspaceWidget(BaseWidget):
         workspace_index = workspace_btn.workspace_index
         workspace = self._komorebic.get_workspace_by_index(self._komorebi_screen, workspace_index)
         workspace_status = self._get_workspace_new_status(workspace)
+
         if self._hide_empty_workspaces and workspace_status == WORKSPACE_STATUS_EMPTY:
             workspace_btn.hide()
         else:
@@ -541,12 +560,13 @@ class WorkspaceWidget(BaseWidget):
                 else:
                     KomorebiAnimation.animate_state_transition(workspace_btn, workspace_status)
             workspace_btn.update_visible_buttons()
+
         self._get_workspace_layer(workspace_index)
         workspace_btn._animation_initialized = True
 
     def _add_or_update_buttons(self) -> None:
         buttons_added = False
-        for workspace_index, _ in enumerate(self._komorebi_workspaces):
+        for workspace_index in range(len(self._komorebi_workspaces)):
             try:
                 button = self._workspace_buttons[workspace_index]
                 self._update_button(button)
@@ -565,14 +585,13 @@ class WorkspaceWidget(BaseWidget):
     def _get_workspace_label(self, workspace_index):
         workspace = self._komorebic.get_workspace_by_index(self._komorebi_screen, workspace_index)
         monitor_index = self._komorebi_screen["index"]
+
         ws_index = workspace_index if self._label_zero_index else workspace_index + 1
         ws_monitor_index = monitor_index if self._label_zero_index else monitor_index + 1
-        ws_name = (
-            workspace["name"]
-            if workspace["name"]
-            else self._label_default_name.format(index=ws_index, monitor_index=ws_monitor_index)
-        )
+
+        ws_name = workspace["name"] or self._label_default_name.format(index=ws_index, monitor_index=ws_monitor_index)
         default_label = self._label_workspace_btn.format(name=ws_name, index=ws_index, monitor_index=ws_monitor_index)
+
         active_label = self._label_workspace_active_btn.format(
             name=ws_name, index=ws_index, monitor_index=ws_monitor_index
         )
@@ -581,30 +600,22 @@ class WorkspaceWidget(BaseWidget):
         )
         return default_label, active_label, populated_label
 
-    def _try_add_workspace_button(self, workspace_index: int) -> WorkspaceButton:
-        workspace_button_indexes = [ws_btn.workspace_index for ws_btn in self._workspace_buttons]
-        if workspace_index not in workspace_button_indexes:
-            default_label, active_label, populated_label = self._get_workspace_label(workspace_index)
-            if self._workspace_app_icons_enabled:
-                workspace_btn = WorkspaceButtonWithIcons(
-                    workspace_index,
-                    self,
-                    default_label,
-                    active_label,
-                    populated_label,
-                    self._animation,
-                )
-            else:
-                workspace_btn = WorkspaceButton(
-                    workspace_index,
-                    self,
-                    default_label,
-                    active_label,
-                    populated_label,
-                    self._animation,
-                )
-            self._workspace_buttons.append(workspace_btn)
-            return workspace_btn
+    def _try_add_workspace_button(self, workspace_index: int) -> WorkspaceButton | None:
+        workspace_button_indexes = {ws_btn.workspace_index for ws_btn in self._workspace_buttons}
+        if workspace_index in workspace_button_indexes:
+            return
+
+        default_label, active_label, populated_label = self._get_workspace_label(workspace_index)
+        if self._workspace_app_icons_enabled:
+            workspace_btn = WorkspaceButtonWithIcons(
+                workspace_index, self, default_label, active_label, populated_label, self._animation,
+            )
+        else:
+            workspace_btn = WorkspaceButton(
+                workspace_index, self, default_label, active_label, populated_label, self._animation,
+            )
+        self._workspace_buttons.append(workspace_btn)
+        return workspace_btn
 
     def _try_remove_workspace_button(self, workspace_index: int) -> None:
         with suppress(IndexError):
@@ -651,16 +662,18 @@ class WorkspaceWidget(BaseWidget):
         for container in containers:
             windows = self._komorebic.get_windows(container)
             windows_in_workspace.extend(windows)
-        floating_windows = [container for container in workspace["floating_windows"]["elements"]]
+
         if not self._workspace_app_icons["hide_floating"]:
-            windows_in_workspace.extend(floating_windows)
+            windows_in_workspace.extend(workspace["floating_windows"]["elements"])
+
         return windows_in_workspace
 
     def _get_all_icons_in_workspace(self, workspace_index: int) -> list[QPixmap] | None:
         windows_in_workspace = self._get_all_windows_in_workspace(workspace_index)
         self._unique_pids = set()
         pixmaps = {
-            window["hwnd"]: self._get_app_icon(window["hwnd"], workspace_index) for window in windows_in_workspace
+            window["hwnd"]: self._get_app_icon(window["hwnd"], workspace_index)
+            for window in windows_in_workspace
         }
         try:
             existing_pixmaps = self._workspace_buttons[workspace_index].icons
@@ -671,16 +684,17 @@ class WorkspaceWidget(BaseWidget):
             pass
         return pixmaps
 
-    def _get_app_icon(self, hwnd: int, workspace_index: int, ignore_cache: bool = False) -> QPixmap | None:
+    def _get_app_icon(
+        self, hwnd: int, workspace_index: int, ignore_cache: bool = False
+    ) -> QPixmap | None:
         try:
             process = get_process_info(hwnd)
             pid = process["pid"]
 
             if self._workspace_app_icons["hide_duplicates"]:
-                if pid not in self._unique_pids:
-                    self._unique_pids.add(pid)
-                else:
-                    return None
+                if pid in self._unique_pids:
+                    return
+                self._unique_pids.add(pid)
 
             self.dpi = self.screen().devicePixelRatio()
             cache_key = (hwnd, self.dpi)
@@ -690,27 +704,28 @@ class WorkspaceWidget(BaseWidget):
             else:
                 icon_img = get_window_icon(hwnd)
 
-            if icon_img:
-                icon_img = icon_img.resize(
-                    (
-                        int(self._workspace_app_icons["size"] * self.dpi),
-                        int(self._workspace_app_icons["size"] * self.dpi),
-                    ),
-                    Image.LANCZOS,
-                ).convert("RGBA")
-                self._icon_cache[cache_key] = icon_img
-                qimage = QImage(
-                    icon_img.tobytes(),
-                    icon_img.width,
-                    icon_img.height,
-                    QImage.Format.Format_RGBA8888,
-                )
-                pixmap = QPixmap.fromImage(qimage)
-                pixmap.setDevicePixelRatio(self.dpi)
-                return pixmap
-            else:
-                return None
+            if not icon_img:
+                return
+
+            icon_img = icon_img.resize(
+                (
+                    int(self._workspace_app_icons["size"] * self.dpi),
+                    int(self._workspace_app_icons["size"] * self.dpi),
+                ),
+                Image.LANCZOS,
+            ).convert("RGBA")
+            self._icon_cache[cache_key] = icon_img
+            qimage = QImage(
+                icon_img.tobytes(),
+                icon_img.width,
+                icon_img.height,
+                QImage.Format.Format_RGBA8888,
+            )
+            pixmap = QPixmap.fromImage(qimage)
+            pixmap.setDevicePixelRatio(self.dpi)
+            return pixmap
+
         except Exception:
             if DEBUG:
                 logging.exception(f"Failed to get icons for window with HWND {hwnd}")
-            return None
+            return

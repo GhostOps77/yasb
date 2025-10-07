@@ -106,35 +106,46 @@ class DraggableAppButton(QFrame):
     def _maybe_start_drag(self, event: QMouseEvent) -> bool:
         if self._press_global_pos is None:
             return False
+
         threshold = max(8, QApplication.startDragDistance())
         moved = (event.globalPosition().toPoint() - self._press_global_pos).manhattanLength()
-        if moved >= threshold and self._lmb_pressed:
-            self._dragging = True
-            try:
-                self._taskbar._set_dragging(True)
-            except Exception:
-                pass
-            drag = QDrag(self)
-            md = QMimeData()
-            md.setText(str(self._hwnd))
-            drag.setMimeData(md)
-            try:
-                drag.exec(Qt.DropAction.MoveAction)
-            finally:
-                # Always reset drag state
-                self._dragging = False
-                try:
-                    self._taskbar._set_dragging(False)
-                except Exception:
-                    pass
-                # If cursor still over button after drag, preview again
-                try:
-                    if self.rect().contains(self.mapFromGlobal(QCursor.pos())) and self._taskbar._preview_enabled:
-                        self._preview_timer.start()
-                except Exception:
-                    pass
-            return True
-        return False
+        if moved < threshold or not self._lmb_pressed:
+            return False
+
+        self._dragging = True
+        try:
+            self._taskbar._set_dragging(True)
+        except Exception:
+            pass
+
+        drag = QDrag(self)
+        md = QMimeData()
+        md.setText(str(self._hwnd))
+        drag.setMimeData(md)
+
+        try:
+            drag.exec(Qt.DropAction.MoveAction)
+        except Exception:
+            pass
+
+        # Always reset drag state
+        self._dragging = False
+        try:
+            self._taskbar._set_dragging(False)
+        except Exception:
+            pass
+
+        # If cursor still over button after drag, preview again
+        try:
+            if (
+                self.rect().contains(self.mapFromGlobal(QCursor.pos()))
+                and self._taskbar._preview_enabled
+            ):
+                self._preview_timer.start()
+        except Exception:
+            pass
+
+        return True
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
@@ -144,14 +155,15 @@ class DraggableAppButton(QFrame):
             self._lmb_pressed = True
             event.accept()
             return
+
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
         if event.buttons() & Qt.MouseButton.LeftButton:
-            if not self._dragging:
-                if not self._maybe_start_drag(event):
-                    event.accept()
-                    return
+            if not (self._dragging or self._maybe_start_drag(event)):
+                event.accept()
+                return
+
         event.accept()
 
     def mouseReleaseEvent(self, event):
@@ -161,10 +173,12 @@ class DraggableAppButton(QFrame):
             self._lmb_pressed = False
             self._press_pos = None
             self._press_global_pos = None
+
             try:
                 self._taskbar._set_dragging(False)
             except Exception:
                 pass
+
             if not was_dragging:
                 try:
                     self._taskbar.bring_to_foreground(self._hwnd)
@@ -173,12 +187,17 @@ class DraggableAppButton(QFrame):
             else:
                 # Drag ended, if pointer still over button, start preview timer
                 try:
-                    if self.rect().contains(self.mapFromGlobal(QCursor.pos())) and self._taskbar._preview_enabled:
+                    if (
+                        self.rect().contains(self.mapFromGlobal(QCursor.pos()))
+                        and self._taskbar._preview_enabled
+                    ):
                         self._preview_timer.start()
                 except Exception:
                     pass
+
             event.accept()
             return
+
         super().mouseReleaseEvent(event)
 
 
@@ -222,6 +241,7 @@ class TaskbarDropWidget(QFrame):
             event.acceptProposedAction()
             self.drag_started.emit()
             return
+
         # External drag (files/text)
         md = event.mimeData()
         if md and (md.hasUrls() or md.hasText()):
@@ -229,6 +249,7 @@ class TaskbarDropWidget(QFrame):
             event.setDropAction(Qt.DropAction.IgnoreAction)
             event.accept()
             return
+
         event.ignore()
 
     def dragMoveEvent(self, event):
@@ -244,6 +265,7 @@ class TaskbarDropWidget(QFrame):
                 self.current_indicator_index = -1
             event.acceptProposedAction()
             return
+
         # External drag
         md = event.mimeData()
         if md and (md.hasUrls() or md.hasText()):
@@ -251,6 +273,7 @@ class TaskbarDropWidget(QFrame):
             event.setDropAction(Qt.DropAction.IgnoreAction)
             event.accept()
             return
+
         event.ignore()
 
     def dragLeaveEvent(self, event):
@@ -261,6 +284,7 @@ class TaskbarDropWidget(QFrame):
         if self.dragged_button:
             self.dragged_button.setProperty("dragging", False)
             self.refresh_styles()
+
         self.dragged_button = None
         self.current_indicator_index = -1
         event.accept()
@@ -327,12 +351,15 @@ class TaskbarDropWidget(QFrame):
     def _highlight_hover(self, btn: QFrame):
         if self._hover_highlight_btn is btn:
             return
+
         self._clear_hover_highlight()
         self._hover_highlight_btn = btn
+
         try:
             btn.setProperty("_prev_inline_style", btn.styleSheet())
         except Exception:
             pass
+
         obj = btn.objectName() or ""
         if obj:
             btn.setStyleSheet(f"#{obj} {{ background-color: rgba(255, 255, 255, 0.2); }}")
@@ -342,6 +369,7 @@ class TaskbarDropWidget(QFrame):
         btn = self._hover_highlight_btn
         if not btn:
             return
+
         prev = btn.property("_prev_inline_style") or ""
         btn.setStyleSheet(prev)
         btn.setProperty("_prev_inline_style", None)
@@ -360,32 +388,40 @@ class TaskbarDropWidget(QFrame):
             self._hover_timer.stop()
             self._hover_target_hwnd = None
             return
+
         hwnd = btn.property("hwnd") or getattr(btn, "_hwnd", None)
         if not hwnd:
             self._hover_timer.stop()
             self._hover_target_hwnd = None
             return
+
         self._hover_target_hwnd = int(hwnd)
         self._hover_timer.start(200)
 
     def get_insert_index(self, drop_position):
         if self.main_layout.count() == 0:
             return 0
+
         for i in range(self.main_layout.count()):
             item = self.main_layout.itemAt(i)
             if not item or not item.widget():
                 continue
+
             w = item.widget()
             mid_x = w.geometry().center().x()
             if drop_position.x() < mid_x:
                 return i
+
         return self.main_layout.count()
 
     def _get_index_from_hover(self, hovered_btn: QFrame, source_btn: QFrame) -> int:
-        """Return insertion index based on relative positions:
+        """
+        Return insertion index based on relative positions:
         - If dragging from left of hovered, insert after hovered (to move right).
         - If dragging from right of hovered, insert before hovered (to move left).
-        This makes dropping anywhere on a hovered button perform a move."""
+        This makes dropping anywhere on a hovered button perform a move.
+        """
+
         hovered_idx = -1
         source_idx = -1
         for i in range(self.main_layout.count()):
@@ -394,11 +430,13 @@ class TaskbarDropWidget(QFrame):
                 hovered_idx = i
             if w is source_btn:
                 source_idx = i
+
         if hovered_idx < 0:
             return 0
         if source_idx < 0:
             # If source isn't in this layout, default to after hovered
             return hovered_idx + 1
+
         return hovered_idx + 1 if source_idx < hovered_idx else hovered_idx
 
     def hide_drop_indicator(self):
@@ -438,7 +476,8 @@ class TaskbarWidget(BaseWidget):
         self._dpi = None
         self._label_icon_size = icon_size
         self._animation = (
-            {"enabled": animation, "type": "fadeInOut", "duration": 200} if isinstance(animation, bool) else animation
+            {"enabled": animation, "type": "fadeInOut", "duration": 200}
+            if isinstance(animation, bool) else animation
         )
         self._title_label = title_label
         self._monitor_exclusive = monitor_exclusive
@@ -459,9 +498,9 @@ class TaskbarWidget(BaseWidget):
 
         self._tooltip = tooltip if not self._preview_enabled else False
 
-        self._ignore_apps["classes"] = list(set(self._ignore_apps.get("classes", [])))
-        self._ignore_apps["processes"] = list(set(self._ignore_apps.get("processes", [])))
-        self._ignore_apps["titles"] = list(set(self._ignore_apps.get("titles", [])))
+        self._ignore_apps["classes"] = list({self._ignore_apps.get("classes", [])})
+        self._ignore_apps["processes"] = list({self._ignore_apps.get("processes", [])})
+        self._ignore_apps["titles"] = list({self._ignore_apps.get("titles", [])})
 
         self._icon_cache = {}
         self._hwnd_to_widget = {}
@@ -703,6 +742,7 @@ class TaskbarWidget(BaseWidget):
                 if w and w.property("hwnd") == hwnd:
                     widget = w
                     break
+
         if widget is not None:
             if self._animation["enabled"] and not immediate:
                 self._animate_container(widget, start_width=widget.width(), end_width=0)
@@ -712,6 +752,7 @@ class TaskbarWidget(BaseWidget):
                 except Exception:
                     pass
                 widget.deleteLater()
+
         # Remove from tracking
         self._window_buttons.pop(hwnd, None)
 
@@ -724,6 +765,7 @@ class TaskbarWidget(BaseWidget):
         """Update window UI element (focused on the specific widget, no global sweep)."""
         if self._suspend_updates:
             return
+
         title = window_data.get("title", "")
         process = window_data.get("process_name", "")
         # If process is explorer.exe (e.g. file explorer), we use the title for caching the icon.
@@ -740,6 +782,7 @@ class TaskbarWidget(BaseWidget):
                     widget = w
                     self._hwnd_to_widget[hwnd] = w
                     break
+
         if widget is None:
             return
 
@@ -891,8 +934,7 @@ class TaskbarWidget(BaseWidget):
 
         # Then rely on owner/root being active (handles wrappers/child windows)
         try:
-            if is_owner_root_active(base):
-                return True
+            return is_owner_root_active(base)
         except Exception:
             pass
 
@@ -933,6 +975,7 @@ class TaskbarWidget(BaseWidget):
             icon_label.setFixedSize(self._label_icon_size, self._label_icon_size)
         except Exception:
             pass
+
         if icon is not None:
             icon_label.setPixmap(icon)
         icon_label.setProperty("hwnd", hwnd)
@@ -946,7 +989,9 @@ class TaskbarWidget(BaseWidget):
             tw_layout.setContentsMargins(0, 0, 0, 0)
             tw_layout.setSpacing(0)
             try:
-                title_wrapper.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
+                title_wrapper.setSizePolicy(
+                    QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred
+                )
             except Exception:
                 pass
 
@@ -972,6 +1017,7 @@ class TaskbarWidget(BaseWidget):
                         title_wrapper.setMaximumWidth(0)
                     except Exception:
                         pass
+
         if self._tooltip:
             set_tooltip(container, title, delay=0)
 
@@ -1087,11 +1133,16 @@ class TaskbarWidget(BaseWidget):
             base, focus_target = resolve_base_and_focus(hwnd)
             is_active = False
             try:
-                if hasattr(self, "_task_manager") and self._task_manager and base in self._task_manager._windows:
+                if (
+                    hasattr(self, "_task_manager")
+                    and self._task_manager
+                    and base in self._task_manager._windows
+                ):
                     app_window = self._task_manager._windows[base]
                     is_active = bool(getattr(app_window, "is_active", False))
             except Exception:
                 is_active = False
+
             if not is_active:
                 is_active = is_owner_root_active(base)
 
@@ -1131,6 +1182,7 @@ class TaskbarWidget(BaseWidget):
         """When we use dragging file ensure the window is in foreground."""
         if not win32gui.IsWindow(hwnd):
             return
+
         try:
             base, focus_target = resolve_base_and_focus(hwnd)
             if win32gui.IsIconic(base):
@@ -1168,7 +1220,11 @@ class TaskbarWidget(BaseWidget):
 
                 # Preserve flashing if manager reports it
                 try:
-                    if hasattr(self, "_task_manager") and self._task_manager and hwnd in self._task_manager._windows:
+                    if (
+                        hasattr(self, "_task_manager")
+                        and self._task_manager
+                        and hwnd in self._task_manager._windows
+                    ):
                         aw = self._task_manager._windows[hwnd]
                         if getattr(aw, "is_flashing", False):
                             new_cls = "app-container flashing"
@@ -1179,21 +1235,24 @@ class TaskbarWidget(BaseWidget):
                 if target_hwnd is not None and hwnd == target_hwnd:
                     new_cls = "app-container foreground"
 
-                if w.property("class") != new_cls:
-                    w.setProperty("class", new_cls)
-                    if self._title_label.get("enabled") and self._title_label.get("show") == "focused":
-                        lay = w.layout()
-                        if lay and lay.count() > 1:
-                            title_wrapper = lay.itemAt(1).widget()
-                            if title_wrapper:
-                                want_visible = target_hwnd is not None and hwnd == target_hwnd
-                                if title_wrapper.isVisible() != want_visible:
-                                    self._animate_or_set_title_visible(title_wrapper, want_visible)
-                                    lay.activate()
-                    st = w.style()
-                    if st:
-                        st.unpolish(w)
-                        st.polish(w)
+                if w.property("class") == new_cls:
+                    return
+
+                w.setProperty("class", new_cls)
+                if self._title_label.get("enabled") and self._title_label.get("show") == "focused":
+                    lay = w.layout()
+                    if lay and lay.count() > 1:
+                        title_wrapper = lay.itemAt(1).widget()
+                        if title_wrapper:
+                            want_visible = target_hwnd is not None and hwnd == target_hwnd
+                            if title_wrapper.isVisible() != want_visible:
+                                self._animate_or_set_title_visible(title_wrapper, want_visible)
+                                lay.activate()
+
+                st = w.style()
+                if st:
+                    st.unpolish(w)
+                    st.polish(w)
         except Exception:
             pass
 

@@ -1,12 +1,11 @@
 import json
-import re
 import subprocess
 import threading
 
 from PyQt6.QtCore import QObject, Qt, pyqtSignal
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel
+from PyQt6.QtWidgets import QFrame, QHBoxLayout
 
-from core.utils.utilities import add_shadow
+from core.utils.utilities import add_shadow, iterate_label_as_parts
 from core.utils.widgets.animation_manager import AnimationManager
 from core.utils.win32.system_function import function_map
 from core.validation.widgets.yasb.custom import VALIDATION_SCHEMA
@@ -130,30 +129,13 @@ class CustomWidget(BaseWidget):
 
     def _create_dynamically_label(self, content: str, content_alt: str):
         def process_content(content, is_alt=False):
-            label_parts = re.split(r"(<span[^>]*?>.*?</span>)", content)
             widgets = []
 
-            for part in label_parts:
-                part = part.strip()
-                if not part:
-                    continue
-
-                if part.startswith("<span") and part.endswith("</span>"):
-                    class_name = re.search(r'class=(["\'])([^"\']+?)\1', part)
-                    class_result = class_name.group(2) if class_name else "icon"
-                    icon = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
-                    label = QLabel(icon)
-                    label.setProperty("class", class_result)
-
-                else:
-                    label = QLabel(part)
-                    label.setProperty("class", "label alt" if is_alt else "label")
-                    label.setText(self._label_placeholder)
-
-                label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            for label in iterate_label_as_parts(
+                widgets, content, "label alt" if is_alt else "label", self._label_shadow,
+                self._widget_container_layout,
+            ):
                 self._set_cursor(label)
-                add_shadow(label, self._label_shadow)
-                self._widget_container_layout.addWidget(label)
                 widgets.append(label)
                 if is_alt:
                     label.hide()
@@ -172,44 +154,17 @@ class CustomWidget(BaseWidget):
 
     def _update_label(self):
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_widgets_len = len(active_widgets)
-
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         active_label_content = active_label_content.format(data=self._exec_data)
 
-        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
-        widget_index = 0
+        for label in iterate_label_as_parts(
+            active_widgets, active_label_content,
+            layout=self._widget_container_layout
+        ):
+            text = self._truncate_label(label.text())
+            label.setText(text)
 
-        try:
-            for part in label_parts:
-                if widget_index >= active_widgets_len:
-                    break
-
-                part = part.strip()
-                # if not part:
-                #     continue
-
-                if not isinstance(active_widgets[widget_index], QLabel):
-                    continue
-
-                if part.startswith("<span") and part.endswith("</span>"):
-                    part = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
-                elif part:
-                    part = self._truncate_label(part)
-
-                active_widgets[widget_index].setText(part)
-                if self._hide_empty:
-                    # if self._exec_data:
-                    #     self.setVisible(True)
-                    #     # active_widgets[widget_index].show()
-                    # else:
-                    #     self.setVisible(False)
-                    #     # active_widgets[widget_index].hide()
-                    self.setVisible(not not self._exec_data)
-                widget_index += 1
-
-        except Exception:
-            active_widgets[widget_index].setText(self._truncate_label(part))
+        self.setVisible(bool(self._exec_data) or not self._hide_empty)
 
     def _exec_callback(self):
         if self._exec_cmd:

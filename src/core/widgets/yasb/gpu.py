@@ -1,15 +1,14 @@
 import logging
 import os
-import re
 import shutil
 from collections import deque
 from subprocess import PIPE, Popen
 
 from humanize import naturalsize
 from PyQt6.QtCore import QTimer
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel
+from PyQt6.QtWidgets import QFrame, QHBoxLayout
 
-from core.utils.utilities import add_shadow, build_progress_widget, build_widget_label
+from core.utils.utilities import add_shadow, build_progress_widget, build_widget_label, iterate_label_as_parts
 from core.utils.widgets.animation_manager import AnimationManager
 from core.validation.widgets.yasb.gpu import VALIDATION_SCHEMA
 from core.widgets.base import BaseWidget
@@ -146,10 +145,12 @@ class GpuWidget(BaseWidget):
                 creationflags=0x08000000,  # CREATE_NO_WINDOW
             )
             stdout, stderr = gpu.communicate(timeout=2)
+
             if gpu.returncode != 0 or not stdout:
                 lines = []
             else:
                 lines = stdout.decode("utf-8").strip().split("\n")
+
             for inst in cls._instances[:]:
                 try:
                     # Find the line for the correct GPU index
@@ -174,6 +175,7 @@ class GpuWidget(BaseWidget):
                         inst._show_placeholder()
                 except Exception:
                     cls._instances.remove(inst)
+
         except Exception as e:
             logging.error(f"Error updating shared GPU data: {e}")
             for inst in cls._instances[:]:
@@ -184,7 +186,9 @@ class GpuWidget(BaseWidget):
         self._gpu_util_history.append(gpu_data.utilization)
         self._gpu_mem_history.append(gpu_data.mem_used)
 
-        _naturalsize = lambda value: naturalsize(value, True, True, "%.0f" if self._hide_decimal else "%.1f")
+        _naturalsize = lambda value: naturalsize(
+            value, True, True, "%.0f" if self._hide_decimal else "%.1f"
+        )
         gpu_info = {
             "index": gpu_data.index,
             "utilization": gpu_data.utilization,
@@ -202,41 +206,56 @@ class GpuWidget(BaseWidget):
         }
 
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
-        active_widgets_len = len(active_widgets)
+        # active_widgets_len = len(active_widgets)
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         active_label_content = active_label_content.format(info=gpu_info)
-        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
-        widget_index = 0
+        # label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
+        # widget_index = 0
 
-        if self._progress_bar["enabled"] and self.progress_widget:
-            if self._widget_container_layout.indexOf(self.progress_widget) == -1:
-                self._widget_container_layout.insertWidget(
-                    (0 if self._progress_bar["position"] == "left" else self._widget_container_layout.count()),
-                    self.progress_widget,
-                )
+        # if self._progress_bar["enabled"] and self.progress_widget:
+        #     if self._widget_container_layout.indexOf(self.progress_widget) == -1:
+        #         self._widget_container_layout.insertWidget(
+        #             (0 if self._progress_bar["position"] == "left" else self._widget_container_layout.count()),
+        #             self.progress_widget,
+        #         )
+        #     self.progress_widget.set_value(gpu_data.utilization)
+
+        add_progress_widget = False
+        if (
+            self._progress_bar["enabled"]
+            and self.progress_widget
+            and self._widget_container_layout.indexOf(self.progress_widget) != -1
+        ):
+            self._widget_container_layout.removeWidget(self.progress_widget)
+            add_progress_widget = True
+
+        gpu_threshold_class = f"status-{self._get_gpu_threshold(gpu_data.utilization)}"
+
+        for label in iterate_label_as_parts(
+            active_widgets, active_label_content,
+            "label alt" if self._show_alt_label else "label",
+            self._widget_container_layout
+        ):
+            class_names = label.property('class').split()
+            for i, class_name in enumerate(class_names):
+                if class_name.startswith("status-"):
+                    class_names[i] = gpu_threshold_class
+                    break
+            else:
+                class_names.append(gpu_threshold_class)
+
+            label.setProperty("class", ' '.join(class_names))
+            label.setStyleSheet("")
+
+        if add_progress_widget:
+            if self._progress_bar["position"] == "left":
+                progress_widget_idx = 0
+            else:
+                progress_widget_idx = self._widget_container_layout.count()
+
+            self._widget_container_layout.insertWidget(progress_widget_idx, self.progress_widget)
             self.progress_widget.set_value(gpu_data.utilization)
 
-        for part in label_parts:
-            part = part.strip()
-            if not part:
-                continue
-
-            if widget_index >= active_widgets_len or not isinstance(active_widgets[widget_index], QLabel):
-                continue
-
-            if part.startswith("<span") and part.endswith("</span>"):
-                part = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
-            else:
-                label_class = "label alt" if self._show_alt_label else "label"
-                active_widgets[widget_index].setProperty("class", label_class)
-                active_widgets[widget_index].setProperty(
-                    "class",
-                    f"{label_class} status-{self._get_gpu_threshold(gpu_data.utilization)}",
-                )
-                active_widgets[widget_index].setStyleSheet("")
-
-            active_widgets[widget_index].setText(part)
-            widget_index += 1
 
     def _get_gpu_threshold(self, utilization) -> str:
         if utilization <= self._gpu_thresholds["low"]:
