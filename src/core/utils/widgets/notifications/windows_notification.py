@@ -12,6 +12,7 @@ class NotificationKinds(IntFlag):
     """
     Enum for notification kinds (toast, tile, badge, proto)
     """
+
     toast = 1
     tile = 2
     badge = 4

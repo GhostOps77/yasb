@@ -186,9 +186,7 @@ class GpuWidget(BaseWidget):
         self._gpu_util_history.append(gpu_data.utilization)
         self._gpu_mem_history.append(gpu_data.mem_used)
 
-        _naturalsize = lambda value: naturalsize(
-            value, True, True, "%.0f" if self._hide_decimal else "%.1f"
-        )
+        _naturalsize = lambda value: naturalsize(value, True, True, "%.0f" if self._hide_decimal else "%.1f")
         gpu_info = {
             "index": gpu_data.index,
             "utilization": gpu_data.utilization,
@@ -232,11 +230,12 @@ class GpuWidget(BaseWidget):
         gpu_threshold_class = f"status-{self._get_gpu_threshold(gpu_data.utilization)}"
 
         for label in iterate_label_as_parts(
-            active_widgets, active_label_content,
+            active_widgets,
+            active_label_content,
             "label alt" if self._show_alt_label else "label",
-            self._widget_container_layout
+            self._widget_container_layout,
         ):
-            class_names = label.property('class').split()
+            class_names = label.property("class").split()
             for i, class_name in enumerate(class_names):
                 if class_name.startswith("status-"):
                     class_names[i] = gpu_threshold_class
@@ -244,7 +243,7 @@ class GpuWidget(BaseWidget):
             else:
                 class_names.append(gpu_threshold_class)
 
-            label.setProperty("class", ' '.join(class_names))
+            label.setProperty("class", " ".join(class_names))
             label.setStyleSheet("")
 
         if add_progress_widget:
@@ -255,7 +254,6 @@ class GpuWidget(BaseWidget):
 
             self._widget_container_layout.insertWidget(progress_widget_idx, self.progress_widget)
             self.progress_widget.set_value(gpu_data.utilization)
-
 
     def _get_gpu_threshold(self, utilization) -> str:
         if utilization <= self._gpu_thresholds["low"]:

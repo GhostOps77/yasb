@@ -264,21 +264,22 @@ class TrafficWidget(BaseWidget):
         active_label_content = active_label_content.format_map(shared_data)
 
         for label in iterate_label_as_parts(
-            active_widgets, active_label_content,
-            'label alt' if self._show_alt_label else 'label',
-            self._widget_container_layout
+            active_widgets,
+            active_label_content,
+            "label alt" if self._show_alt_label else "label",
+            self._widget_container_layout,
         ):
             # Update CSS class based on internet connection status
             class_names = label.property("class").split()
             if not self._is_internet_connected:
                 if "offline" not in class_names:
-                    class_names.append('offline')
+                    class_names.append("offline")
 
             elif "offline" in class_names:
                 # Remove offline class if connected
-                class_names.remove('offline')
+                class_names.remove("offline")
 
-            label.setProperty("class", " ".join(class_names.split()))
+            label.setProperty("class", " ".join(class_names))
             label.setStyleSheet("")
 
     def _on_connection_changed(self, is_connected: bool):
@@ -629,10 +630,6 @@ class TrafficWidget(BaseWidget):
         """Check if the popup menu is visible"""
         try:
             menu_widget = getattr(self, "_menu_widget", None)
-            return (
-                menu_widget is not None
-                and isinstance(menu_widget, QWidget)
-                and menu_widget.isVisible()
-            )
+            return menu_widget is not None and isinstance(menu_widget, QWidget) and menu_widget.isVisible()
         except (RuntimeError, AttributeError):
             return False

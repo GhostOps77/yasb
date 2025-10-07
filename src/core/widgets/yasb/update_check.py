@@ -133,10 +133,7 @@ class UpdateWorker(QThread):
                 # Skip if language is not supported
                 if fl < 0 or detected_language not in WINGET_COLUMN_HEADERS:
                     if DEBUG:
-                        logging.warning(
-                            "Could not identify header row in any supported language. "
-                            "Skipping processing."
-                        )
+                        logging.warning("Could not identify header row in any supported language. Skipping processing.")
                     self.winget_update_signal.emit({"count": 0, "names": []})
                     return
 
@@ -152,9 +149,8 @@ class UpdateWorker(QThread):
                 upgrade_list = []
                 for line in lines[fl + 1 :]:
                     # Check for known terminators in the detected language
-                    if (
-                        detected_language in WINGET_SECTION_HEADERS
-                        and line.startswith(WINGET_SECTION_HEADERS[detected_language])
+                    if detected_language in WINGET_SECTION_HEADERS and line.startswith(
+                        WINGET_SECTION_HEADERS[detected_language]
                     ):
                         break
 
@@ -195,11 +191,13 @@ class UpdateWorker(QThread):
                 count, filtered_names, filtered_app_ids = self.filter_updates(
                     upgrade_list, update_names, self.update_type
                 )
-                self.winget_update_signal.emit({
-                    "count": count,
-                    "names": filtered_names,
-                    "app_ids": filtered_app_ids,
-                })
+                self.winget_update_signal.emit(
+                    {
+                        "count": count,
+                        "names": filtered_names,
+                        "app_ids": filtered_app_ids,
+                    }
+                )
 
         except Exception as e:
             logging.error(f"Error in {self.update_type} worker: {e}")
@@ -240,13 +238,9 @@ class UpdateManager:
         if update_type not in self._workers:
             worker = UpdateWorker(update_type, exclude_list)
             if update_type == "windows":
-                worker.windows_update_signal.connect(
-                    lambda x: self.notify_subscribers("windows_update", x)
-                )
+                worker.windows_update_signal.connect(lambda x: self.notify_subscribers("windows_update", x))
             else:
-                worker.winget_update_signal.connect(
-                    lambda x: self.notify_subscribers("winget_update", x)
-                )
+                worker.winget_update_signal.connect(lambda x: self.notify_subscribers("winget_update", x))
             self._workers[update_type] = worker
             worker.start()
 
@@ -268,9 +262,9 @@ class UpdateManager:
                 id_args = " ".join([f'"{app_id}"' for app_id in self._winget_app_ids])
                 command = (
                     f'start "Winget Upgrade" "{powershell_path}" -NoExit -Command '
-                     '"Write-Host \\"=========================================\\"; '
+                    '"Write-Host \\"=========================================\\"; '
                     f'Write-Host \\"YASB FOUND {count} {package_label} READY TO UPDATE\\"; '
-                     'Write-Host \\"=========================================\\"; '
+                    'Write-Host \\"=========================================\\"; '
                     f'winget upgrade {id_args}"'
                 )
             else:
@@ -407,9 +401,8 @@ class UpdateCheckWidget(BaseWidget):
         for _ in iterate_label_as_parts(active_widgets, active_label_content):
             pass
 
-        if (
-            (widget_type == "windows" and self._windows_update_tooltip)
-            or (widget_type == "winget" and self._winget_update_tooltip)
+        if (widget_type == "windows" and self._windows_update_tooltip) or (
+            widget_type == "winget" and self._winget_update_tooltip
         ):
             set_tooltip(container, "\n".join(names))
 

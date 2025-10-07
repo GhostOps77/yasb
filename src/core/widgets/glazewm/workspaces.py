@@ -84,10 +84,7 @@ class GlazewmWorkspaceButton(QPushButton):
             self.status = WorkspaceStatus.EMPTY
 
     def _update_label(self):
-        replacements = {
-            "name": self.workspace_name or "",
-            "display_name": self.display_name or ""
-        }
+        replacements = {"name": self.workspace_name or "", "display_name": self.display_name or ""}
 
         # Label priority: YASB config -> display_name from GlazeWM -> name from GlazeWM
         populated_label = self.populated_label or self.display_name or self.workspace_name
@@ -282,8 +279,7 @@ class GlazewmWorkspaceButtonWithIcons(QFrame):
         ):
             icons_list = []
         elif (
-            not self.parent_widget.workspace_app_icons["enabled_populated"]
-            and self.status == WorkspaceStatus.POPULATED
+            not self.parent_widget.workspace_app_icons["enabled_populated"] and self.status == WorkspaceStatus.POPULATED
         ):
             icons_list = []
         else:

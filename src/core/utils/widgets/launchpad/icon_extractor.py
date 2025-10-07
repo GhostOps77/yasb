@@ -101,6 +101,7 @@ class IconExtractorUtil:
                 return
 
             logofiles = [x.lower() for x in logofiles]
+
             def filter_logos(logofiles, qualifiers, values):
                 for qualifier in qualifiers:
                     for value in values:
@@ -162,9 +163,7 @@ class UrlExtractorUtil:
                 with urllib.request.urlopen(url, timeout=3) as resp:
                     html = resp.read().decode("utf-8", errors="ignore")
 
-                title_match = re.search(
-                    r"<title\b[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL
-                )
+                title_match = re.search(r"<title\b[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
 
                 if title_match:
                     page_title = title_match.group(1).strip()

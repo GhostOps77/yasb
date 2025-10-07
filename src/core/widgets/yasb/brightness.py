@@ -196,7 +196,8 @@ class BrightnessWidget(BaseWidget):
             add_progress_widget = True
 
         for _ in iterate_label_as_parts(
-            active_widgets, active_label_content,
+            active_widgets,
+            active_label_content,
             # layout=self._widget_container_layout
         ):
             pass

@@ -461,8 +461,7 @@ class StackWidget(BaseWidget):
 
     def _has_active_container_changed(self):
         return (
-            self._prev_focus_container != self._curr_focus_container
-            and not self._has_active_workspace_index_changed()
+            self._prev_focus_container != self._curr_focus_container and not self._has_active_workspace_index_changed()
         )
 
     def _has_active_workspace_index_changed(self):
@@ -525,9 +524,7 @@ class StackWidget(BaseWidget):
         title = self._rewrite_filter(window["title"])
         process_name = self._rewrite_filter(window["exe"])
 
-        default_label = self._label_window.format(
-            ndex=w_index, title=title, process=process_name, hwnd=window["hwnd"]
-        )
+        default_label = self._label_window.format(ndex=w_index, title=title, process=process_name, hwnd=window["hwnd"])
         active_label = self._label_window_active.format(
             index=w_index, title=title, process=process_name, hwnd=window["hwnd"]
         )
@@ -538,7 +535,7 @@ class StackWidget(BaseWidget):
 
         elif self._max_length and len(default_label) > self._max_length:
             default_label = default_label[: self._max_length] + self._max_length_ellipsis
-            
+
         if self._max_length_active and len(active_label) > self._max_length_active:
             active_label = active_label[: self._max_length_active] + self._max_length_ellipsis
         return default_label, active_label

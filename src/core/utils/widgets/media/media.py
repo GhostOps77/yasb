@@ -278,9 +278,7 @@ class WindowsMedia(metaclass=Singleton):
                 media_info["thumbnail"] = await self.get_thumbnail(media_info["thumbnail"])
 
         except Exception as e:
-            self._log.error(
-                f"MediaCallback: Error occurred whilst fetching media properties and thumbnail: {e}"
-            )
+            self._log.error(f"MediaCallback: Error occurred whilst fetching media properties and thumbnail: {e}")
             return
 
         self._media_info = media_info
@@ -361,10 +359,7 @@ class WindowsMedia(metaclass=Singleton):
         with self._current_session_lock:
             current_session_idx = -1
             for i, session in enumerate(sessions):
-                if (
-                    self._current_session is None
-                    or self._are_same_sessions(session, self._current_session)
-                ):
+                if self._current_session is None or self._are_same_sessions(session, self._current_session):
                     current_session_idx = i
                     break
 

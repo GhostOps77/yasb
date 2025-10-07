@@ -322,11 +322,7 @@ class BluetoothWidget(BaseWidget):
             if self._device_aliases:
                 connected_devices = [
                     next(
-                        (
-                            alias["alias"]
-                            for alias in self._device_aliases
-                            if alias["name"].strip() == device.strip()
-                        ),
+                        (alias["alias"] for alias in self._device_aliases if alias["name"].strip() == device.strip()),
                         device,
                     )
                     for device in connected_devices
@@ -347,7 +343,8 @@ class BluetoothWidget(BaseWidget):
         # label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
 
         for label in iterate_label_as_parts(
-            active_widgets, active_label_content,
+            active_widgets,
+            active_label_content,
             # layout=self._widget_container_layout
         ):
             label_text = label.text()

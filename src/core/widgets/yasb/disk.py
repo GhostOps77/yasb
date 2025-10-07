@@ -133,9 +133,7 @@ class DiskWidget(BaseWidget):
             percent_value = float(percent_str.strip("%"))
             # else:
             #     percent_value = float(percent_str)
-            active_label_content = active_label_content.format(
-                space=disk_space, volume_label=self._volume_label
-            )
+            active_label_content = active_label_content.format(space=disk_space, volume_label=self._volume_label)
 
         add_progress_widget = False
         if self._progress_bar["enabled"] and self.progress_widget:
@@ -147,12 +145,13 @@ class DiskWidget(BaseWidget):
         disk_status_class = f"status-{self._get_disk_threshold(percent_value)}"
 
         for label in iterate_label_as_parts(
-            active_widgets, active_label_content,
+            active_widgets,
+            active_label_content,
             "label alt" if self._show_alt_label else "label",
             # self._widget_container_layout
         ):
             # Update label with formatted content
-            class_names = label.property('class').split()
+            class_names = label.property("class").split()
             for i, class_name in enumerate(class_names):
                 if class_name.startswith("status-"):
                     class_names[i] = disk_status_class
@@ -160,7 +159,7 @@ class DiskWidget(BaseWidget):
             else:
                 class_names.append(disk_status_class)
 
-            label.setProperty("class", ' '.join(class_names))
+            label.setProperty("class", " ".join(class_names))
             label.setStyleSheet("")
 
         if add_progress_widget:
@@ -269,11 +268,7 @@ class DiskWidget(BaseWidget):
             volume_label = self._volume_label
 
         partitions = psutil.disk_partitions()
-        specific_partitions = (
-            partition
-            for partition in partitions
-            if partition.device in f"{volume_label}:\\"
-        )
+        specific_partitions = (partition for partition in partitions if partition.device in f"{volume_label}:\\")
         # if not specific_partitions:
         #     return
 
@@ -285,20 +280,20 @@ class DiskWidget(BaseWidget):
                 "total": {
                     "mb": f"{usage.total / (1024**2):.{self._decimal_display}f}MB",
                     "gb": f"{usage.total / (1024**3):.{self._decimal_display}f}GB",
-                    "tb": f"{usage.total / (1024**4):.{self._decimal_display}f}TB"
+                    "tb": f"{usage.total / (1024**4):.{self._decimal_display}f}TB",
                 },
                 "free": {
                     "mb": f"{usage.free / (1024**2):.{self._decimal_display}f}MB",
                     "gb": f"{usage.free / (1024**3):.{self._decimal_display}f}GB",
                     "tb": f"{usage.free / (1024**4):.{self._decimal_display}f}TB",
-                    "percent": f"{percent_free:.{self._decimal_display}f}%"
+                    "percent": f"{percent_free:.{self._decimal_display}f}%",
                 },
                 "used": {
                     "mb": f"{usage.used / (1024**2):.{self._decimal_display}f}MB",
                     "gb": f"{usage.used / (1024**3):.{self._decimal_display}f}GB",
                     "tb": f"{usage.used / (1024**4):.{self._decimal_display}f}TB",
-                    "percent": f"{percent_used:.{self._decimal_display}f}%"
-                }
+                    "percent": f"{percent_used:.{self._decimal_display}f}%",
+                },
             }
 
         return

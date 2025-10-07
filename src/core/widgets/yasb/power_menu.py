@@ -70,11 +70,7 @@ class AnimatedWidget(QWidget):
 class OverlayWidget(BaseStyledWidget, AnimatedWidget):
     def __init__(self, animation_duration, uptime):
         super().__init__(animation_duration)
-        self.setWindowFlags(
-            Qt.WindowType.FramelessWindowHint
-            | Qt.WindowType.WindowStaysOnTopHint
-            | Qt.WindowType.Tool
-        )
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         if uptime:
             self.boot_time()
@@ -357,6 +353,7 @@ class MainWindow(BaseStyledWidget, AnimatedWidget):
             for child in source.findChildren(QLabel):
                 child.style().unpolish(child)
                 child.style().polish(child)
+
         elif event.type() == QtCore.QEvent.Type.Leave and isinstance(source, QPushButton):
             source.setProperty("class", f"button {source.property('class').split()[1]}")
             source.style().unpolish(source)
@@ -364,6 +361,7 @@ class MainWindow(BaseStyledWidget, AnimatedWidget):
             for child in source.findChildren(QLabel):
                 child.style().unpolish(child)
                 child.style().polish(child)
+
         return super().eventFilter(source, event)
 
     def keyPressEvent(self, event):

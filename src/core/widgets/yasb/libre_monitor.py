@@ -256,9 +256,7 @@ class LibreHardwareMonitorWidget(BaseWidget):
         """Check if the popup menu is visible"""
         try:
             return (
-                getattr(self, "_menu", None) is not None
-                and isinstance(self._menu, QWidget)
-                and self._menu.isVisible()
+                getattr(self, "_menu", None) is not None and isinstance(self._menu, QWidget) and self._menu.isVisible()
             )
         except (RuntimeError, AttributeError):
             return False
@@ -295,9 +293,7 @@ class LibreHardwareMonitorWidget(BaseWidget):
             info["max"] = f"{history_max_value:.{self._precision}f}"
             info["unit"] = self._data.get("format", "Error Error").split(" ")[-1]
             info["histogram"] = (
-                "".join(
-                    self._get_histogram_bar(val, min_val, max_val) for val in self._history
-                )
+                "".join(self._get_histogram_bar(val, min_val, max_val) for val in self._history)
                 .encode("utf-8")
                 .decode("unicode_escape")
             )
@@ -310,7 +306,8 @@ class LibreHardwareMonitorWidget(BaseWidget):
         active_label_content = active_label_content.format(info=info)
 
         for _ in iterate_label_as_parts(
-            active_widgets, active_label_content,
+            active_widgets,
+            active_label_content,
             # layout=self._widget_container_layout
         ):
             pass

@@ -488,9 +488,7 @@ class VolumeWidget(BaseWidget):
             mute_status = self.volume.GetMute()
             icon_volume = self._get_volume_icon()
             level_volume = (
-                self._mute_text
-                if mute_status == 1
-                else f"{round(self.volume.GetMasterVolumeLevelScalar() * 100)}%"
+                self._mute_text if mute_status == 1 else f"{round(self.volume.GetMasterVolumeLevelScalar() * 100)}%"
             )
         except Exception:
             mute_status, icon_volume, level_volume = None, "", "No Device"
@@ -504,8 +502,7 @@ class VolumeWidget(BaseWidget):
             add_progress_widget = True
 
         for _ in iterate_label_as_parts(
-            active_widgets, active_label_content,
-            'label alt' if self._show_alt_label else 'label'
+            active_widgets, active_label_content, "label alt" if self._show_alt_label else "label"
         ):
             pass
 

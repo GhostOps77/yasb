@@ -147,10 +147,9 @@ class PowerPlanWidget(BaseWidget):
         active_label_content = active_label_content.format(active_plan=self._active_plan_name)
 
         for label in iterate_label_as_parts(
-            active_widgets, active_label_content,
-            'label alt' if self._show_alt_label else 'label'
+            active_widgets, active_label_content, "label alt" if self._show_alt_label else "label"
         ):
-            label.setProperty("class", label.property('class') + ' ' + self._plan_class_name)
+            label.setProperty("class", label.property("class") + " " + self._plan_class_name)
             label.setStyleSheet("")
 
     def _toggle_label(self):
@@ -199,11 +198,7 @@ class PowerPlanWidget(BaseWidget):
             else:
                 btn.setProperty("class", "button")
 
-            btn.clicked.connect(
-                lambda checked,
-                guid=plan["guid"],
-                name=plan["name"]: self._change_plan(guid, name)
-            )
+            btn.clicked.connect(lambda checked, guid=plan["guid"], name=plan["name"]: self._change_plan(guid, name))
 
             frame_layout.addWidget(btn)
 

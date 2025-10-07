@@ -130,10 +130,7 @@ class NotesWidget(BaseWidget):
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         active_label_content = active_label_content.format(count=notes_count)
 
-        for _ in iterate_label_as_parts(
-            active_widgets, active_label_content,
-            layout=self._widget_container_layout
-        ):
+        for _ in iterate_label_as_parts(active_widgets, active_label_content, layout=self._widget_container_layout):
             pass
 
     def _show_menu(self):
@@ -323,9 +320,7 @@ class NotesWidget(BaseWidget):
         container_layout.addWidget(text_container)
 
         # Spacer to push buttons to the right
-        container_layout.addItem(
-            QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-        )
+        container_layout.addItem(QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
 
         # Create vertical layout for the buttons
         buttons_container = QWidget()

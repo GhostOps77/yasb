@@ -125,9 +125,7 @@ class MemoryWidget(BaseWidget):
         """Update label using shared memory data."""
 
         _round = lambda value: round(value) if self._hide_decimal else value
-        _naturalsize = lambda value: naturalsize(
-            value, True, True, "%.0f" if self._hide_decimal else "%.1f"
-        )
+        _naturalsize = lambda value: naturalsize(value, True, True, "%.0f" if self._hide_decimal else "%.1f")
 
         active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
         # active_widgets_len = len(active_widgets)
@@ -157,11 +155,12 @@ class MemoryWidget(BaseWidget):
         threshold_class = f"status-{self._get_virtual_memory_threshold(virtual_mem.percent)}"
 
         for label in iterate_label_as_parts(
-            active_widgets, active_label_content,
+            active_widgets,
+            active_label_content,
             "label alt" if self._show_alt_label else "label",
             # self._widget_container_layout
         ):
-            class_names = label.property('class').split()
+            class_names = label.property("class").split()
             for i, class_name in enumerate(class_names):
                 if class_name.startswith("status-"):
                     class_names[i] = threshold_class
@@ -169,7 +168,7 @@ class MemoryWidget(BaseWidget):
             else:
                 class_names.append(threshold_class)
 
-            label.setProperty("class", ' '.join(class_names))
+            label.setProperty("class", " ".join(class_names))
             label.setStyleSheet("")
 
         if add_progress_widget:

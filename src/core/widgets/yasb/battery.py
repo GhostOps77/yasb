@@ -156,9 +156,7 @@ class BatteryWidget(BaseWidget):
 
             active_label_content = "Battery info not available"
 
-            for _ in iterate_label_as_parts(
-                self._widget_container_layout, active_widgets, active_label_content
-            ):
+            for _ in iterate_label_as_parts(self._widget_container_layout, active_widgets, active_label_content):
                 pass
 
             return
@@ -176,12 +174,13 @@ class BatteryWidget(BaseWidget):
             icon=charging_icon,
         )
 
-        threshold_class_name = f'status-{threshold}'
+        threshold_class_name = f"status-{threshold}"
 
         for label in iterate_label_as_parts(
-            active_widgets, active_label_content,
+            active_widgets,
+            active_label_content,
             "label alt" if self._show_alt_label else "label",
-            # self._widget_container_layout, 
+            # self._widget_container_layout,
         ):
             # apply status‐class
             class_names = label.property("class").split()
@@ -205,5 +204,5 @@ class BatteryWidget(BaseWidget):
                 if "blink" in class_names:
                     class_names.remove("blink")
 
-            label.setProperty('class', ' '.join(class_names))
+            label.setProperty("class", " ".join(class_names))
             label.setStyleSheet("")

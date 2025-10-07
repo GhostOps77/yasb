@@ -1,25 +1,28 @@
 DEFAULTS = {
-    "listen_paths": [{
-        "patterns": None,
-        "ignore_patterns": [],
-        "ignore_directories": True,
-        "read_file_contents": False,
-        "read_max_bytes": 65536,
-        "labels": {
-            "file": {
-                "created": "📄 {data.src.name} created",
-                "modified": "✏ {data.src.name} modified",
-                "deleted": "🗑 {data.src.name} deleted",
-                "moved": "➡ {data.src.name} moved {data.dest.name}",
+    "class_name": "",
+    "listen_paths": [
+        {
+            "patterns": None,
+            "ignore_patterns": [],
+            "ignore_directories": True,
+            "read_file_contents": False,
+            "read_max_bytes": 65536,
+            "labels": {
+                "file": {
+                    "created": "📄 {data.src.name} created",
+                    "modified": "✏ {data.src.name} modified",
+                    "deleted": "🗑 {data.src.name} deleted",
+                    "moved": "➡ {data.src.name} moved {data.dest.name}",
+                },
+                "folder": {
+                    "created": "📂 {data.src.name} created",
+                    "modified": "📂 {data.src.name} modified",
+                    "deleted": "📂 {data.src.name} deleted",
+                    "moved": "📂 {data.src.name} moved to {data.dest.name}",
+                },
             },
-            "folder": {
-                "created": "📂 {data.src.name} created",
-                "modified": "📂 {data.src.name} modified",
-                "deleted": "📂 {data.src.name} deleted",
-                "moved": "📂 {data.src.name} moved to {data.dest.name}",
-            },
-        },
-    }],
+        }
+    ],
     "label_max_length": None,
     "clear_labels_after_interval": None,
     "read_max_bytes": 65536,
@@ -34,66 +37,97 @@ DEFAULTS = {
 
 
 VALIDATION_SCHEMA = {
+    "class_name": {
+        "type": "string",
+        "required": False,
+        "default": DEFAULTS["class_name"]
+    },
     "listen_paths": {
         "type": "list",
         "required": True,
         "schema": {
-            "class-name": {"type": "string", "required": True},
-            "directory": {"type": "string", "required": True},
-            "patterns": {
-                "type": "list",
-                "nullable": True,
-                "schema": {"type": "string"},
-                # "default": None,
-                "default": DEFAULTS["listen_paths"][0]['patterns']
-            },
-            "ignore_patterns": {
-                "type": "list",
-                "schema": {"type": "string"},
-                # "default": [],
-                "default": DEFAULTS["listen_paths"][0]['ignore_patterns']
-            },
-            "ignore_directories": {
-                "type": "boolean",
-                # "default": True,
-                "default": DEFAULTS["listen_paths"][0]['ignore_directories']
-            },
-            "read_file_contents": {
-                "type": "boolean",
-                # "default": False,
-                "default": DEFAULTS["listen_paths"][0]['read_file_contents']
-            },
-            "read_max_bytes": {
-                "type": "integer",
-                "min": 1,
-                # "default": 65536,
-                "default": DEFAULTS["listen_paths"][0]['read_max_bytes']
-            },
-            "labels": {
-                "type": "dict",
-                "default": DEFAULTS["listen_paths"][0]["labels"],
-                "schema": {
-                    "file": {
-                        "type": "dict",
-                        "schema": {
-                            "created": {"type": "string", "default": DEFAULTS['listen_paths'][0]["labels"]["file"]["created"]},
-                            "modified": {"type": "string", "default": DEFAULTS['listen_paths'][0]["labels"]["file"]["modified"]},
-                            "deleted": {"type": "string", "default": DEFAULTS['listen_paths'][0]["labels"]["file"]["deleted"]},
-                            "moved": {"type": "string", "default": DEFAULTS['listen_paths'][0]["labels"]["file"]["moved"]},
-                        },
-                    },
-                    "folder": {
-                        "type": "dict",
-                        "schema": {
-                            "created": {"type": "string", "default": DEFAULTS['listen_paths'][0]["labels"]["folder"]["created"]},
-                            "modified": {"type": "string", "default": DEFAULTS['listen_paths'][0]["labels"]["folder"]["modified"]},
-                            "deleted": {"type": "string", "default": DEFAULTS['listen_paths'][0]["labels"]["folder"]["deleted"]},
-                            "moved": {"type": "string", "default": DEFAULTS['listen_paths'][0]["labels"]["folder"]["moved"]},
-                        },
-                    },
+            "type": "dict",
+            "schema": {
+                "directory": {"type": "string", "required": True},
+                "patterns": {
+                    "type": "list",
+                    "nullable": True,
+                    "schema": {"type": "string"},
+                    # "default": None,
+                    "default": DEFAULTS["listen_paths"][0]["patterns"],
                 },
-                # "description": "Templates for labels; templates may include {action}, {path}, {name}, {content}"
-            },
+                "ignore_patterns": {
+                    "type": "list",
+                    "schema": {"type": "string"},
+                    # "default": [],
+                    "default": DEFAULTS["listen_paths"][0]["ignore_patterns"],
+                },
+                "ignore_directories": {
+                    "type": "boolean",
+                    # "default": True,
+                    "default": DEFAULTS["listen_paths"][0]["ignore_directories"],
+                },
+                "read_file_contents": {
+                    "type": "boolean",
+                    # "default": False,
+                    "default": DEFAULTS["listen_paths"][0]["read_file_contents"],
+                },
+                "read_max_bytes": {
+                    "type": "integer",
+                    "min": 1,
+                    # "default": 65536,
+                    "default": DEFAULTS["listen_paths"][0]["read_max_bytes"],
+                },
+                "labels": {
+                    "type": "dict",
+                    "default": DEFAULTS["listen_paths"][0]["labels"],
+                    "schema": {
+                        "file": {
+                            "type": "dict",
+                            "schema": {
+                                "created": {
+                                    "type": "string",
+                                    "default": DEFAULTS["listen_paths"][0]["labels"]["file"]["created"],
+                                },
+                                "modified": {
+                                    "type": "string",
+                                    "default": DEFAULTS["listen_paths"][0]["labels"]["file"]["modified"],
+                                },
+                                "deleted": {
+                                    "type": "string",
+                                    "default": DEFAULTS["listen_paths"][0]["labels"]["file"]["deleted"],
+                                },
+                                "moved": {
+                                    "type": "string",
+                                    "default": DEFAULTS["listen_paths"][0]["labels"]["file"]["moved"],
+                                }
+                            }
+                        },
+                        "folder": {
+                            "type": "dict",
+                            "schema": {
+                                "created": {
+                                    "type": "string",
+                                    "default": DEFAULTS["listen_paths"][0]["labels"]["folder"]["created"],
+                                },
+                                "modified": {
+                                    "type": "string",
+                                    "default": DEFAULTS["listen_paths"][0]["labels"]["folder"]["modified"],
+                                },
+                                "deleted": {
+                                    "type": "string",
+                                    "default": DEFAULTS["listen_paths"][0]["labels"]["folder"]["deleted"],
+                                },
+                                "moved": {
+                                    "type": "string",
+                                    "default": DEFAULTS["listen_paths"][0]["labels"]["folder"]["moved"],
+                                }
+                            }
+                        }
+                    }
+                    # "description": "Templates for labels; templates may include {action}, {path}, {name}, {content}"
+                }
+            }
         },
     },
     "clear_labels_after_interval": {

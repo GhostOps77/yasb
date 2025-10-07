@@ -173,11 +173,7 @@ class PomodoroWidget(BaseWidget):
 
         # Update menu if open
         try:
-            if not (
-                hasattr(self, "_dialog")
-                and self._dialog is not None
-                and self._dialog.isVisible()
-            ):
+            if not (hasattr(self, "_dialog") and self._dialog is not None and self._dialog.isVisible()):
                 return
 
             if self._is_break:
@@ -196,8 +192,7 @@ class PomodoroWidget(BaseWidget):
             status_text = "Paused" if self._is_paused else ("Break" if self._is_break else "Work")
             self._progress_gauge.setStatusText(f"{status_text}\n{self._format_time(self._remaining_time)}")
             self._session_label.setText(
-                f"Session: {self._session_count + 1}"
-                + (f"/{self._session_target}" if self._session_target > 0 else "")
+                f"Session: {self._session_count + 1}" + (f"/{self._session_target}" if self._session_target > 0 else "")
             )
         except RuntimeError:
             pass
@@ -243,19 +238,20 @@ class PomodoroWidget(BaseWidget):
         #         )
 
         for label in iterate_label_as_parts(
-            active_widgets, active_label_content,
+            active_widgets,
+            active_label_content,
             "label alt" if self._show_alt_label else "label",
             # self._widget_container_layout
         ):
-            class_names = label.property('class').split()
+            class_names = label.property("class").split()
             for i, cn in enumerate(class_names):
-                if cn in {'paused', 'break', 'work'}:
+                if cn in {"paused", "break", "work"}:
                     class_names[i] = status_class
                     break
             else:
                 class_names.append(status_class)
 
-            label.setProperty("class", ' '.join(class_names))
+            label.setProperty("class", " ".join(class_names))
             label.setStyleSheet("")
 
         if add_progress_widget:

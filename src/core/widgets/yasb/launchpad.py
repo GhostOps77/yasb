@@ -282,13 +282,7 @@ class AppDialog(QDialog):
 
         def on_title_selected(text: str):
             text_lower = text.lower()
-            path: str = next(
-                (
-                    path for name, path, _ in self._installed_apps
-                    if name.lower() == text_lower
-                ),
-                None
-            )
+            path: str = next((path for name, path, _ in self._installed_apps if name.lower() == text_lower), None)
 
             if path is None:
                 return
@@ -304,8 +298,14 @@ class AppDialog(QDialog):
                     )
                     result = subprocess.run(
                         [
-                            "powershell", "-NoProfile", "-NonInteractive", "-NoLogo",
-                            "-ExecutionPolicy", "Bypass", "-Command", ps_get_location,
+                            "powershell",
+                            "-NoProfile",
+                            "-NonInteractive",
+                            "-NoLogo",
+                            "-ExecutionPolicy",
+                            "Bypass",
+                            "-Command",
+                            ps_get_location,
                         ],
                         capture_output=True,
                         text=True,
@@ -419,7 +419,9 @@ class AppDialog(QDialog):
 
     def browse_path(self):
         file_path, _ = QFileDialog.getOpenFileName(
-            self, "Select Application", "",
+            self,
+            "Select Application",
+            "",
             "Executable or Shortcut (*.exe *.lnk);;All Files (*)",
         )
         if file_path:
@@ -427,7 +429,9 @@ class AppDialog(QDialog):
 
     def browse_icon(self):
         icon_path, _ = QFileDialog.getOpenFileName(
-            self, "Select Icon", "",
+            self,
+            "Select Icon",
+            "",
             "Image Files (*.png *.jpg *.jpeg *.gif *.bmp *.ico *.svg);;All Files (*)",
         )
         if icon_path:
@@ -441,10 +445,7 @@ class AppDialog(QDialog):
         if icon_changed and icon_path and self.icons_dir and os.path.isfile(icon_path):
             try:
                 title = self.title_edit.text().strip().lower()
-                safe_title = "".join(
-                    c for c in title
-                    if c.isalnum() or c in " -_"
-                ).rstrip().replace(" ", "_")
+                safe_title = "".join(c for c in title if c.isalnum() or c in " -_").rstrip().replace(" ", "_")
 
                 _, ext = os.path.splitext(icon_path)
                 if not ext:
@@ -992,9 +993,7 @@ class LaunchpadWidget(BaseWidget):
         self.popup.setProperty("class", "launchpad")
         self.popup.setContentsMargins(0, 0, 0, 0)
         self.popup.setWindowFlags(
-            Qt.WindowType.FramelessWindowHint
-            | Qt.WindowType.Tool
-            | Qt.WindowType.WindowStaysOnTopHint
+            Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool | Qt.WindowType.WindowStaysOnTopHint
         )
         self.popup.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
@@ -1164,9 +1163,7 @@ class LaunchpadWidget(BaseWidget):
 
         try:
             language, codepage = win32api.GetFileVersionInfo(path, "\\VarFileInfo\\Translation")[0]
-            stringFileInfo = "\\StringFileInfo\\{:04X}{:04X}\\{}".format(
-                language, codepage, "FileDescription"
-            )
+            stringFileInfo = "\\StringFileInfo\\{:04X}{:04X}\\{}".format(language, codepage, "FileDescription")
             description = win32api.GetFileVersionInfo(path, stringFileInfo)
         except:
             description = "unknown"
@@ -1178,9 +1175,7 @@ class LaunchpadWidget(BaseWidget):
         app_data = None
 
         if ext == ".lnk":
-            target_path, icon_path, app_name = ShortcutResolver.resolve_lnk_target(
-                file_path, self._warning_dialog
-            )
+            target_path, icon_path, app_name = ShortcutResolver.resolve_lnk_target(file_path, self._warning_dialog)
             if not app_name or not target_path:
                 self._warning_dialog(f"Failed to resolve shortcut: {file_path}")
                 return
@@ -1191,8 +1186,7 @@ class LaunchpadWidget(BaseWidget):
             icon_png = IconExtractorUtil.extract_icon_from_path(icon_path, self._icons_dir)
             if not icon_png:
                 self._warning_dialog(
-                    f"Failed to extract icon for application<br><b>{file_path}</b><br>" \
-                     "Please select an icon manually."
+                    f"Failed to extract icon for application<br><b>{file_path}</b><br>Please select an icon manually."
                 )
 
             app_data = (app_name, target_path, icon_png or "")
@@ -1207,8 +1201,7 @@ class LaunchpadWidget(BaseWidget):
 
             if not icon_png:
                 self._warning_dialog(
-                    f"Failed to extract icon for application<br><b>{file_path}</b><br>" \
-                     "Please select an icon manually."
+                    f"Failed to extract icon for application<br><b>{file_path}</b><br>Please select an icon manually."
                 )
 
             app_data = (title, file_path, icon_png or "")
@@ -1294,9 +1287,7 @@ class LaunchpadWidget(BaseWidget):
         if not self._app_icons:
             return
 
-        current_index = next(
-            (i for i, icon in enumerate(self._app_icons) if icon.hasFocus()), -1
-        )
+        current_index = next((i for i, icon in enumerate(self._app_icons) if icon.hasFocus()), -1)
         if current_index == -1:
             self._focus_icon(0)
             return
@@ -1377,16 +1368,14 @@ class LaunchpadWidget(BaseWidget):
         if search_text:
             search_text_lower = search_text.lower()
             filtered_apps = [
-                app_data
-                for app_data in self._all_apps
-                if search_text_lower in app_data.get("title", "").lower()
+                app_data for app_data in self._all_apps if search_text_lower in app_data.get("title", "").lower()
             ]
         else:
             filtered_apps = self._all_apps
 
         if not filtered_apps:
             no_apps_label = QLabel(
-                "No applications found<div style='font-size:14pt;margin-top:12px;font-weight:400'>" \
+                "No applications found<div style='font-size:14pt;margin-top:12px;font-weight:400'>"
                 f"press <b>{self._shortcuts['add_app']}</b> to add new apps</div>"
             )
             no_apps_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -1565,7 +1554,9 @@ class LaunchpadWidget(BaseWidget):
     def _add_new_app(self):
         dialog = AppDialog(
             # self._launchpad_popup if self._launchpad_popup else None, None, self._icons_dir,
-            self._launchpad_popup, None, self._icons_dir,
+            self._launchpad_popup,
+            None,
+            self._icons_dir,
         )
 
         if dialog.exec() == QDialog.DialogCode.Accepted:
@@ -1671,9 +1662,7 @@ class LaunchpadWidget(BaseWidget):
         content_layout.setContentsMargins(20, 20, 20, 0)
         content_layout.setSpacing(0)
 
-        message_label = QLabel(
-            f"Are you sure you want to delete '{app_data.get('title', 'Unknown')}'?"
-        )
+        message_label = QLabel(f"Are you sure you want to delete '{app_data.get('title', 'Unknown')}'?")
         message_label.setWordWrap(True)
         message_label.setProperty("class", "message")
         content_layout.addWidget(message_label)

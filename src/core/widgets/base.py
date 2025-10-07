@@ -102,4 +102,3 @@ class BaseWidget(QWidget):
 
     def _cb_do_nothing(self):
         pass
-

@@ -141,10 +141,7 @@ class WallpapersWidget(BaseWidget):
         def process_content(content, is_alt=False):
             widgets = []
             for label in iterate_label_as_parts(
-                widgets,
-                content,
-                layout=self._widget_container_layout,
-                content_shadow=self._label_shadow
+                widgets, content, layout=self._widget_container_layout, content_shadow=self._label_shadow
             ):
                 # label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
                 label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -183,9 +180,7 @@ class WallpapersWidget(BaseWidget):
 
         return enum_windows
 
-    def find_window_handles(
-        self, parent: int = None, window_class: str = None, title: str = None
-    ) -> list[int]:
+    def find_window_handles(self, parent: int = None, window_class: str = None, title: str = None) -> list[int]:
         """Find window handles based on class name and title."""
         cb = self._make_filter(window_class, title)
         try:
@@ -257,7 +252,6 @@ class WallpapersWidget(BaseWidget):
 
         if event is None or event.button() == Qt.MouseButton.RightButton:
             self.change_background()
-
 
     def change_background(self, image_path: str = None):
         """Change the desktop wallpaper to a new image."""

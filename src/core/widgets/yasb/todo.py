@@ -246,9 +246,7 @@ class TodoWidget(BaseWidget):
         save_button = QPushButton(save_button_text)
         save_button.setProperty("class", "button add")
         save_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        save_button.clicked.connect(
-            lambda: on_save(dialog, task) if task else on_save(dialog)
-        )
+        save_button.clicked.connect(lambda: on_save(dialog, task) if task else on_save(dialog))
         button_layout.addWidget(save_button)
 
         dialog_layout.addWidget(button_container)
@@ -299,11 +297,7 @@ class TodoWidget(BaseWidget):
         # Tooltip: show number of tasks per category, skip 0s
         category_counts = {}
         for cat_key, cat_conf in self._categories.items():
-            count = sum(
-                1
-                for t in self._tasks
-                if t.get("category") == cat_key and not t.get("completed", False)
-            )
+            count = sum(1 for t in self._tasks if t.get("category") == cat_key and not t.get("completed", False))
             if count > 0:
                 category_counts[cat_conf["label"]] = count
 
@@ -548,9 +542,7 @@ class TodoWidget(BaseWidget):
             return
 
         # Use filtered tasks for refresh
-        tasks = self._get_filtered_tasks(
-            completed=self._show_completed, category=self._category_filter
-        )
+        tasks = self._get_filtered_tasks(completed=self._show_completed, category=self._category_filter)
         self._refresh_task_list(scroll_widget.layout(), tasks)
 
     def _expand_task(self, task_id):
@@ -828,10 +820,7 @@ class TodoWidget(BaseWidget):
             widget_to_remove.setParent(None)
 
         # Only refresh if no task items left after removal
-        task_items_left = any(
-            hasattr(layout.itemAt(i).widget(), "_task_id")
-            for i in range(layout.count())
-        )
+        task_items_left = any(hasattr(layout.itemAt(i).widget(), "_task_id") for i in range(layout.count()))
 
         if task_items_left:
             self._refresh_menu_task_list()

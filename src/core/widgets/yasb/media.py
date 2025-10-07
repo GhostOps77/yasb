@@ -178,39 +178,34 @@ class MediaWidget(BaseWidget):
         self._playback_info_signal.connect(self._on_playback_info_changed)
         self.media.subscribe(
             lambda playback_info: (
-                self._playback_info_signal.emit(playback_info)
-                if hasattr(self, "_playback_info_signal") else None
+                self._playback_info_signal.emit(playback_info) if hasattr(self, "_playback_info_signal") else None
             ),
             "playback_info",
         )
         self._media_info_signal.connect(self._on_media_properties_changed)
         self.media.subscribe(
             lambda media_info: (
-                self._media_info_signal.emit(media_info)
-                if hasattr(self, "_media_info_signal") else None
+                self._media_info_signal.emit(media_info) if hasattr(self, "_media_info_signal") else None
             ),
             "media_info",
         )
         self._session_status_signal.connect(self._on_session_status_changed)
         self.media.subscribe(
             lambda session_status: (
-                self._session_status_signal.emit(session_status)
-                if hasattr(self, "_session_status_signal") else None
+                self._session_status_signal.emit(session_status) if hasattr(self, "_session_status_signal") else None
             ),
             "session_status",
         )
         self._timeline_info_signal.connect(self._on_timeline_properties_changed)
         self.media.subscribe(
             lambda timeline_info: (
-                self._timeline_info_signal.emit(timeline_info)
-                if hasattr(self, "_timeline_info_signal") else None
+                self._timeline_info_signal.emit(timeline_info) if hasattr(self, "_timeline_info_signal") else None
             ),
             "timeline_info",
         )
         self.media.subscribe(
             lambda timeline_info: (
-                self._update_interpolated_position(timeline_info)
-                if hasattr(self, "_label") else None
+                self._update_interpolated_position(timeline_info) if hasattr(self, "_label") else None
             ),
             "timeline_interpolated",
         )
@@ -268,8 +263,7 @@ class MediaWidget(BaseWidget):
         media_info = self.media._media_info
 
         if media_info is not None and (
-            media_info.get("title", None) is not None
-            or media_info.get("artist", None) is not None
+            media_info.get("title", None) is not None or media_info.get("artist", None) is not None
         ):
             # Create thumbnail label
             self._popup_thumbnail_label = QLabel()
@@ -845,10 +839,9 @@ class MediaWidget(BaseWidget):
                 else:
                     format_label_content = "No media"
         else:
-            format_label_content = active_label_content.format_map({
-                k: self._format_max_field_size(v) if isinstance(v, str) else v
-                for k, v in media_info.items()
-            })
+            format_label_content = active_label_content.format_map(
+                {k: self._format_max_field_size(v) if isinstance(v, str) else v for k, v in media_info.items()}
+            )
 
         # Format the label
         active_label.setText(format_label_content)
@@ -1450,7 +1443,7 @@ class WheelEventFilter(QtCore.QObject):
         if not self.media_widget._dialog.geometry().contains(event.globalPosition().toPoint()):
             return False
 
-        if hasattr(self.media_widget, "_app_volume_slider") and self.media_widget._app_volume_slider:
+        if getattr(self.media_widget, "_app_volume_slider", None):
             slider_global_rect = QtCore.QRect(
                 self.media_widget._app_volume_slider.mapToGlobal(QtCore.QPoint(0, 0)),
                 self.media_widget._app_volume_slider.size(),

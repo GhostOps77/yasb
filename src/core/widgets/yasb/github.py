@@ -96,9 +96,7 @@ class NotificationLabel(QLabel):
                 x = self.width() - radius - margin_x
                 y = self.height() - radius - margin_y
 
-            painter.drawEllipse(
-                QPoint(x + radius // 2, y + radius // 2), radius // 2, radius // 2
-            )
+            painter.drawEllipse(QPoint(x + radius // 2, y + radius // 2), radius // 2, radius // 2)
 
 
 class GithubWidget(BaseWidget):
@@ -255,7 +253,8 @@ class GithubWidget(BaseWidget):
         new_notification_class = "new-notification"
 
         for label in iterate_label_as_parts(
-            active_widgets, active_label_content,
+            active_widgets,
+            active_label_content,
             # layout=self._widget_container_layout
         ):
             # Update class based on notification count
@@ -304,8 +303,7 @@ class GithubWidget(BaseWidget):
             logging.error(f"HTTP Error occurred: {e.code} - {e.reason}")
         except Exception as e:
             logging.error(
-                f"An unexpected error occurred: {e!s}, " \
-                 "in most cases this error when there is no internet connection."
+                f"An unexpected error occurred: {e!s}, in most cases this error when there is no internet connection."
             )
 
     def _handle_mouse_press_event(self, event, notification_id, url, container_label):
@@ -322,9 +320,7 @@ class GithubWidget(BaseWidget):
 
     def show_menu(self):
         notifications_count = len(self._github_data)
-        notifications_unread_count = sum(
-            1 for notification in self._github_data if notification["unread"]
-        )
+        notifications_unread_count = sum(1 for notification in self._github_data if notification["unread"])
 
         self._menu = PopupWidget(
             self,
@@ -387,8 +383,7 @@ class GithubWidget(BaseWidget):
                 #     "CheckSuite": self._icons["checksuite"],
                 # }.get(notification["type"], self._icons["default"])
                 icon_type = self._icons.get(
-                    notification['type'].replace('_', ' ').title().replace(' ', ''),
-                    notification['default']
+                    notification["type"].replace("_", " ").title().replace(" ", ""), notification["default"]
                 )
 
                 new_item_class = "new" if notification["unread"] else ""
@@ -515,14 +510,16 @@ class GithubWidget(BaseWidget):
                 else:
                     github_url = notification["repository"]["html_url"]
 
-                result.append({
-                    "id": notification["id"],
-                    "repository": repo_full_name,
-                    "title": notification["subject"]["title"],
-                    "type": subject_type,
-                    "url": github_url,
-                    "unread": notification["unread"],
-                })
+                result.append(
+                    {
+                        "id": notification["id"],
+                        "repository": repo_full_name,
+                        "title": notification["subject"]["title"],
+                        "type": subject_type,
+                        "url": github_url,
+                        "unread": notification["unread"],
+                    }
+                )
             return result
 
         except urllib.error.URLError:

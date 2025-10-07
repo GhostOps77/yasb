@@ -51,10 +51,7 @@ class KomorebiClient:
                 return add_index(screen, i)
 
     def get_workspaces(self, screen: dict) -> list:
-        return [
-            add_index(workspace, i)
-            for i, workspace in enumerate(screen["workspaces"]["elements"])
-        ]
+        return [add_index(workspace, i) for i, workspace in enumerate(screen["workspaces"]["elements"])]
 
     def get_workspace_by_index(self, screen: dict, workspace_index: int) -> dict | None:
         try:

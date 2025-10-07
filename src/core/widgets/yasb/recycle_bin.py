@@ -1,4 +1,3 @@
-
 from PyQt6.QtWidgets import QFrame, QHBoxLayout
 
 from core.utils.tooltip import set_tooltip
@@ -97,11 +96,12 @@ class RecycleBinWidget(BaseWidget):
         )
 
         for label in iterate_label_as_parts(
-            active_widgets, active_label_content,
+            active_widgets,
+            active_label_content,
             "label alt" if self._show_alt_label else "label",
             # self._widget_container_layout
         ):
-            class_names = label.property('class').split()
+            class_names = label.property("class").split()
             for i, cn in enumerate(class_names):
                 if cn.startswith("bin-"):
                     class_names[i] = bin_class_name
@@ -109,7 +109,7 @@ class RecycleBinWidget(BaseWidget):
             else:
                 class_names.append(bin_class_name)
 
-            label.setProperty("class", ' '.join(class_names))
+            label.setProperty("class", " ".join(class_names))
             label.setStyleSheet("")
 
         if self._tooltip:

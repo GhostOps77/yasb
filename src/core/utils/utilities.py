@@ -72,10 +72,7 @@ def is_windows_10() -> bool:
 
 
 def is_process_running(process_name: str) -> bool:
-    return any(
-        proc.info["name"] == process_name
-        for proc in psutil.process_iter(["name"])
-    )
+    return any(proc.info["name"] == process_name for proc in psutil.process_iter(["name"]))
 
 
 def percent_to_float(percent: str) -> float:
@@ -123,9 +120,9 @@ def add_shadow(el: QWidget, options: dict[str, Any]) -> None:
 def iterate_label_as_parts(
     widgets: list[QLabel],
     content: str,
-    class_name: str = 'label',
+    class_name: str = "label",
     layout: QBoxLayout | None = None,
-    content_shadow: dict = None
+    content_shadow: dict = None,
 ) -> Generator[QLabel, None, None]:
     label_parts = CAPTURE_SPAN_TAG_REGEX.split(content)
     widgets_len = len(widgets)
@@ -139,7 +136,7 @@ def iterate_label_as_parts(
         class_result = class_name
         if part.startswith("<span") and part.endswith("</span>"):
             class_name = HTML_TAG_CLASS_ATTR_REGEX.search(part)
-            class_result += ' ' + (class_name.group(2) if class_name else "icon")
+            class_result += " " + (class_name.group(2) if class_name else "icon")
             part = REPLACE_SPAN_TAG_REGEX.sub("", part).strip()
 
         while widgets_idx < widgets_len and not isinstance(widgets[widgets_idx], QLabel):
@@ -159,7 +156,7 @@ def iterate_label_as_parts(
             if layout is not None:
                 layout.addWidget(label)
 
-        label.setProperty('class', class_result)
+        label.setProperty("class", class_result)
         if content_shadow:
             add_shadow(label, content_shadow)
 
@@ -178,11 +175,7 @@ def build_widget_label(self, content: str, content_alt: str = None, content_shad
         widgets = []
 
         label_parts_gen = iterate_label_as_parts(
-            widgets,
-            content,
-            "label alt" if is_alt else "label",
-            self._widget_container_layout,
-            content_shadow
+            widgets, content, "label alt" if is_alt else "label", self._widget_container_layout, content_shadow
         )
 
         for label in label_parts_gen:

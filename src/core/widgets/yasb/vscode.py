@@ -119,9 +119,7 @@ class VSCodeWidget(BaseWidget):
 
             with conn:
                 cursor = conn.cursor()
-                cursor.execute(
-                    "SELECT value FROM ItemTable WHERE key = 'history.recentlyOpenedPathsList'"
-                )
+                cursor.execute("SELECT value FROM ItemTable WHERE key = 'history.recentlyOpenedPathsList'")
 
                 result = cursor.fetchone()
                 if not result:
@@ -174,8 +172,7 @@ class VSCodeWidget(BaseWidget):
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
 
         for _ in iterate_label_as_parts(
-            active_widgets, active_label_content,
-            'label alt' if self._show_alt_label else 'label'
+            active_widgets, active_label_content, "label alt" if self._show_alt_label else "label"
         ):
             pass
 

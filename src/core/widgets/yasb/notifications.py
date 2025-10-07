@@ -82,9 +82,7 @@ class NotificationsWidget(BaseWidget):
 
         # Register the WindowsNotificationUpdate event
         self.event_service = EventService()
-        self.event_service.register_event(
-            "WindowsNotificationUpdate", self.windows_notification_update_signal
-        )
+        self.event_service.register_event("WindowsNotificationUpdate", self.windows_notification_update_signal)
         self.windows_notification_update_signal.connect(self._on_windows_notification_update)
 
         self._update_label()
@@ -133,10 +131,7 @@ class NotificationsWidget(BaseWidget):
             icon=(self._icons["new"] if self._notification_count > 0 else self._icons["default"]),
         )
 
-        for label in iterate_label_as_parts(
-            active_widgets, active_label_content,
-            layout=self._widget_container_layout
-        ):
+        for label in iterate_label_as_parts(active_widgets, active_label_content, layout=self._widget_container_layout):
             # Update class based on notification count
             current_class = label.property("class")
             if self._notification_count > 0:
@@ -145,7 +140,7 @@ class NotificationsWidget(BaseWidget):
             elif "new-notification" in current_class:
                 current_class.remove("new-notification")
 
-            label.setProperty("class", ' '.join(current_class))
+            label.setProperty("class", " ".join(current_class))
 
         for widget in active_widgets:
             widget.style().unpolish(widget)

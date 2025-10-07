@@ -74,9 +74,7 @@ class WorkspaceButton(QPushButton):
         try:
             VirtualDesktop(self.workspace_index).go()
             if isinstance(self.parent_widget, WorkspaceWidget):
-                self.parent_widget._event_service.emit_event(
-                    "virtual_desktop_changed", {"index": self.workspace_index}
-                )
+                self.parent_widget._event_service.emit_event("virtual_desktop_changed", {"index": self.workspace_index})
         except Exception:
             logging.exception(f"Failed to focus desktop at index {self.workspace_index}")
 
@@ -200,11 +198,7 @@ class WorkspaceButton(QPushButton):
 
     def rename_desktop(self):
         dialog = QInputDialog(self)
-        dialog.setWindowFlags(
-            Qt.WindowType.Dialog
-            | Qt.WindowType.CustomizeWindowHint
-            | Qt.WindowType.WindowTitleHint
-        )
+        dialog.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.CustomizeWindowHint | Qt.WindowType.WindowTitleHint)
         dialog.setWindowTitle("Rename This Desktop")
         dialog.setProperty("class", "rename-dialog")
         dialog.setLabelText("Enter name for this desktop")
@@ -320,11 +314,7 @@ class WorkspaceWidget(BaseWidget):
 
         try:
             self.destroyed.connect(
-                lambda _=None: (
-                    WorkspaceWidget._instances.remove(self)
-                    if self in WorkspaceWidget._instances
-                    else None
-                )
+                lambda _=None: (WorkspaceWidget._instances.remove(self) if self in WorkspaceWidget._instances else None)
             )
         except Exception:
             pass
@@ -343,19 +333,11 @@ class WorkspaceWidget(BaseWidget):
 
         # Update only affected buttons (previous and current) and animate both simultaneously
         prev_btn = next(
-            (
-                b
-                for b in self._workspace_buttons
-                if b.workspace_index == self._prev_workspace_index
-            ),
+            (b for b in self._workspace_buttons if b.workspace_index == self._prev_workspace_index),
             None,
         )
         curr_btn = next(
-            (
-                b
-                for b in self._workspace_buttons
-                if b.workspace_index == self._curr_workspace_index
-            ),
+            (b for b in self._workspace_buttons if b.workspace_index == self._curr_workspace_index),
             None,
         )
 

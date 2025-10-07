@@ -129,8 +129,7 @@ class WifiWidget(BaseWidget):
             widgets: list[QLabel] = []
 
             for label in iterate_label_as_parts(
-                widgets, content, 'label alt' if is_alt else 'label',
-                self._widget_container_layout, self._label_shadow
+                widgets, content, "label alt" if is_alt else "label", self._widget_container_layout, self._label_shadow
             ):
                 if is_alt or is_ethernet:
                     label.hide()
@@ -199,8 +198,7 @@ class WifiWidget(BaseWidget):
         )
 
         for _ in iterate_label_as_parts(
-            active_widgets, active_label_content,
-            'label alt' if self._show_alt_label else 'label'
+            active_widgets, active_label_content, "label alt" if self._show_alt_label else "label"
         ):
             pass
 

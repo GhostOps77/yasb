@@ -78,9 +78,7 @@ class ServerCheckWorker(QThread):
             updated += 1
             self.progress_updated.emit(server, updated, total)
 
-            status = self.check_single_server(
-                server, self.ssl_verify, self.ssl_check, self.timeout
-            )
+            status = self.check_single_server(server, self.ssl_verify, self.ssl_check, self.timeout)
             server_statuses.append(status)
 
         self.status_updated.emit(server_statuses)
@@ -271,27 +269,22 @@ class ServerMonitor(BaseWidget):
 
         min_ssl = 0
         if status_data:
-            min_ssl = min(
-                (s["ssl"] for s in status_data if isinstance(s["ssl"], int)),
-                default=0
-            )
+            min_ssl = min((s["ssl"] for s in status_data if isinstance(s["ssl"], int)), default=0)
 
-        status_data.append({
-            "online_count": online_count,
-            "offline_count": offline_count,
-            "ssl_warning": min_ssl < self._ssl_warning,
-        })
+        status_data.append(
+            {
+                "online_count": online_count,
+                "offline_count": offline_count,
+                "ssl_warning": min_ssl < self._ssl_warning,
+            }
+        )
 
         self._server_status_data = status_data
         self._last_refresh_time = datetime.now()
         self._update_label()
         self._send_notification()
         try:
-            if (
-                getattr(self, "dialog", None)
-                and self.dialog.isVisible()
-                and self._first_run
-            ):
+            if getattr(self, "dialog", None) and self.dialog.isVisible() and self._first_run:
                 self.dialog.hide()
                 self.show_menu()
         except RuntimeError:
@@ -352,8 +345,9 @@ class ServerMonitor(BaseWidget):
         self._widget_container.setStyleSheet(self._widget_container.styleSheet())
 
         for _ in iterate_label_as_parts(
-            active_widgets, active_label_content,
-            'label alt' if self._show_alt_label else 'label',
+            active_widgets,
+            active_label_content,
+            "label alt" if self._show_alt_label else "label",
             # self._widget_container_layout
         ):
             pass
@@ -471,9 +465,7 @@ class ServerMonitor(BaseWidget):
             if not self._loading_label.isVisible():
                 return
             try:
-                self._loading_label.setText(
-                    f"<br>Checking {updated}/{total} servers<br><b>{server}</b><br>"
-                )
+                self._loading_label.setText(f"<br>Checking {updated}/{total} servers<br><b>{server}</b><br>")
             except RuntimeError:
                 self._worker.progress_updated.disconnect(update_progress)
 
@@ -527,11 +519,13 @@ class ServerMonitor(BaseWidget):
                     default=0,
                 )
 
-            status_data.append({
-                "online_count": online_count,
-                "offline_count": offline_count,
-                "ssl_warning": True if min_ssl < self._ssl_warning else False,
-            })
+            status_data.append(
+                {
+                    "online_count": online_count,
+                    "offline_count": offline_count,
+                    "ssl_warning": True if min_ssl < self._ssl_warning else False,
+                }
+            )
 
             self._server_status_data = status_data
             self._last_refresh_time = datetime.now()
@@ -637,10 +631,9 @@ class ServerMonitor(BaseWidget):
                     server_data_status = self._icons["warning"]
                     class_name += " warning"
 
-                if (
-                    (server_data["ssl"] is not None and server_data["ssl"] < self._ssl_warning)
-                    or server_data["status"] == "Offline"
-                ):
+                if (server_data["ssl"] is not None and server_data["ssl"] < self._ssl_warning) or server_data[
+                    "status"
+                ] == "Offline":
                     # Add opacity effect for animation
                     opacity_effect = QGraphicsOpacityEffect()
                     server_status.setGraphicsEffect(opacity_effect)
@@ -678,8 +671,7 @@ class ServerMonitor(BaseWidget):
 
                 if server_data["status"] == "Online":
                     details_text = (
-                        f"{server_data_response_time}{ssl_status}, "
-                         "response code: {server_data['response_code']}"
+                        f"{server_data_response_time}{ssl_status}, response code: {{server_data['response_code']}}"
                     )
                 else:
                     details_text = "Server is offline"

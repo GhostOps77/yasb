@@ -59,7 +59,7 @@ class GlazewmTilingDirectionWidget(BaseWidget):
             [
                 "sub -e focus_changed tiling_direction_changed focused_container_moved",
                 "query tiling-direction",
-            ]
+            ],
         )
         self.glazewm_client.glazewm_connection_status.connect(self._update_connection_status)  # type: ignore
         self.glazewm_client.tiling_direction_processed.connect(self._update_tiling_direction)  # type: ignore

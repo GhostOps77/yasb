@@ -282,11 +282,9 @@ class SystrayWidget(BaseWidget):
 
     def set_containers_visibility(self):
         """Update the containers visibility based on the show_unpinned_button setting"""
-        
+
         self.unpinned_vis_btn.setChecked(self.show_unpinned)
-        self.unpinned_vis_btn.setText(
-            self.label_expanded if self.show_unpinned else self.label_collapsed
-        )
+        self.unpinned_vis_btn.setText(self.label_expanded if self.show_unpinned else self.label_collapsed)
         self.unpinned_widget.setVisible(self.show_unpinned or not self.show_unpinned_button)
 
     def on_thread_started(self):
@@ -482,10 +480,7 @@ class SystrayWidget(BaseWidget):
             w.unpolish(self.pinned_widget)
             w.polish(self.pinned_widget)
 
-        elif (
-            self.pinned_widget.property("forceshow")
-            and not is_empty and (w := self.pinned_widget.style())
-        ):
+        elif self.pinned_widget.property("forceshow") and not is_empty and (w := self.pinned_widget.style()):
             logger.debug(f"Is empty: {is_empty}, force show: {force_show}")
             self.pinned_widget.setProperty("forceshow", False)
             w.unpolish(self.pinned_widget)
@@ -534,7 +529,8 @@ class SystrayWidget(BaseWidget):
                 index = self.pinned_layout.indexOf(w)
             uuid = None if w.data.guid is None else str(w.data.guid)
             widgets_state[uuid or w.data.exe_path] = IconState(
-                is_pinned=w.is_pinned, index=index,
+                is_pinned=w.is_pinned,
+                index=index,
             )
         self.current_state |= widgets_state
 

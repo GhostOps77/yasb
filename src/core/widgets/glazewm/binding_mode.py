@@ -114,24 +114,23 @@ class GlazewmBindingModeWidget(BaseWidget):
 
         active_label_content = active_label_content.format(
             binding_mode=(
-                self._active_binding_mode.display_name
-                or self._active_binding_mode.name
-                or self._label_if_no_active
+                self._active_binding_mode.display_name or self._active_binding_mode.name or self._label_if_no_active
             ),
             icon=self._icons.get(self._active_binding_mode.name or "none", self._default_icon),
         )
 
         for label in iterate_label_as_parts(
-            active_widgets, active_label_content,
+            active_widgets,
+            active_label_content,
             # layout=self._widget_container_layout
         ):
             class_name: str = label.property("class")
             if self._active_binding_mode.name:
                 if class_name.find("label-offline") != -1:
-                    class_name = class_name.replace('label-offline', 'label')
-                class_name += ' ' + self._active_binding_mode.name
+                    class_name = class_name.replace("label-offline", "label")
+                class_name += " " + self._active_binding_mode.name
             else:
-                class_name = class_name.replace('label', "label-offline")
+                class_name = class_name.replace("label", "label-offline")
 
             self._reload_css(label)
 

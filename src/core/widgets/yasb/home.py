@@ -112,7 +112,9 @@ class HomeWidget(BaseWidget):
             self._menu._add_separator(main_layout)
 
             self._add_menu_item(
-                main_layout, self._menu_labels["system"], lambda: os.startfile("ms-settings:"),
+                main_layout,
+                self._menu_labels["system"],
+                lambda: os.startfile("ms-settings:"),
             )
 
             self._add_menu_item(

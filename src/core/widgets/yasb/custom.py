@@ -132,8 +132,11 @@ class CustomWidget(BaseWidget):
             widgets = []
 
             for label in iterate_label_as_parts(
-                widgets, content, "label alt" if is_alt else "label", self._label_shadow,
+                widgets,
+                content,
+                "label alt" if is_alt else "label",
                 self._widget_container_layout,
+                self._label_shadow,
             ):
                 self._set_cursor(label)
                 widgets.append(label)
@@ -157,10 +160,7 @@ class CustomWidget(BaseWidget):
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         active_label_content = active_label_content.format(data=self._exec_data)
 
-        for label in iterate_label_as_parts(
-            active_widgets, active_label_content,
-            layout=self._widget_container_layout
-        ):
+        for label in iterate_label_as_parts(active_widgets, active_label_content, layout=self._widget_container_layout):
             text = self._truncate_label(label.text())
             label.setText(text)
 

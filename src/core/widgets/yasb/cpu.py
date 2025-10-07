@@ -166,13 +166,9 @@ class CpuWidget(BaseWidget):
             },
             "histograms": {
                 "cpu_freq": "".join(
-                    self._get_histogram_bar(freq, cpu_freq.min, cpu_freq.max)
-                    for freq in self._cpu_freq_history
+                    self._get_histogram_bar(freq, cpu_freq.min, cpu_freq.max) for freq in self._cpu_freq_history
                 ),
-                "cpu_percent": "".join(
-                    self._get_histogram_bar(percent, 0, 100)
-                    for percent in self._cpu_perc_history
-                ),
+                "cpu_percent": "".join(self._get_histogram_bar(percent, 0, 100) for percent in self._cpu_perc_history),
                 "cores": "".join([self._get_histogram_bar(percent, 0, 100) for percent in cores_perc]),
             },
         }
@@ -197,7 +193,7 @@ class CpuWidget(BaseWidget):
             "label alt" if self._show_alt_label else "label",
             # self._widget_container_layout,
         ):
-            class_names = label.property('class').split()
+            class_names = label.property("class").split()
             for i, class_name in enumerate(class_names):
                 if class_name.startswith("status-"):
                     class_names[i] = cpu_status_class
@@ -205,7 +201,7 @@ class CpuWidget(BaseWidget):
             else:
                 class_names.append(cpu_status_class)
 
-            label.setProperty("class", ' '.join(class_names))
+            label.setProperty("class", " ".join(class_names))
             label.setStyleSheet("")
 
         if add_progress_widget:

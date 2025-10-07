@@ -3,7 +3,6 @@ UI Style Utilities.
 Provides functions to build and apply styles to UI components based on the current application theme (light or dark).
 """
 
-
 from PyQt6.QtGui import QPalette
 from PyQt6.QtWidgets import QApplication, QPushButton
 

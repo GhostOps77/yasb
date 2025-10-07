@@ -137,10 +137,7 @@ class DraggableAppButton(QFrame):
 
         # If cursor still over button after drag, preview again
         try:
-            if (
-                self.rect().contains(self.mapFromGlobal(QCursor.pos()))
-                and self._taskbar._preview_enabled
-            ):
+            if self.rect().contains(self.mapFromGlobal(QCursor.pos())) and self._taskbar._preview_enabled:
                 self._preview_timer.start()
         except Exception:
             pass
@@ -187,10 +184,7 @@ class DraggableAppButton(QFrame):
             else:
                 # Drag ended, if pointer still over button, start preview timer
                 try:
-                    if (
-                        self.rect().contains(self.mapFromGlobal(QCursor.pos()))
-                        and self._taskbar._preview_enabled
-                    ):
+                    if self.rect().contains(self.mapFromGlobal(QCursor.pos())) and self._taskbar._preview_enabled:
                         self._preview_timer.start()
                 except Exception:
                     pass
@@ -476,8 +470,7 @@ class TaskbarWidget(BaseWidget):
         self._dpi = None
         self._label_icon_size = icon_size
         self._animation = (
-            {"enabled": animation, "type": "fadeInOut", "duration": 200}
-            if isinstance(animation, bool) else animation
+            {"enabled": animation, "type": "fadeInOut", "duration": 200} if isinstance(animation, bool) else animation
         )
         self._title_label = title_label
         self._monitor_exclusive = monitor_exclusive
@@ -989,9 +982,7 @@ class TaskbarWidget(BaseWidget):
             tw_layout.setContentsMargins(0, 0, 0, 0)
             tw_layout.setSpacing(0)
             try:
-                title_wrapper.setSizePolicy(
-                    QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred
-                )
+                title_wrapper.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
             except Exception:
                 pass
 
@@ -1133,11 +1124,7 @@ class TaskbarWidget(BaseWidget):
             base, focus_target = resolve_base_and_focus(hwnd)
             is_active = False
             try:
-                if (
-                    hasattr(self, "_task_manager")
-                    and self._task_manager
-                    and base in self._task_manager._windows
-                ):
+                if hasattr(self, "_task_manager") and self._task_manager and base in self._task_manager._windows:
                     app_window = self._task_manager._windows[base]
                     is_active = bool(getattr(app_window, "is_active", False))
             except Exception:
@@ -1220,11 +1207,7 @@ class TaskbarWidget(BaseWidget):
 
                 # Preserve flashing if manager reports it
                 try:
-                    if (
-                        hasattr(self, "_task_manager")
-                        and self._task_manager
-                        and hwnd in self._task_manager._windows
-                    ):
+                    if hasattr(self, "_task_manager") and self._task_manager and hwnd in self._task_manager._windows:
                         aw = self._task_manager._windows[hwnd]
                         if getattr(aw, "is_flashing", False):
                             new_cls = "app-container flashing"

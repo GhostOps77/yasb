@@ -227,10 +227,7 @@ class KeybindsDialog(QDialog):
                         if not (
                             keys
                             and next_keys
-                            and (
-                                keys[-1].lower() in no_plus_modifiers
-                                and next_keys[0].lower() in no_plus_modifiers
-                            )
+                            and (keys[-1].lower() in no_plus_modifiers and next_keys[0].lower() in no_plus_modifiers)
                         ):
                             plus_btn = QPushButton("+")
                             plus_btn.setEnabled(False)

@@ -109,14 +109,13 @@ class LanguageWidget(BaseWidget):
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
 
         try:
-            active_label_content = active_label_content.format(
-                lang=self._get_current_keyboard_language()
-            )
+            active_label_content = active_label_content.format(lang=self._get_current_keyboard_language())
         except:
             pass
 
         for _ in iterate_label_as_parts(
-            active_widgets, active_label_content,
+            active_widgets,
+            active_label_content,
             # layout=self._widget_container_layout
         ):
             pass
@@ -269,17 +268,21 @@ class LanguageWidget(BaseWidget):
                 kernel32.GetLocaleInfoW(lang_id, LOCALE_SLANGUAGE, lang_name_buf, LOCALE_NAME_MAX_LENGTH)
                 # get the ISO-639-2 three-letter code (e.g. "ENG")
                 if not kernel32.GetLocaleInfoW(
-                    lang_id, LOCALE_SISO639LANGNAME2, lang_code_buf, LOCALE_NAME_MAX_LENGTH,
+                    lang_id,
+                    LOCALE_SISO639LANGNAME2,
+                    lang_code_buf,
+                    LOCALE_NAME_MAX_LENGTH,
                 ):
                     kernel32.GetLocaleInfoW(
-                        lang_id, LOCALE_SISO639LANGNAME, lang_code_buf, LOCALE_NAME_MAX_LENGTH,
+                        lang_id,
+                        LOCALE_SISO639LANGNAME,
+                        lang_code_buf,
+                        LOCALE_NAME_MAX_LENGTH,
                     )
 
                 lang_name = lang_name_buf.value
                 lang_code = (
-                    self._menu_config["layout_icon"]
-                    if self._menu_config["show_layout_icon"]
-                    else lang_code_buf.value
+                    self._menu_config["layout_icon"] if self._menu_config["show_layout_icon"] else lang_code_buf.value
                 )
                 k_layouts = None
 
@@ -313,13 +316,15 @@ class LanguageWidget(BaseWidget):
                 #     pass
                 finally:
                     if lang_name and lang_code:
-                        languages.append({
-                            "id": lang_id,
-                            "handle": layout_handle,
-                            "name": lang_name,
-                            "code": lang_code,
-                            "layouts": k_layouts or lang_name,  # fallback to lang_name
-                        })
+                        languages.append(
+                            {
+                                "id": lang_id,
+                                "handle": layout_handle,
+                                "name": lang_name,
+                                "code": lang_code,
+                                "layouts": k_layouts or lang_name,  # fallback to lang_name
+                            }
+                        )
             except Exception:
                 continue
 

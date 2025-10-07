@@ -226,17 +226,13 @@ class ClockWidget(BaseWidget):
 
     def _toggle_calendar(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
 
         self.show_calendar()
 
     def _toggle_label(self):
         if self._animation["enabled"]:
-            AnimationManager.animate(
-                self, self._animation["type"], self._animation["duration"]
-            )
+            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
 
         self._show_alt_label = not self._show_alt_label
         for widget in self._widgets:
@@ -278,17 +274,17 @@ class ClockWidget(BaseWidget):
                 pass
 
         active_label_content = active_label_content.format(
-            timedata=now,
-            icon=f'<span class="icon">{self._get_icon_for_hour(now.hour)}</span>'
+            timedata=now, icon=f'<span class="icon">{self._get_icon_for_hour(now.hour)}</span>'
         )
 
         for label in iterate_label_as_parts(
-            active_widgets, active_label_content,
+            active_widgets,
+            active_label_content,
             # self._widget_container_layout
         ):
             if hour_changed:
-                class_names = label.property('class')
-                class_names = re.sub(r'clock_\d{2}', '', class_names).strip()
+                class_names = label.property("class")
+                class_names = re.sub(r"clock_\d{2}", "", class_names).strip()
                 label.setProperty("class", class_names + f" clock_{current_hour}")
                 self._reload_css(label)
 
@@ -405,9 +401,7 @@ class ClockWidget(BaseWidget):
         qlocale = QLocale(self._locale) if self._locale else QLocale.system()
 
         self.day_label = QLabel(
-            qlocale.dayName(
-                QDate(datetime_now.year, datetime_now.month, datetime_now.day).dayOfWeek()
-            )
+            qlocale.dayName(QDate(datetime_now.year, datetime_now.month, datetime_now.day).dayOfWeek())
         )
         self.day_label.setProperty("class", "day-label")
         self.day_label.setAlignment(Qt.AlignmentFlag.AlignCenter)

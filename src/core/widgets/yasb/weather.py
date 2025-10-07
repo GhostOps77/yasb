@@ -183,7 +183,8 @@ class WeatherWidget(BaseWidget):
 
         # Create hourly layout and add frames (before the daily widget to pass it to press event)
         hourly_temperature_widget = HourlyTemperatureLineWidget(
-            units=self._units, config=self._weather_card,
+            units=self._units,
+            config=self._weather_card,
         )
         hourly_temperature_widget.setProperty("class", "hourly-data")
         hourly_temperature_scroll_area = HourlyTemperatureScrollArea()
@@ -300,7 +301,7 @@ class WeatherWidget(BaseWidget):
 
         # If any icons failed to load, try to fetch them again once
         if not failed_icons:
-            return 
+            return
 
         try:
             # Create a temporary icon fetcher to fetch the missing icons
@@ -338,11 +339,10 @@ class WeatherWidget(BaseWidget):
             widgets: list[QLabel] = []
 
             for label in iterate_label_as_parts(
-                widgets, content, "label alt" if is_alt else "label",
-                self._widget_container_layout, self._label_shadow
+                widgets, content, "label alt" if is_alt else "label", self._widget_container_layout, self._label_shadow
             ):
-                class_names = label.property('class').split()
-                if 'icon' in class_names or len(class_names) > (is_alt + 1):
+                class_names = label.property("class").split()
+                if "icon" in class_names or len(class_names) > (is_alt + 1):
                     label.hide()
                 else:
                     label.setText("weather update...")
@@ -371,8 +371,15 @@ class WeatherWidget(BaseWidget):
         active_label_content = active_label_content.format_map(self._weather_data)
 
         weather_class_names = [
-            "Sunny", "Clear", "Cloudy", "Foggy", "Rainy", "Snowy", "Thunderstorm",
-            "Blizzard", "Cloudy"
+            "Sunny",
+            "Clear",
+            "Cloudy",
+            "Foggy",
+            "Rainy",
+            "Snowy",
+            "Thunderstorm",
+            "Blizzard",
+            "Cloudy",
         ]
 
         if self._tooltip:
@@ -385,13 +392,12 @@ class WeatherWidget(BaseWidget):
 
         try:
             for label in iterate_label_as_parts(
-                active_widgets, active_label_content,
-                'label alt' if self._show_alt_label else 'label'
+                active_widgets, active_label_content, "label alt" if self._show_alt_label else "label"
             ):
-                class_names = set(label.property('class').split())
+                class_names = set(label.property("class").split())
 
                 # If the current label is not from a span tag, ignore it.
-                if not ('icon' in class_names or len(class_names) > (self._show_alt_label + 1)):
+                if not ("icon" in class_names or len(class_names) > (self._show_alt_label + 1)):
                     continue
 
                 if update_class:
@@ -404,7 +410,7 @@ class WeatherWidget(BaseWidget):
                     if append_class_icon:
                         # Create the new class string
                         class_names.add(append_class_icon)
-                        label.setProperty("class", ' '.join(class_names))
+                        label.setProperty("class", " ".join(class_names))
 
                     # Update css
                     self._reload_css(label)
@@ -431,9 +437,7 @@ class WeatherWidget(BaseWidget):
         value = round(temp) if self._hide_decimal else temp
         return f"{value}{unit}"
 
-    def _format_measurement(
-        self, imperial_val: str, imperial_unit: str, metric_val: str, metric_unit: str
-    ) -> str:
+    def _format_measurement(self, imperial_val: str, imperial_unit: str, metric_val: str, metric_unit: str) -> str:
         if self._units == "imperial":
             return f"{imperial_val} {imperial_unit}"
         return f"{metric_val} {metric_unit}"
@@ -462,10 +466,12 @@ class WeatherWidget(BaseWidget):
             weather_icon_string, weather_text = get_weather(conditions_code, current["is_day"])
 
             # Load icons images into cache for current and future forecasts if not already cached
-            img_icon_keys = list({
-                f"http:{day['condition']['icon']}"
-                for day in [forecast] + [forecast1["day"], forecast2["day"]] + all_hourly_data
-            })
+            img_icon_keys = list(
+                {
+                    f"http:{day['condition']['icon']}"
+                    for day in [forecast] + [forecast1["day"], forecast2["day"]] + all_hourly_data
+                }
+            )
             self._icon_fetcher.fetch_icons(img_icon_keys)
 
             self._weather_data = {
@@ -474,11 +480,9 @@ class WeatherWidget(BaseWidget):
                 "feelslike": self._format_temp(current["feelslike_f"], current["feelslike_c"]),
                 "humidity": f"{current['humidity']}%",
                 "cloud": current["cloud"],
-
                 # Forecast today
                 "min_temp": self._format_temp(forecast["mintemp_f"], forecast["mintemp_c"]),
                 "max_temp": self._format_temp(forecast["maxtemp_f"], forecast["maxtemp_c"]),
-
                 # Location and conditions
                 "location": weather_data["location"]["name"],
                 "location_region": weather_data["location"]["region"],
@@ -488,23 +492,19 @@ class WeatherWidget(BaseWidget):
                 "conditions": conditions_data,
                 "condition_text": weather_text,
                 "is_day": "Day" if current["is_day"] else "Night",
-
                 # Icons
                 "icon": weather_icon_string,
                 "icon_class": weather_icon_string,
                 "day0_icon": f"http:{forecast['condition']['icon']}",
-
                 # Wind data
                 "wind": self._format_measurement(current["wind_mph"], "mph", current["wind_kph"], "km/h"),
                 "wind_dir": current["wind_dir"],
                 "wind_degree": current["wind_degree"],
-
                 # Other measurements
                 "pressure": self._format_measurement(current["pressure_in"], "in", current["pressure_mb"], "mb"),
                 "precip": self._format_measurement(current["precip_in"], "in", current["precip_mm"], "mm"),
                 "vis": self._format_measurement(current["vis_miles"], "mi", current["vis_km"], "km"),
                 "uv": current["uv"],
-
                 # Future forecasts
                 "day1_name": self._format_date_string(forecast1["date"]),
                 "day1_min_temp": self._format_temp(forecast1["day"]["mintemp_f"], forecast1["day"]["mintemp_c"]),
@@ -514,19 +514,16 @@ class WeatherWidget(BaseWidget):
                 "day2_min_temp": self._format_temp(forecast2["day"]["mintemp_f"], forecast2["day"]["mintemp_c"]),
                 "day2_max_temp": self._format_temp(forecast2["day"]["maxtemp_f"], forecast2["day"]["maxtemp_c"]),
                 "day2_icon": f"http:{forecast2['day']['condition']['icon']}",
-
                 # Alerts
                 "alert_title": (
                     alerts["alert"][0]["headline"] if alerts["alert"] and alerts["alert"][0]["headline"] else None
                 ),
-                "alert_desc": (
-                    alerts["alert"][0]["desc"] if alerts["alert"] and alerts["alert"][0]["desc"] else None
-                ),
+                "alert_desc": (alerts["alert"][0]["desc"] if alerts["alert"] and alerts["alert"][0]["desc"] else None),
                 "alert_end_date": (
                     self._format_alert_datetime(alerts["alert"][0]["expires"])
                     if alerts["alert"] and alerts["alert"][0]["expires"]
                     else None
-                )
+                ),
             }
         except Exception as e:
             if not self._retry_timer.isActive():
@@ -542,14 +539,40 @@ class WeatherWidget(BaseWidget):
 
             self._weather_data = dict.fromkeys(
                 (
-                    "temp", "min_temp", "max_temp", "location", "location_region",
-                    "location_country", "time_zone", "localtime", "humidity", "is_day",
-                    "day0_icon", "icon", "icon_class", "conditions", "condition_text",
-                    "wind", "wind_dir", "wind_degree", "pressure", "precip", "uv", "vis",
-                    "cloud", "feelslike", "day1_name", "day1_min_temp", "day1_max_temp",
-                    "day1_icon", "day2_name", "day2_min_temp", "day2_max_temp", "day2_icon"
+                    "temp",
+                    "min_temp",
+                    "max_temp",
+                    "location",
+                    "location_region",
+                    "location_country",
+                    "time_zone",
+                    "localtime",
+                    "humidity",
+                    "is_day",
+                    "day0_icon",
+                    "icon",
+                    "icon_class",
+                    "conditions",
+                    "condition_text",
+                    "wind",
+                    "wind_dir",
+                    "wind_degree",
+                    "pressure",
+                    "precip",
+                    "uv",
+                    "vis",
+                    "cloud",
+                    "feelslike",
+                    "day1_name",
+                    "day1_min_temp",
+                    "day1_max_temp",
+                    "day1_icon",
+                    "day2_name",
+                    "day2_min_temp",
+                    "day2_max_temp",
+                    "day2_icon",
                 ),
-                'N/A'
+                "N/A",
             ) | dict.fromkeys(("alert_title", "alert_desc", "alert_end_date"))
 
 

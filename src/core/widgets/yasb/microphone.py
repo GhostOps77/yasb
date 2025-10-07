@@ -162,14 +162,14 @@ class MicrophoneWidget(BaseWidget):
         # label_parts = re.split(r"(<span[^>]*?>.*?</span>)", active_label_content)
         # widget_index = 0
 
-        if self._progress_bar["enabled"] and self.progress_widget:
-            if self._widget_container_layout.indexOf(self.progress_widget) == -1:
-                self._widget_container_layout.insertWidget(
-                    (0 if self._progress_bar["position"] == "left" else self._widget_container_layout.count()),
-                    self.progress_widget,
-                )
-            numeric_value = int(re.search(r"\d+", min_level).group()) if re.search(r"\d+", min_level) else 0
-            self.progress_widget.set_value(numeric_value)
+        # if self._progress_bar["enabled"] and self.progress_widget:
+        #     if self._widget_container_layout.indexOf(self.progress_widget) == -1:
+        #         self._widget_container_layout.insertWidget(
+        #             (0 if self._progress_bar["position"] == "left" else self._widget_container_layout.count()),
+        #             self.progress_widget,
+        #         )
+        #     numeric_value = int(re.search(r"\d+", min_level).group()) if re.search(r"\d+", min_level) else 0
+        #     self.progress_widget.set_value(numeric_value)
 
         add_progress_widget = False
         if self._progress_bar["enabled"] and self.progress_widget:
@@ -178,25 +178,28 @@ class MicrophoneWidget(BaseWidget):
             add_progress_widget = True
 
         for label in iterate_label_as_parts(
-            active_widgets, active_label_content,
+            active_widgets,
+            active_label_content,
             # self._widget_container_layout
         ):
             self._set_muted_class(label, mute_status == 1)
 
-        if add_progress_widget:
-            if self._progress_bar["position"] == "left":
-                progress_widget_idx = 0
-            else:
-                progress_widget_idx = self._widget_container_layout.count()
+        if not add_progress_widget:
+            return
 
-            self._widget_container_layout.insertWidget(progress_widget_idx, self.progress_widget)
-            match = re.search(r"\d+", min_level)
-            if match:
-                numeric_value = int(match.group())
-            else:
-                numeric_value = 0
+        if self._progress_bar["position"] == "left":
+            progress_widget_idx = 0
+        else:
+            progress_widget_idx = self._widget_container_layout.count()
 
-            self.progress_widget.set_value(numeric_value)
+        self._widget_container_layout.insertWidget(progress_widget_idx, self.progress_widget)
+        match = re.search(r"\d+", min_level)
+        if match:
+            numeric_value = int(match.group())
+        else:
+            numeric_value = 0
+
+        self.progress_widget.set_value(numeric_value)
 
     def _initialize_microphone_interface(self):
         CoInitialize()
@@ -213,17 +216,17 @@ class MicrophoneWidget(BaseWidget):
         finally:
             CoUninitialize()
 
-    def _set_muted_class(self, widget, muted: bool):
+    def _set_muted_class(self, label, muted: bool):
         """Set or remove the 'muted' class on the widget."""
-        current_class = widget.property("class") or ""
+        current_class = label.property("class") or ""
         classes = set(current_class.split())
         if muted:
             classes.add("muted")
         else:
             classes.discard("muted")
-        widget.setProperty("class", " ".join(classes))
-        widget.style().unpolish(widget)
-        widget.style().polish(widget)
+        label.setProperty("class", " ".join(classes))
+        label.style().unpolish(label)
+        label.style().polish(label)
 
     def _get_mic_icon(self):
         if not self.audio_endpoint:

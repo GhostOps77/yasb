@@ -190,23 +190,14 @@ class GlazewmClient(QObject):
                 for child in mon.get("children", [])
                 if child.get("type") == "workspace"
             ]
-            monitors.append(
-                Monitor(
-                    name=monitor_name,
-                    hwnd=handle,
-                    workspaces=workspaces_data
-                )
-            )
+            monitors.append(Monitor(name=monitor_name, hwnd=handle, workspaces=workspaces_data))
         return monitors
 
     def _process_binding_modes(self, data: list[dict[str, Any]]) -> BindingMode:
         if len(data) == 0:
             return BindingMode(name=None, display_name=None)
 
-        return BindingMode(
-            name=data[0].get("name", None),
-            display_name=data[0].get("displayName", None)
-        )
+        return BindingMode(name=data[0].get("name", None), display_name=data[0].get("displayName", None))
 
     def _read_windows(self, parent):
         windows = []

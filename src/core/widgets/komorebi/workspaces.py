@@ -221,9 +221,7 @@ class WorkspaceButtonWithIcons(QFrame):
 
     def activate_workspace(self):
         try:
-            self.komorebic.activate_workspace(
-                self.parent_widget._komorebi_screen["index"], self.workspace_index
-            )
+            self.komorebic.activate_workspace(self.parent_widget._komorebi_screen["index"], self.workspace_index)
         except Exception:
             logging.exception(f"Failed to focus workspace at index {self.workspace_index}")
 
@@ -268,8 +266,7 @@ class WorkspaceWidget(BaseWidget):
         self._label_zero_index = label_zero_index
         self._workspace_app_icons = app_icons
         self._workspace_app_icons_enabled = (
-            self._workspace_app_icons["enabled_populated"]
-            or self._workspace_app_icons["enabled_active"]
+            self._workspace_app_icons["enabled_populated"] or self._workspace_app_icons["enabled_active"]
         )
         self._hide_if_offline = hide_if_offline
         self._padding = container_padding
@@ -490,12 +487,9 @@ class WorkspaceWidget(BaseWidget):
                 self._prev_workspace_index = self._curr_workspace_index
                 self._curr_workspace_index = focused_workspace["index"]
 
-            self._curr_num_windows_in_workspaces = (
-                self._curr_num_windows_in_workspaces[: len(self._komorebi_workspaces)]
-                + [0] * (
-                    len(self._komorebi_workspaces) - len(self._curr_num_windows_in_workspaces)
-                )
-            )
+            self._curr_num_windows_in_workspaces = self._curr_num_windows_in_workspaces[
+                : len(self._komorebi_workspaces)
+            ] + [0] * (len(self._komorebi_workspaces) - len(self._curr_num_windows_in_workspaces))
             self._prev_num_windows_in_workspaces = self._curr_num_windows_in_workspaces.copy()
             for i in range(len(self._komorebi_workspaces)):
                 windows = self._get_all_windows_in_workspace(i)
@@ -608,11 +602,21 @@ class WorkspaceWidget(BaseWidget):
         default_label, active_label, populated_label = self._get_workspace_label(workspace_index)
         if self._workspace_app_icons_enabled:
             workspace_btn = WorkspaceButtonWithIcons(
-                workspace_index, self, default_label, active_label, populated_label, self._animation,
+                workspace_index,
+                self,
+                default_label,
+                active_label,
+                populated_label,
+                self._animation,
             )
         else:
             workspace_btn = WorkspaceButton(
-                workspace_index, self, default_label, active_label, populated_label, self._animation,
+                workspace_index,
+                self,
+                default_label,
+                active_label,
+                populated_label,
+                self._animation,
             )
         self._workspace_buttons.append(workspace_btn)
         return workspace_btn
@@ -672,8 +676,7 @@ class WorkspaceWidget(BaseWidget):
         windows_in_workspace = self._get_all_windows_in_workspace(workspace_index)
         self._unique_pids = set()
         pixmaps = {
-            window["hwnd"]: self._get_app_icon(window["hwnd"], workspace_index)
-            for window in windows_in_workspace
+            window["hwnd"]: self._get_app_icon(window["hwnd"], workspace_index) for window in windows_in_workspace
         }
         try:
             existing_pixmaps = self._workspace_buttons[workspace_index].icons
@@ -684,9 +687,7 @@ class WorkspaceWidget(BaseWidget):
             pass
         return pixmaps
 
-    def _get_app_icon(
-        self, hwnd: int, workspace_index: int, ignore_cache: bool = False
-    ) -> QPixmap | None:
+    def _get_app_icon(self, hwnd: int, workspace_index: int, ignore_cache: bool = False) -> QPixmap | None:
         try:
             process = get_process_info(hwnd)
             pid = process["pid"]

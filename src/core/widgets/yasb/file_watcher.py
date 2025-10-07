@@ -9,7 +9,7 @@ from watchdog.events import DirCreatedEvent, FileCreatedEvent, PatternMatchingEv
 from watchdog.observers import Observer
 
 import settings
-from core.utils.utilities import iterate_label_as_parts
+from core.utils.utilities import build_widget_label, iterate_label_as_parts
 from core.validation.widgets.yasb.file_watcher import VALIDATION_SCHEMA
 from core.widgets.base import BaseWidget
 
@@ -50,9 +50,7 @@ class FileEntity:
         return os.path.basename(self.path)
 
     @classmethod
-    def from_path(
-        cls, path: str, read_file_contents: bool = False, read_max_bytes: int = 65536
-    ):
+    def from_path(cls, path: str, read_file_contents: bool = False, read_max_bytes: int = 65536):
         if read_file_contents:
             try:
                 with open(path, encoding="utf-8", errors="ignore") as f:
@@ -145,12 +143,13 @@ class FileWatcherWidget(BaseWidget):
 
     def __init__(
         self,
+        class_name: str,
         listen_paths: list[ListenPaths],
         label_max_length: int,
         clear_labels_after_interval: int,
         container_padding: dict[str, int] | None = None,
     ):
-        super().__init__(class_name="file-watcher")
+        super().__init__(class_name=f"file-watcher {class_name}")
 
         self.listen_paths = listen_paths
         self._padding = container_padding
@@ -172,7 +171,7 @@ class FileWatcherWidget(BaseWidget):
         self._widget_container.setLayout(self._widget_container_layout)
         self.widget_layout.addWidget(self._widget_container)
 
-        self._update_label(self._label_content)
+        build_widget_label(self, self._label_content)
 
         # signals and watchdog
         self._emitter = FileEventEmitter()
@@ -201,12 +200,11 @@ class FileWatcherWidget(BaseWidget):
             return os.path.expanduser(os.path.expandvars(path.strip()))
 
         def remove_duplicate_paths(paths: list[str]):
-            paths[:] = {p2 for p in  paths if (p2 := expand_path(p))}
-
+            paths[:] = {p2 for p in paths if (p2 := expand_path(p))}
 
         for path in self.listen_paths:
             if path["patterns"] is None:
-                path["patterns"] = ['*'] if path["ignore_directories"] else ['**']
+                path["patterns"] = ["*"] if path["ignore_directories"] else ["**"]
             else:
                 remove_duplicate_paths(path["patterns"])
 
@@ -220,13 +218,10 @@ class FileWatcherWidget(BaseWidget):
                 path["ignore_directories"],
                 path["read_file_contents"],
                 path["read_max_bytes"],
+                path['labels']
             )
 
-            self._observer.schedule(
-                handler,
-                expand_path(path["directory"]),
-                recursive=not path["ignore_directories"]
-            )
+            self._observer.schedule(handler, expand_path(path["directory"]), recursive=not path["ignore_directories"])
 
         self._observer.start()
         logger.info("FileWatcher: Observer started and running")
@@ -262,7 +257,8 @@ class FileWatcherWidget(BaseWidget):
 
     def _update_label(self, content: str):
         for _ in iterate_label_as_parts(
-            self._widgets, content,
+            self._widgets,
+            content,
             # layout=self._widget_container_layout
         ):
             pass

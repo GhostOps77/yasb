@@ -1,6 +1,5 @@
 """Shared color token definitions for UI components."""
 
-
 # Theme -> Variant -> Property -> Value
 ButtonColorTokens = dict[str, dict[str, dict[str, str]]]
 # Theme -> Property -> Value
