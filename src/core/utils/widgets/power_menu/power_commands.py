@@ -50,10 +50,7 @@ class PowerOperations:
     def lock(self):
         self.clear_widget()
         subprocess.Popen(
-            [
-                "rundll32.exe",
-                "user32.dll,LockWorkStation",
-            ],
+            ["rundll32.exe", "user32.dll,LockWorkStation"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             creationflags=subprocess.CREATE_NO_WINDOW,
@@ -110,10 +107,7 @@ class PowerOperations:
     def hibernate(self):
         self.clear_widget()
         subprocess.Popen(
-            [
-                "shutdown",
-                "/h",
-            ],
+            ["shutdown", "/h"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             creationflags=subprocess.CREATE_NO_WINDOW,

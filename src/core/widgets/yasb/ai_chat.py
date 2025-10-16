@@ -38,13 +38,12 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from core.utils.utilities import PopupWidget, add_shadow
+from core.utils.utilities import PopupWidget, iterate_label_as_parts
 from core.utils.widgets.ai_chat.client import AiChatClient
 from core.utils.widgets.ai_chat.client_helper import format_chat_text
-from core.utils.widgets.animation_manager import AnimationManager
 from core.utils.win32.utilities import qmenu_rounded_corners
 from core.validation.widgets.yasb.ai_chat import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseFrame, BaseHBoxLayout, BaseVBoxLayout, BaseWidget, BaseYasbWidgetLabel
 
 
 class ContextMenuMixin:
@@ -132,11 +131,9 @@ class ChatMessageLabel(ContextMenuMixin, QLabel):
     def setText(self, text):
         """Override setText to handle long words and make URLs clickable, and store original HTML"""
         if text:
-            processed_text = format_chat_text(text)
-            processed_text = self._insert_break_opportunities(processed_text)
-            super().setText(processed_text)
-        else:
-            super().setText(text)
+            text = format_chat_text(text)
+            text = self._insert_break_opportunities(text)
+        super().setText(text)
 
     def _insert_break_opportunities(self, text):
         """Insert zero-width spaces to enable breaking of very long words, while preserving HTML and all original whitespace."""
@@ -148,10 +145,11 @@ class ChatMessageLabel(ContextMenuMixin, QLabel):
 
             def break_long_word(match):
                 word = match.group(0)
-                if len(word) > 50 and "&" not in word and "<" not in word:
+                word_len = len(word)
+                if word_len > 50 and "&" not in word and "<" not in word:
                     # Insert zero-width space every 30 characters
                     return "".join(
-                        char + ("\u200b" if (i + 1) % 30 == 0 and i + 1 < len(word) else "")
+                        char + ("\u200b" if (i + 1) % 30 == 0 and i + 1 < word_len else "")
                         for i, char in enumerate(word)
                     )
                 return word
@@ -220,8 +218,7 @@ class NotificationLabel(QLabel):
         painter.setPen(Qt.PenStyle.NoPen)
 
         radius = 6
-        margin_x = self._margin[0]
-        margin_y = self._margin[1]
+        margin_x, margin_y = self._margin
 
         # Calculate position based on the specified corner
         x = y = 0
@@ -244,6 +241,7 @@ class NotificationLabel(QLabel):
 class AiChatWidget(BaseWidget):
     validation_schema = VALIDATION_SCHEMA
     _persistent_chat_history = {}
+    label_cls = NotificationLabel
 
     def __init__(
         self,
@@ -252,13 +250,11 @@ class AiChatWidget(BaseWidget):
         icons: dict,
         notification_dot: dict[str, Any],
         animation: dict[str, str],
-        container_padding: dict[str, int],
         callbacks: dict[str, str],
-        label_shadow: dict = None,
-        container_shadow: dict = None,
         providers: list = None,
+        **kwargs,
     ):
-        super().__init__(class_name="ai-chat-widget")
+        super().__init__(class_name="ai-chat-widget", **kwargs)
         self._label_content = label
         self._icons = icons
         self._notification_dot: dict[str, Any] = notification_dot
@@ -268,70 +264,33 @@ class AiChatWidget(BaseWidget):
         self._model = None
         self._popup_chat = None
         self._animation = animation
-        self._padding = container_padding
         self._chat = chat
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
         self._notification_label: NotificationLabel | None = None
         self._input_draft = ""
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-        self.widget_layout.addWidget(self._widget_container)
 
         self._create_dynamically_label(self._label_content)
 
         self.register_callback("toggle_chat", self._toggle_chat)
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
-        self.callback_middle = callbacks["on_middle"]
+        self.map_callbacks(callbacks)
+
         self._thinking_timer = None
         self._thinking_step = 0
         self._thinking_label = None
         self._new_notification = False
 
+    def init_label(self, text, *args, class_name="", **kwargs):
+        return self.label_cls(
+            text,
+            *args,
+            class_name=class_name,
+            corner=self._notification_dot["corner"],
+            color=self._notification_dot["color"],
+            margin=self._notification_dot["margin"] ** kwargs,
+        )
+
     def _create_dynamically_label(self, content: str):
-        label_parts = re.split(r"(<span[^>]*?>.*?</span>)", content)
-        label_parts = [part for part in label_parts if part]
-        for part in label_parts:
-            part = part.strip()
-            if not part:
-                continue
-            if part.startswith("<span") and part.endswith("</span>"):
-                class_name = re.search(r'class=(["\'])([^"\']+?)\1', part)
-                class_result = class_name.group(2) if class_name else "icon"
-                icon = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
-                label = NotificationLabel(
-                    icon,
-                    corner=self._notification_dot["corner"],
-                    color=self._notification_dot["color"],
-                    margin=self._notification_dot["margin"],
-                )
-                label.setProperty("class", class_result)
-                self._notification_label = label
-            else:
-                label = NotificationLabel(
-                    part,
-                    corner=self._notification_dot["corner"],
-                    color=self._notification_dot["color"],
-                    margin=self._notification_dot["margin"],
-                )
-                label.setProperty("class", "label")
-                self._notification_label = label
-            label.setCursor(Qt.CursorShape.PointingHandCursor)
-            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            add_shadow(label, self._label_shadow)
-            self._widget_container_layout.addWidget(label)
-            label.show()
+        for label in iterate_label_as_parts(self, [], content):
+            self._notification_label = label
 
     def _update_label(self):
         """Update the label content and notification dot state."""
@@ -413,11 +372,13 @@ class AiChatWidget(BaseWidget):
             item = self.chat_layout.itemAt(last_idx)
             if item:
                 row_widget = item.widget()
+
         last_role = None
         if row_widget and isinstance(row_widget, QWidget):
             # Try to detect role by QLabel property
-            for i in range(row_widget.layout().count()):
-                child = row_widget.layout().itemAt(i).widget()
+            # for i in range(row_widget.layout().count()):
+            #     child = row_widget.layout().itemAt(i).widget()
+            for child in range(row_widget.layout().children()):
                 if isinstance(child, QLabel):
                     if child.property("class") == "assistant-message":
                         msg_label = child
@@ -425,9 +386,11 @@ class AiChatWidget(BaseWidget):
                         break
                     elif child.property("class") == "user-message":
                         last_role = "user"
+
         partial = self._streaming_state.get("partial_text", "")
         if not partial:
             partial = "thinking ..."
+
         # Only append assistant message if last message is user
         if last_role == "user":
             self._append_message("assistant", partial)
@@ -438,18 +401,22 @@ class AiChatWidget(BaseWidget):
                 item = self.chat_layout.itemAt(last_idx)
                 if item:
                     row_widget = item.widget()
+
             if row_widget and isinstance(row_widget, QWidget):
-                for i in range(row_widget.layout().count()):
-                    child = row_widget.layout().itemAt(i).widget()
+                # for i in range(row_widget.layout().count()):
+                #     child = row_widget.layout().itemAt(i).widget()
+                for child in row_widget.layout().children():
                     if isinstance(child, QLabel) and child.property("class") == "assistant-message":
                         msg_label = child
                         break
+
         elif last_role == "assistant" and msg_label is not None:
             # Just update the label
             try:
                 msg_label.setText(partial)
             except RuntimeError:
                 pass
+
         # If not found, fallback to previous logic
         if msg_label is not None:
             self._streaming_state["msg_label"] = msg_label
@@ -460,6 +427,7 @@ class AiChatWidget(BaseWidget):
                 except Exception:
                     pass
                 self._worker.chunk_signal.connect(self._streaming_chunk_handler)
+
             # If still thinking (no chunk yet), restart thinking animation
             if not self._streaming_state.get("partial_text", ""):
                 self._start_thinking_animation(msg_label)
@@ -467,8 +435,7 @@ class AiChatWidget(BaseWidget):
     def _toggle_chat(self):
         # If popup is not visible or doesn't exist, open it
         if self._popup_chat is None or not (self._popup_chat and self._popup_chat.isVisible()):
-            if self._animation["enabled"]:
-                AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+            self._animate()
             self._show_chat()
         else:
             self._popup_chat.hide()
@@ -492,20 +459,16 @@ class AiChatWidget(BaseWidget):
         self._popup_chat.destroyed.connect(self._on_popup_destroyed)
         self._popup_chat.destroyed.connect(self._stop_thinking_animation)
 
-        layout = QVBoxLayout(self._popup_chat)
-        layout.setSpacing(0)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout = BaseVBoxLayout(self._popup_chat)
 
-        header_widget = QFrame()
-        header_widget.setProperty("class", "chat-header")
-        header_layout = QVBoxLayout(header_widget)
-        header_layout.setSpacing(0)
-        header_layout.setContentsMargins(0, 0, 0, 0)
+        header_widget = BaseFrame(class_name="chat-header")
+        header_layout = BaseVBoxLayout(header_widget)
 
         selection_row = QHBoxLayout()
         selection_row.setAlignment(Qt.AlignmentFlag.AlignVCenter)
-        provider_label = QLabel("Provider")
-        provider_label.setProperty("class", "provider-label")
+
+        provider_label = BaseYasbWidgetLabel("Provider", class_name="provider-label")
+
         self.provider_btn = QPushButton(self._provider or "Select provider")
         self.provider_btn.setProperty("class", "provider-button")
         self.provider_btn.setStyleSheet(
@@ -525,8 +488,9 @@ class AiChatWidget(BaseWidget):
             lambda: self.provider_menu.exec(self.provider_btn.mapToGlobal(self.provider_btn.rect().bottomLeft()))
         )
         self._populate_provider_menu()
-        model_label = QLabel("Model")
-        model_label.setProperty("class", "model-label")
+
+        model_label = BaseYasbWidgetLabel("Model", class_name="model-label")
+
         self.model_btn = QPushButton(self._get_model_label())
         self.model_btn.setProperty("class", "model-button")
         self.model_btn.setStyleSheet(
@@ -565,17 +529,10 @@ class AiChatWidget(BaseWidget):
         self._populate_model_menu()
 
         selection_row.addWidget(provider_label, 0, Qt.AlignmentFlag.AlignVCenter)
-        selection_row.addWidget(
-            self.provider_btn,
-            1,
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
-        )
+        selection_row.addWidget(self.provider_btn, 1, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         selection_row.addWidget(model_label, 0, Qt.AlignmentFlag.AlignVCenter)
-        selection_row.addWidget(
-            self.model_btn,
-            1,
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
-        )
+        selection_row.addWidget(self.model_btn, 1, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+
         header_layout.addLayout(selection_row)
         layout.addWidget(header_widget)
 
@@ -598,20 +555,24 @@ class AiChatWidget(BaseWidget):
         self.chat_widget = QWidget()
         self.chat_widget.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.chat_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+
         self.chat_layout = QVBoxLayout(self.chat_widget)
         self.chat_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.chat_layout.addSpacerItem(QSpacerItem(1, 1, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
+
         self.chat_scroll.setWidget(self.chat_widget)
+
         layout.addWidget(self.chat_scroll, stretch=1)
+
         v_scrollbar = self.chat_scroll.verticalScrollBar()
         v_scrollbar.setSingleStep(6)
+
         # Restore chat history
         self._render_chat_history()
 
-        footer = QFrame()
-        footer.setProperty("class", "chat-footer")
-        footer_layout = QHBoxLayout(footer)
-        footer_layout.setContentsMargins(0, 0, 0, 0)
+        footer = BaseFrame(class_name="chat-footer")
+        footer_layout = BaseHBoxLayout(footer)
+
         self.input_edit = ChatInputEdit()
         self.input_edit.setProperty("class", "chat-input")
         self.input_edit.setPlaceholderText("Type your message...")
@@ -619,26 +580,31 @@ class AiChatWidget(BaseWidget):
         self.input_edit.text_changed.connect(self._update_send_button_state)
         self.input_edit.set_streaming(False)
         self.input_edit.set_parent_widget(self)
+
         if hasattr(self, "_input_draft") and self._input_draft:
             self.input_edit.setPlainText(self._input_draft)
+
         self.send_btn = QPushButton(self._icons["send"])
         self.send_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.send_btn.setProperty("class", "send-button")
         self.send_btn.clicked.connect(self._on_send_clicked)
+
         self.stop_btn = QPushButton(self._icons["stop"])
         self.stop_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.stop_btn.setProperty("class", "stop-button")
         self.stop_btn.clicked.connect(self._on_stop_clicked)
         self.stop_btn.setVisible(False)
+
         self.clear_btn = QPushButton(self._icons["clear"])
         self.clear_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.clear_btn.setProperty("class", "clear-button")
         self.clear_btn.clicked.connect(self._on_clear_chat)
+
         footer_layout.addWidget(self.input_edit, stretch=1)
-        footer_layout.addWidget(self.send_btn)
-        footer_layout.addWidget(self.stop_btn)
-        footer_layout.addWidget(self.clear_btn)
+        footer_layout.addWidgets(self.send_btn, self.stop_btn, self.clear_btn)
+
         layout.addWidget(footer)
+
         self._popup_chat.setPosition(
             alignment=self._chat["alignment"],
             direction=self._chat["direction"],
@@ -668,8 +634,9 @@ class AiChatWidget(BaseWidget):
             del self._streaming_partial_to_load
         if hasattr(self, "_message_batch_index"):
             del self._message_batch_index
+
         # Clear existing widgets
-        for i in reversed(range(self.chat_layout.count())):  # Remove all widgets
+        for i in range(self.chat_layout.count() - 1, -1, -1):  # Remove all widgets
             item = self.chat_layout.itemAt(i)
             if item and item.widget():
                 widget = item.widget()
@@ -691,13 +658,15 @@ class AiChatWidget(BaseWidget):
     def _append_message(self, role, text):
         """Append a message to the chat layout"""
         self._remove_placeholder()
+
         row = QFrame()
         row.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        row_layout = QHBoxLayout(row)
-        row_layout.setContentsMargins(0, 0, 0, 0)
-        row_layout.setSpacing(0)
+
+        row_layout = BaseHBoxLayout(row)
+
         icon_label = QLabel()
         icon_label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+
         msg_label = ChatMessageLabel()
         msg_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         msg_label.set_parent_widget(self)
@@ -705,6 +674,7 @@ class AiChatWidget(BaseWidget):
             Qt.TextInteractionFlag.TextSelectableByMouse | Qt.TextInteractionFlag.LinksAccessibleByMouse
         )
         msg_label.setOpenExternalLinks(True)
+
         if role == "user":
             msg_label.setText(text)
             msg_label.setProperty("class", "user-message")
@@ -716,8 +686,8 @@ class AiChatWidget(BaseWidget):
             msg_label.setText(text)
             msg_label.setProperty("class", "assistant-message")
             msg_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        row_layout.addWidget(icon_label)
-        row_layout.addWidget(msg_label)
+
+        row_layout.addWidget(icon_label, msg_label)
 
         insert_pos = self.chat_layout.count() - 1
         self.chat_layout.insertWidget(insert_pos, row)
@@ -729,19 +699,24 @@ class AiChatWidget(BaseWidget):
 
         hour = datetime.now().hour
         greeting = "Good morning" if 5 <= hour < 12 else "Good afternoon" if 12 <= hour < 18 else "Good evening"
+
         placeholder = QWidget()
         placeholder.setProperty("class", "empty-chat")
-        layout = QVBoxLayout(placeholder)
-        layout.setContentsMargins(0, 0, 0, 0)
+
+        layout = BaseVBoxLayout(placeholder)
         layout.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
+
         label1 = QLabel(greeting)
         label1.setProperty("class", "greeting")
         label1.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+
         label2 = QLabel("How can I help you today?")
         label2.setProperty("class", "message")
         label2.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+
         layout.addWidget(label1)
         layout.addWidget(label2)
+
         self.chat_layout.insertWidget(self.chat_layout.count() - 1, placeholder, stretch=1)
 
     def _load_all_messages_async(self, history, streaming_partial):
@@ -790,6 +765,7 @@ class AiChatWidget(BaseWidget):
             if self._streaming_partial_to_load is not None:
                 partial = self._streaming_partial_to_load or "thinking ..."
                 self._append_message("assistant", partial)
+
                 # Set streaming label reference for real-time updates
                 last_idx = self.chat_layout.count() - 2
                 row_widget = None
@@ -798,12 +774,14 @@ class AiChatWidget(BaseWidget):
                     if item:
                         row_widget = item.widget()
                 msg_label = None
+
                 if row_widget and isinstance(row_widget, QWidget):
                     for i in range(row_widget.layout().count()):
                         child = row_widget.layout().itemAt(i).widget()
                         if isinstance(child, QLabel) and child.property("class") == "assistant-message":
                             msg_label = child
                             break
+
                 if hasattr(self, "_streaming_state") and msg_label is not None:
                     self._streaming_state["msg_label"] = msg_label
                     # Ensure only one handler is connected
@@ -813,15 +791,13 @@ class AiChatWidget(BaseWidget):
                         except Exception:
                             pass
                         self._worker.chunk_signal.connect(self._streaming_chunk_handler)
+
                     # If partial is empty, start thinking animation
                     if not self._streaming_partial_to_load:
                         self._start_thinking_animation(msg_label)
+
             # Clean up batch loading variables
-            for attr in (
-                "_history_to_load",
-                "_streaming_partial_to_load",
-                "_message_batch_index",
-            ):
+            for attr in ("_history_to_load", "_streaming_partial_to_load", "_message_batch_index"):
                 if hasattr(self, attr):
                     delattr(self, attr)
 
@@ -836,15 +812,13 @@ class AiChatWidget(BaseWidget):
             self._input_draft = self.input_edit.toPlainText()
         else:
             self._input_draft = ""
+
         if hasattr(self, "_loading_label"):
             del self._loading_label
+
         self._popup_chat = None
         self._stop_thinking_animation()
-        for attr in (
-            "_history_to_load",
-            "_streaming_partial_to_load",
-            "_message_batch_index",
-        ):
+        for attr in ("_history_to_load", "_streaming_partial_to_load", "_message_batch_index"):
             if hasattr(self, attr):
                 delattr(self, attr)
 
@@ -872,6 +846,7 @@ class AiChatWidget(BaseWidget):
         ):
             self.model_btn.setEnabled(False)
             return
+
         for model_cfg in self._provider_config["models"]:
             model_name = model_cfg["name"]
             model_label = model_cfg.get("label", model_name)
@@ -884,6 +859,7 @@ class AiChatWidget(BaseWidget):
                 action.setChecked(False)
             action.triggered.connect(lambda checked, m=model_label: self._on_model_changed_by_label(m))
         self.model_btn.setEnabled(True)
+
         # Set first model as default from the provider config
         if self._model and any(m["name"] == self._model for m in self._provider_config["models"]):
             selected_model = next(m for m in self._provider_config["models"] if m["name"] == self._model)
@@ -897,6 +873,7 @@ class AiChatWidget(BaseWidget):
         self._save_current_history()
         if not hasattr(self, "_provider_config") or not self._provider_config:
             return
+
         for model_cfg in self._provider_config["models"]:
             if model_cfg.get("label", model_cfg["name"]) == model_label:
                 self._model = model_cfg["name"]
@@ -963,16 +940,7 @@ class AiChatWidget(BaseWidget):
         error_signal = pyqtSignal(str)
         finished_signal = pyqtSignal()
 
-        def __init__(
-            self,
-            provider_config,
-            model,
-            chat_history,
-            stop_event_func,
-            max_tokens,
-            temperature,
-            top_p,
-        ):
+        def __init__(self, provider_config, model, chat_history, stop_event_func, max_tokens, temperature, top_p):
             super().__init__()
             self.provider_config = provider_config
             self.model = model
@@ -1026,15 +994,14 @@ class AiChatWidget(BaseWidget):
         self._thinking_step = 0
 
     def _send_to_api(self):
-        msg_label = None
-        instructions = None
+        msg_label = instructions = None
 
         self._cleanup_previous_worker()
 
         self._append_message("assistant", "thinking ...")
         # Find the last assistant message label in the layout
         msg_label = None
-        for i in reversed(range(self.chat_layout.count())):
+        for i in range(self.chat_layout.count() - 1, -1, -1):
             item = self.chat_layout.itemAt(i)
             widget = item.widget()
             if widget and isinstance(widget, QWidget):
@@ -1046,6 +1013,7 @@ class AiChatWidget(BaseWidget):
                         break
                 if msg_label:
                     break
+
         if not self._is_popup_valid() or msg_label is None:
             return
         self._start_thinking_animation(msg_label)
@@ -1182,13 +1150,14 @@ class AiChatWidget(BaseWidget):
             self._update_label()
 
         # Thread will quit automatically via finished signal, just clear reference when safe
-        if hasattr(self, "_thread") and self._thread:
+        if getattr(self, "_thread", None):
             # Schedule cleanup after thread finishes naturally
             QTimer.singleShot(50, self._clear_thread_reference)
 
     def _streaming_error_handler(self, err):
         if hasattr(self, "_streaming_state"):
             self._streaming_state["in_progress"] = False
+
         msg_label = self._streaming_state.get("msg_label") if hasattr(self, "_streaming_state") else None
         self._stop_thinking_animation()
         reply = f"[Error: {err}]"
@@ -1216,7 +1185,7 @@ class AiChatWidget(BaseWidget):
 
     def _remove_placeholder(self):
         """Remove all empty-chat widgets if they exist with immediate cleanup"""
-        for i in reversed(range(self.chat_layout.count())):
+        for i in range(self.chat_layout.count() - 1, -1, -1):
             item = self.chat_layout.itemAt(i)
             widget = item.widget()
             if widget and widget.property("class") == "empty-chat":

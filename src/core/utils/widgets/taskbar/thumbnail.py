@@ -4,7 +4,7 @@ from ctypes import byref, wintypes
 import win32gui
 from PyQt6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, QRect, Qt
 from PyQt6.QtGui import QFontMetrics, QPixmap, QRegion
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
+from PyQt6.QtWidgets import QFrame, QWidget
 
 from core.utils.win32.bindings.dwmapi import (
     DwmQueryThumbnailSourceSize,
@@ -19,6 +19,7 @@ from core.utils.win32.constants import (
     DWM_TNP_VISIBLE,
 )
 from core.utils.win32.structs import DWM_THUMBNAIL_PROPERTIES, RECT, SIZE
+from core.widgets.base import BaseFrame, BaseHBoxLayout, BaseLabel
 
 logger = logging.getLogger(__name__)
 
@@ -115,22 +116,17 @@ class PreviewPopup(QFrame):
         self._animation_duration = animation_duration
 
         # Main content frame
-        self._content = QFrame(self)
-        self._content.setProperty("class", "taskbar-preview")
+        self._content = BaseFrame(self, class_name="taskbar-preview")
 
         # Header with icon and title
-        self._header = QFrame(self._content)
-        self._header.setProperty("class", "header")
-        self._header_layout = QHBoxLayout(self._header)
-        self._header_layout.setContentsMargins(0, 0, 0, 0)
-        self._header_layout.setSpacing(self.HEADER_SPACING)
+        self._header = BaseFrame(self._content, class_name="header")
+        self._header_layout = BaseHBoxLayout(self._header, spacing=self.HEADER_SPACING)
 
-        self._icon_label = QLabel(self._header)
+        self._icon_label = BaseLabel(self._header)
         self._icon_label.setFixedSize(self.ICON_SIZE, self.ICON_SIZE)
         self._icon_label.setScaledContents(True)
 
-        self._title_label = QLabel(self._header)
-        self._title_label.setProperty("class", "title")
+        self._title_label = BaseLabel(self._header, class_name="title")
 
         self._header_layout.addWidget(self._icon_label)
         self._header_layout.addWidget(self._title_label, 1)
@@ -205,10 +201,7 @@ class PreviewPopup(QFrame):
             dpr = self.get_dpr()
             target = max(1, int(self.ICON_SIZE * dpr))
             phys_pix = icon.scaled(
-                target,
-                target,
-                Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation,
+                target, target, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
             )
             phys_pix.setDevicePixelRatio(dpr)
             self._icon_label.setPixmap(phys_pix)
@@ -407,6 +400,7 @@ class TaskbarThumbnailManager:
                 self._preview_popup.deleteLater()
         except Exception:
             pass
+
         self._preview_popup = None
         self._unregister_thumbnail()
         try:

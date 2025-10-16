@@ -4,7 +4,6 @@ import psutil
 import win32api
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
-    QFrame,
     QHBoxLayout,
     QLabel,
     QProgressBar,
@@ -14,14 +13,12 @@ from PyQt6.QtWidgets import (
 
 from core.utils.utilities import (
     PopupWidget,
-    add_shadow,
     build_progress_widget,
     build_widget_label,
     iterate_label_as_parts,
 )
-from core.utils.widgets.animation_manager import AnimationManager
 from core.validation.widgets.yasb.disk import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseVBoxLayout, BaseWidget
 
 
 class ClickableDiskWidget(QWidget):
@@ -49,75 +46,54 @@ class DiskWidget(BaseWidget):
         decimal_display: int,
         update_interval: int,
         group_label: dict[str, str],
-        container_padding: dict[str, int],
         animation: dict[str, str],
         callbacks: dict[str, str],
         disk_thresholds: dict[str, int],
         label_shadow: dict = None,
-        container_shadow: dict = None,
         progress_bar: dict = None,
+        **kwargs,
     ):
-        super().__init__(int(update_interval * 1000), class_name=f"disk-widget {class_name}")
+        super().__init__(int(update_interval * 1000), class_name=f"disk-widget {class_name}", **kwargs)
+
         self._decimal_display = decimal_display
         self._show_alt_label = False
         self._label_content = label
         self._label_alt_content = label_alt
         self._volume_label = volume_label.upper()
-        self._padding = container_padding
         self._group_label = group_label
         self._animation = animation
         self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
         self._disk_thresholds = disk_thresholds
         self._progress_bar = progress_bar
 
-        self.progress_widget = None
         self.progress_widget = build_progress_widget(self, self._progress_bar)
-
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-        # Initialize container
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-        # Add the container to the main widget layout
-        self.widget_layout.addWidget(self._widget_container)
 
         build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("toggle_group", self._toggle_group)
         self.register_callback("update_label", self._update_label)
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
-        self.callback_middle = callbacks["on_middle"]
-        self.callback_timer = "update_label"
+        self.register_callback("timer", self._update_label)
+        self.map_callbacks(callbacks)
+
         self.start_timer()
 
     def _toggle_label(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         self._show_alt_label = not self._show_alt_label
-        for widget in self._widgets:
-            widget.setVisible(not self._show_alt_label)
-        for widget in self._widgets_alt:
-            widget.setVisible(self._show_alt_label)
+        # for widget in self._widgets:
+        #     widget.setVisible(not self._show_alt_label)
+        # for widget in self._widgets_alt:
+        #     widget.setVisible(self._show_alt_label)
         self._update_label()
 
     def _toggle_group(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         self.show_group_label()
 
     def _update_label(self):
-        active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+        # active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+        active_widgets = self._widgets
         # active_widgets_len = len(active_widgets)
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
 
@@ -145,21 +121,10 @@ class DiskWidget(BaseWidget):
         disk_status_class = f"status-{self._get_disk_threshold(percent_value)}"
 
         for label in iterate_label_as_parts(
-            active_widgets,
-            active_label_content,
-            "label alt" if self._show_alt_label else "label",
-            # self._widget_container_layout
+            self, active_widgets, active_label_content, "alt" if self._show_alt_label else ""
         ):
             # Update label with formatted content
-            class_names = label.property("class").split()
-            for i, class_name in enumerate(class_names):
-                if class_name.startswith("status-"):
-                    class_names[i] = disk_status_class
-                    break
-            else:
-                class_names.append(disk_status_class)
-
-            label.setProperty("class", " ".join(class_names))
+            label.setProperty("class", label.property("class") + " " + disk_status_class)
             label.setStyleSheet("")
 
         if add_progress_widget:
@@ -238,12 +203,11 @@ class DiskWidget(BaseWidget):
             progress_bar.setTextVisible(False)
             progress_bar.setProperty("class", "disk-group-label-bar")
             if disk_space:
-                progress_bar.setValue(int(float(disk_space["used"]["percent"].strip("%"))))
+                # progress_bar.setValue(int(float(disk_space["used"]["percent"].strip("%"))))
+                progress_bar.setValue(int(disk_space["used"]["percent"].strip("%")))
             v_layout.addWidget(progress_bar)
 
-            row_widget_layout = QVBoxLayout(row_widget)
-            row_widget_layout.setContentsMargins(0, 0, 0, 0)
-            row_widget_layout.setSpacing(0)
+            row_widget_layout = BaseVBoxLayout(row_widget)
             row_widget_layout.addWidget(clicable_row)
 
             layout.addWidget(row_widget)

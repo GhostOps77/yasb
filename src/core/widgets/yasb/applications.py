@@ -4,14 +4,14 @@ import subprocess
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QCursor, QPixmap
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
+from PyQt6.QtWidgets import QLabel, QWidget
 
 from core.utils.tooltip import set_tooltip
 from core.utils.utilities import add_shadow
 from core.utils.widgets.animation_manager import AnimationManager
 from core.utils.win32.system_function import function_map
 from core.validation.widgets.yasb.applications import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseHBoxLayout, BaseWidget
 
 
 class ApplicationsWidget(BaseWidget):
@@ -25,37 +25,15 @@ class ApplicationsWidget(BaseWidget):
         image_icon_size: int,
         animation: dict[str, str],
         tooltip: bool,
-        container_padding: dict[str, int],
-        label_shadow: dict = None,
-        container_shadow: dict = None,
+        **kwargs,
     ):
-        super().__init__(class_name=f"apps-widget {class_name}")
+        super().__init__(class_name=f"apps-widget {class_name}", **kwargs)
         self._label = label
 
         self._apps = app_list
-        self._padding = container_padding
         self._image_icon_size = image_icon_size
         self._animation = animation
         self._tooltip = tooltip
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
-        # Construct container
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-        # Initialize container
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-
-        # Add the container to the main widget layout
-        self.widget_layout.addWidget(self._widget_container)
         self._update_label()
 
     def _update_label(self):
@@ -69,9 +47,7 @@ class ApplicationsWidget(BaseWidget):
 
             # Create a container widget for each label
             label_container = QWidget()
-            label_layout = QHBoxLayout(label_container)
-            label_layout.setContentsMargins(0, 0, 0, 0)
-            label_layout.setSpacing(0)
+            label_layout = BaseHBoxLayout(label_container)
 
             # Create the label
             label = ClickableLabel(self)
@@ -117,12 +93,7 @@ class ApplicationsWidget(BaseWidget):
                 if not any(param in data for param in ["-new-tab", "-new-window", "-private-window"]):
                     data = data.split()
 
-                subprocess.Popen(
-                    data,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    shell=True,
-                )
+                subprocess.Popen(data, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
             except Exception as e:
                 logging.error(f"Error starting app: {str(e)}")
         except Exception as e:

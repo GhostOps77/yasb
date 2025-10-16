@@ -2,10 +2,8 @@ import logging
 
 from humanize import naturalsize
 from PyQt6.QtCore import QTimer
-from PyQt6.QtWidgets import QFrame, QHBoxLayout
 
-from core.utils.utilities import add_shadow, build_progress_widget, build_widget_label, iterate_label_as_parts
-from core.utils.widgets.animation_manager import AnimationManager
+from core.utils.utilities import build_progress_widget, build_widget_label, iterate_label_as_parts
 from core.validation.widgets.yasb.memory import VALIDATION_SCHEMA
 from core.widgets.base import BaseWidget
 
@@ -26,51 +24,26 @@ class MemoryWidget(BaseWidget):
         animation: dict[str, str],
         callbacks: dict[str, str],
         memory_thresholds: dict[str, int],
-        container_padding: dict[str, int],
-        label_shadow: dict = None,
-        container_shadow: dict = None,
         progress_bar: dict = None,
         hide_decimal: bool = False,
+        **kwargs,
     ):
-        super().__init__(class_name=f"memory-widget {class_name}")
+        super().__init__(class_name=f"memory-widget {class_name}", **kwargs)
         self._memory_thresholds = memory_thresholds
         self._histogram_icons = histogram_icons
         self._show_alt_label = False
         self._label_content = label
         self._label_alt_content = label_alt
         self._animation = animation
-        self._padding = container_padding
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
         self._progress_bar = progress_bar
         self._hide_decimal = hide_decimal
 
-        self.progress_widget = None
         self.progress_widget = build_progress_widget(self, self._progress_bar)
-        # Construct container
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-        # Initialize container
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-        # Add the container to the main widget layout
-        self.widget_layout.addWidget(self._widget_container)
 
         build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
 
         self.register_callback("toggle_label", self._toggle_label)
-
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
-        self.callback_middle = callbacks["on_middle"]
+        self.map_callbacks(callbacks)
 
         # Add this instance to the shared instances list
         if self not in MemoryWidget._instances:
@@ -155,20 +128,9 @@ class MemoryWidget(BaseWidget):
         threshold_class = f"status-{self._get_virtual_memory_threshold(virtual_mem.percent)}"
 
         for label in iterate_label_as_parts(
-            active_widgets,
-            active_label_content,
-            "label alt" if self._show_alt_label else "label",
-            # self._widget_container_layout
+            self, active_widgets, active_label_content, "alt" if self._show_alt_label else ""
         ):
-            class_names = label.property("class").split()
-            for i, class_name in enumerate(class_names):
-                if class_name.startswith("status-"):
-                    class_names[i] = threshold_class
-                    break
-            else:
-                class_names.append(threshold_class)
-
-            label.setProperty("class", " ".join(class_names))
+            label.setProperty("class", label.property("class") + " " + threshold_class)
             label.setStyleSheet("")
 
         if add_progress_widget:
@@ -181,13 +143,12 @@ class MemoryWidget(BaseWidget):
             self.progress_widget.set_value(virtual_mem.percent)
 
     def _toggle_label(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         self._show_alt_label = not self._show_alt_label
-        for widget in self._widgets:
-            widget.setVisible(not self._show_alt_label)
-        for widget in self._widgets_alt:
-            widget.setVisible(self._show_alt_label)
+        # for widget in self._widgets:
+        #     widget.setVisible(not self._show_alt_label)
+        # for widget in self._widgets_alt:
+        #     widget.setVisible(self._show_alt_label)
         MemoryWidget._notify_instances()
 
     def _get_virtual_memory_threshold(self, virtual_memory_percent) -> str:

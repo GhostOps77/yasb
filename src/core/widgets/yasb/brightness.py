@@ -5,12 +5,11 @@ from datetime import datetime
 import screen_brightness_control as sbc
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QWheelEvent
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QSlider, QVBoxLayout
+from PyQt6.QtWidgets import QSlider, QVBoxLayout
 
 from core.utils.tooltip import set_tooltip
 from core.utils.utilities import (
     PopupWidget,
-    add_shadow,
     build_progress_widget,
     build_widget_label,
     iterate_label_as_parts,
@@ -51,8 +50,6 @@ class BrightnessWidget(BaseWidget):
         container_padding: dict[str, int],
         animation: dict[str, str],
         callbacks: dict[str, str],
-        label_shadow: dict = None,
-        container_shadow: dict = None,
         progress_bar: dict = None,
     ):
         super().__init__(class_name="brightness-widget")
@@ -75,25 +72,9 @@ class BrightnessWidget(BaseWidget):
         self._step = scroll_step
         self._current_mode = None
         self._animation = animation
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
 
         self._progress_bar = progress_bar
         self.progress_widget = build_progress_widget(self, self._progress_bar)
-
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-        self.widget_layout.addWidget(self._widget_container)
 
         build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
 
@@ -101,10 +82,7 @@ class BrightnessWidget(BaseWidget):
         self.register_callback("toggle_level_next", self._toggle_level_next)
         self.register_callback("toggle_level_prev", self._toggle_level_prev)
         self.register_callback("toggle_brightness_menu", self._toggle_brightness_menu)
-
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
-        self.callback_middle = callbacks["on_middle"]
+        self.map_callbacks(callbacks)
 
         self.current_brightness = None
         self.monitor_timer = QTimer()
@@ -120,13 +98,12 @@ class BrightnessWidget(BaseWidget):
             QTimer.singleShot(1000, self.auto_light)
 
     def _toggle_label(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         self._show_alt_label = not self._show_alt_label
-        for widget in self._widgets:
-            widget.setVisible(not self._show_alt_label)
-        for widget in self._widgets_alt:
-            widget.setVisible(self._show_alt_label)
+        # for widget in self._widgets:
+        #     widget.setVisible(not self._show_alt_label)
+        # for widget in self._widgets_alt:
+        #     widget.setVisible(self._show_alt_label)
         self._update_label()
 
     def _toggle_level_next(self):
@@ -188,11 +165,7 @@ class BrightnessWidget(BaseWidget):
                 self._widget_container_layout.removeWidget(self.progress_widget)
             add_progress_widget = True
 
-        for _ in iterate_label_as_parts(
-            active_widgets,
-            active_label_content,
-            # layout=self._widget_container_layout
-        ):
+        for _ in iterate_label_as_parts(self, active_widgets, active_label_content):
             pass
 
         if not add_progress_widget:

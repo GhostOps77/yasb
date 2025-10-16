@@ -11,13 +11,10 @@ from PyQt6 import QtCore
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QPixmap, QWheelEvent
 from PyQt6.QtWidgets import (
-    QFrame,
     QGridLayout,
-    QHBoxLayout,
     QLabel,
     QSizePolicy,
     QSlider,
-    QVBoxLayout,
 )
 from winrt.windows.media.control import GlobalSystemMediaTransportControlsSessionPlaybackInfo
 
@@ -38,7 +35,7 @@ from core.utils.win32.app_aumid import (
     OpenProcess,
 )
 from core.validation.widgets.yasb.media import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseFrame, BaseHBoxLayout, BaseLabel, BaseVBoxLayout, BaseWidget
 from settings import DEBUG
 
 
@@ -72,14 +69,12 @@ class MediaWidget(BaseWidget):
         symmetric_corner_radius: bool,
         icons: dict[str, str],
         animation: dict[str, str],
-        container_padding: dict[str, int],
         media_menu: dict[str, Any],
         media_menu_icons: dict[str, str],
         scrolling_label: dict[str, Any],
-        label_shadow: dict = None,
-        container_shadow: dict = None,
+        **kwargs,
     ):
-        super().__init__(class_name=f"media-widget {class_name}")
+        super().__init__(class_name=f"media-widget {class_name}", **kwargs)
         self._label_content = label
         self._label_alt_content = label_alt
 
@@ -96,23 +91,10 @@ class MediaWidget(BaseWidget):
         self._symmetric_corner_radius = symmetric_corner_radius
         self._hide_empty = hide_empty
         self._animation = animation
-        self._padding = container_padding
         self._menu_config = media_menu
         self._menu_config_icons = media_menu_icons
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
         self._scrolling_label = scrolling_label
-        # Construct container
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(0, 0, 0, 0)
-        # Initialize container
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-        # Add the container to the main widget layout
-        self.widget_layout.addWidget(self._widget_container)
+
         if self._hide_empty:
             self.hide()
         # Make a grid box to overlay the text and thumbnail
@@ -129,37 +111,25 @@ class MediaWidget(BaseWidget):
 
         # Label
         if self._scrolling_label["enabled"]:
-            self._label = ScrollingLabel(
-                self,
-                max_width=self._max_field_size["label"],
-                options=self._scrolling_label,
-            )
+            self._label = ScrollingLabel(self, max_width=self._max_field_size["label"], options=self._scrolling_label)
         else:
-            self._label = QLabel(self)
-
-        self._label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._label.setCursor(Qt.CursorShape.PointingHandCursor)
-        add_shadow(self._label, self._label_shadow)
+            self._label = BaseLabel(self)
 
         # Label Alt
         if self._scrolling_label["enabled"]:
             self._label_alt = ScrollingLabel(
-                self,
-                max_width=self._max_field_size["label_alt"],
-                options=self._scrolling_label,
+                self, max_width=self._max_field_size["label_alt"], options=self._scrolling_label
             )
         else:
-            self._label_alt = QLabel(self)
-
-        self._label_alt.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._label.setCursor(Qt.CursorShape.PointingHandCursor)
-        add_shadow(self._label_alt, self._label_shadow)
+            self._label_alt = BaseLabel(self)
 
         self._thumbnail_label = QLabel(self)
-        self._thumbnail_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self._label.setProperty("class", "label")
         self._label_alt.setProperty("class", "label alt")
+
+        add_shadow(self._label, self._label_shadow)
+        add_shadow(self._label_alt, self._label_shadow)
 
         self.thumbnail_box.addWidget(self._thumbnail_label, 0, 0)
         self.thumbnail_box.addWidget(self._label, 0, 0)
@@ -210,15 +180,13 @@ class MediaWidget(BaseWidget):
             "timeline_interpolated",
         )
 
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
-        self.callback_middle = callbacks["on_middle"]
-
         self.register_callback("toggle_media_menu", self._toggle_media_menu)
         if not self._controls_only:
             self.register_callback("toggle_play_pause", self._toggle_play_pause)
             self.register_callback("toggle_label", self._toggle_label)
             self._label.show()
+
+        self.map_callbacks(callbacks)
 
         self._label_alt.hide()
         self._show_alt_label = False
@@ -236,8 +204,7 @@ class MediaWidget(BaseWidget):
         self._app_is_muted = False
 
     def _toggle_media_menu(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         self.show_menu()
 
     def show_menu(self):
@@ -252,24 +219,20 @@ class MediaWidget(BaseWidget):
         self._dialog.setProperty("class", "media-menu")
 
         # Create main layout for the popup dialog
-        main_layout = QVBoxLayout(self._dialog)
-        main_layout.setContentsMargins(12, 12, 12, 12)
-        main_layout.setSpacing(0)
+        main_layout = BaseVBoxLayout(self._dialog, paddings=12)
 
-        content_layout = QHBoxLayout()
-        content_layout.setSpacing(0)
+        content_layout = BaseHBoxLayout()
 
         # Try to get current media info and thumbnail
         media_info = self.media._media_info
 
-        if media_info is not None and (
-            media_info.get("title", None) is not None or media_info.get("artist", None) is not None
+        if (
+            media_info is not None
+            and media_info.get("title", None) is not None
+            or media_info.get("artist", None) is not None
         ):
             # Create thumbnail label
-            self._popup_thumbnail_label = QLabel()
-            self._popup_thumbnail_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self._popup_thumbnail_label.setProperty("class", "thumbnail")
-            self._popup_thumbnail_label.setContentsMargins(0, 0, 0, 0)
+            self._popup_thumbnail_label = BaseLabel(class_name="thumbnail")
             self._popup_thumbnail_label.setFixedSize(
                 self._menu_config["thumbnail_size"], self._menu_config["thumbnail_size"]
             )
@@ -286,19 +249,14 @@ class MediaWidget(BaseWidget):
                     content_layout.addWidget(self._popup_thumbnail_label, alignment=Qt.AlignmentFlag.AlignTop)
 
                 # Create layout for text information (title, artist, slider, controls)
-                text_layout = QVBoxLayout()
-                text_layout.setContentsMargins(0, 0, 0, 0)
-                text_layout.setSpacing(0)
-                text_layout.setProperty("class", "text-layout")
+                text_layout = BaseVBoxLayout(class_name="text-layout")
 
                 title_text = (
                     self._format_max_field_size(media_info["title"], "popup_title")
                     if media_info["title"] is not None
                     else "Unknown Title"
                 )
-                self._popup_title_label = QLabel(title_text)
-                self._popup_title_label.setContentsMargins(0, 0, 0, 0)
-                self._popup_title_label.setProperty("class", "title")
+                self._popup_title_label = BaseLabel(title_text, class_name="title")
                 self._popup_title_label.setWordWrap(True)
                 self._popup_title_label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
 
@@ -307,53 +265,36 @@ class MediaWidget(BaseWidget):
                     if media_info["artist"] is not None
                     else "Unknown Artist"
                 )
-                self._popup_artist_label = QLabel(artist_text)
-                self._popup_artist_label.setContentsMargins(0, 0, 0, 0)
-                self._popup_artist_label.setProperty("class", "artist")
+                self._popup_artist_label = BaseLabel(artist_text, class_name="artist")
                 self._popup_artist_label.setWordWrap(True)
                 self._popup_artist_label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
                 text_layout.addWidget(self._popup_title_label, alignment=Qt.AlignmentFlag.AlignTop)
                 text_layout.addWidget(self._popup_artist_label, alignment=Qt.AlignmentFlag.AlignTop)
 
                 # Add control buttons directly below the slider in the text layout
-                control_layout = QHBoxLayout()
-                control_layout.setSpacing(0)
+                control_layout = BaseHBoxLayout()
 
                 # Create clickable buttons using the same method as main widget
-                prev_button = ClickableLabel(self)
-                prev_button.setProperty("class", "btn prev")
-                prev_button.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                prev_button.setText(self._menu_config_icons["prev_track"])
+                prev_button = ClickableLabel(self, self._menu_config_icons["prev_track"], class_name="btn prev")
                 prev_button.data = self.media.prev
                 self._popup_prev_label = prev_button
 
-                play_button = ClickableLabel(self)
-                play_button.setProperty("class", "btn play")
-                play_button.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                play_icon = self._menu_config_icons["pause" if self._is_playing else "play"]
-                play_button.setText(play_icon)
+                play_button = ClickableLabel(
+                    self, self._menu_config_icons["pause" if self._is_playing else "play"], class_name="btn play"
+                )
                 play_button.data = self.media.play_pause
                 self._popup_play_button = play_button
 
-                next_button = ClickableLabel(self)
-                next_button.setProperty("class", "btn next")
-                next_button.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                next_button.setText(self._menu_config_icons["next_track"])
+                next_button = ClickableLabel(self, self._menu_config_icons["next_track"], class_name="btn next")
                 next_button.data = self.media.next
                 self._popup_next_label = next_button
 
-                control_layout.addWidget(prev_button)
-                control_layout.addWidget(play_button)
-                control_layout.addWidget(next_button)
-
+                control_layout.addWidgets(prev_button, play_button, next_button)
                 control_layout.addStretch(1)
 
                 source_name, source_class_name = self._get_source_app_name(media_info)
                 if source_name is not None and self._menu_config["show_source"]:
-                    self._popup_source_label = QLabel(source_name)
-                    self._popup_source_label.setContentsMargins(0, 0, 0, 0)
-                    self._popup_source_label.setProperty("class", f"source {source_class_name}")
-                    self._popup_source_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                    self._popup_source_label = BaseLabel(source_name, class_name=f"source {source_class_name}")
                     control_layout.addWidget(self._popup_source_label, 0, Qt.AlignmentFlag.AlignVCenter)
 
                 # Add control layout to the text layout
@@ -365,11 +306,8 @@ class MediaWidget(BaseWidget):
                 # Per-app vertical volume slider
                 if self._menu_config["show_volume_slider"]:
                     try:
-                        self._vol_container = QFrame()
-                        self._vol_container.setProperty("class", "app-volume-container")
-                        vol_layout = QVBoxLayout(self._vol_container)
-                        vol_layout.setContentsMargins(0, 0, 0, 0)
-                        vol_layout.setSpacing(0)
+                        self._vol_container = BaseFrame(class_name="app-volume-container")
+                        vol_layout = BaseVBoxLayout(self._vol_container)
 
                         self._app_volume_slider = QSlider(Qt.Orientation.Vertical)
                         self._app_volume_slider.setProperty("class", "volume-slider")
@@ -381,10 +319,7 @@ class MediaWidget(BaseWidget):
                         vol_layout.addWidget(self._app_volume_slider, 0, Qt.AlignmentFlag.AlignCenter)
 
                         # Add mute/unmute button below the volume slider
-                        self._app_mute_button = ClickableLabel(self)
-                        self._app_mute_button.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                        self._app_mute_button.setProperty("class", "mute-button")
-                        self._app_mute_button.setCursor(Qt.CursorShape.PointingHandCursor)
+                        self._app_mute_button = ClickableLabel(self, class_name="mute-button")
                         self._app_mute_button.data = self._toggle_app_mute
 
                         vol_layout.addWidget(self._app_mute_button, 0, Qt.AlignmentFlag.AlignCenter)
@@ -401,23 +336,17 @@ class MediaWidget(BaseWidget):
                 logging.error(f"MediaWidget: Error setting thumbnail in menu: {e}")
         else:
             # No media playing message
-            no_media_label = QLabel("No media playing")
-            no_media_label.setProperty("class", "no-media")
-            no_media_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            no_media_label = BaseLabel("No media playing", class_name="no-media")
             content_layout.addWidget(no_media_label)
 
         # Add top layout to main layout
         main_layout.addLayout(content_layout)
 
         # Create horizontal layout for slider and time labels
-        self._time_slider_container = QFrame()
-        self._time_slider_container.setProperty("class", "media-timeline-container")
-        self._time_slider_container.setContentsMargins(0, 0, 0, 0)
+        self._time_slider_container = BaseFrame(class_name="media-timeline-container")
 
         # Use a vertical layout for the container instead of horizontal
-        time_slider_layout = QVBoxLayout(self._time_slider_container)
-        time_slider_layout.setContentsMargins(0, 0, 0, 0)
-        time_slider_layout.setSpacing(0)  # Add spacing between slider and time labels
+        time_slider_layout = BaseVBoxLayout(self._time_slider_container)
 
         # Create and configure the slider
         self._progress_slider = QSlider(Qt.Orientation.Horizontal)
@@ -427,17 +356,13 @@ class MediaWidget(BaseWidget):
         self._progress_slider.setMaximum(1000)  # We use 1000 for better precision
 
         # Create a horizontal layout for the time labels
-        time_labels_layout = QHBoxLayout()
-        time_labels_layout.setContentsMargins(0, 0, 0, 0)
-        time_labels_layout.setSpacing(0)
+        time_labels_layout = BaseHBoxLayout()
 
         # Create time labels for current and total time
-        self._popup_current_time_label = QLabel("00:00")
-        self._popup_current_time_label.setProperty("class", "playback-time current")
+        self._popup_current_time_label = BaseLabel("00:00", class_name="playback-time current")
         self._popup_current_time_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
 
-        self._popup_total_time_label = QLabel("00:00")
-        self._popup_total_time_label.setProperty("class", "playback-time total")
+        self._popup_total_time_label = BaseLabel("00:00", class_name="playback-time total")
         self._popup_total_time_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
 
         # Initialize with current times if available
@@ -584,8 +509,7 @@ class MediaWidget(BaseWidget):
             return f"{minutes:01d}:{seconds:02d}"
 
     def _toggle_label(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         self._show_alt_label = not self._show_alt_label
 
         if self._show_alt_label:
@@ -598,8 +522,7 @@ class MediaWidget(BaseWidget):
         self.media.force_update()
 
     def _toggle_play_pause(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         WindowsMedia().play_pause()
 
     def _on_timeline_properties_changed(self, timeline_props):
@@ -721,19 +644,19 @@ class MediaWidget(BaseWidget):
             self._play_label.setText(play_icon)
 
             self._prev_label.setProperty("class", f"btn prev {'disabled' if not is_prev_enabled else ''}")
-            self._prev_label.setCursor(
-                Qt.CursorShape.PointingHandCursor if is_prev_enabled else Qt.CursorShape.PointingHandCursor
-            )
+            # self._prev_label.setCursor(
+            #     Qt.CursorShape.PointingHandCursor if is_prev_enabled else Qt.CursorShape.PointingHandCursor
+            # )
 
             self._play_label.setProperty("class", f"btn play {'disabled' if not is_play_enabled else ''}")
-            self._play_label.setCursor(
-                Qt.CursorShape.PointingHandCursor if is_play_enabled else Qt.CursorShape.PointingHandCursor
-            )
+            # self._play_label.setCursor(
+            #     Qt.CursorShape.PointingHandCursor if is_play_enabled else Qt.CursorShape.PointingHandCursor
+            # )
 
             self._next_label.setProperty("class", f"btn next {'disabled' if not is_next_enabled else ''}")
-            self._next_label.setCursor(
-                Qt.CursorShape.PointingHandCursor if is_next_enabled else Qt.CursorShape.PointingHandCursor
-            )
+            # self._next_label.setCursor(
+            #     Qt.CursorShape.PointingHandCursor if is_next_enabled else Qt.CursorShape.PointingHandCursor
+            # )
 
             self._prev_label.setStyleSheet("")
             self._play_label.setStyleSheet("")
@@ -748,23 +671,23 @@ class MediaWidget(BaseWidget):
                     self._popup_play_button.setProperty(
                         "class", f"btn play {'disabled' if not is_play_enabled else ''}"
                     )
-                    self._popup_play_button.setCursor(
-                        Qt.CursorShape.PointingHandCursor if is_play_enabled else Qt.CursorShape.PointingHandCursor
-                    )
+                    # self._popup_play_button.setCursor(
+                    #     Qt.CursorShape.PointingHandCursor if is_play_enabled else Qt.CursorShape.PointingHandCursor
+                    # )
                     self._popup_play_button.setStyleSheet("")
 
                 if self._popup_prev_label is not None:
                     self._popup_prev_label.setProperty("class", f"btn prev {'disabled' if not is_prev_enabled else ''}")
-                    self._popup_prev_label.setCursor(
-                        Qt.CursorShape.PointingHandCursor if is_prev_enabled else Qt.CursorShape.PointingHandCursor
-                    )
+                    # self._popup_prev_label.setCursor(
+                    #     Qt.CursorShape.PointingHandCursor if is_prev_enabled else Qt.CursorShape.PointingHandCursor
+                    # )
                     self._popup_prev_label.setStyleSheet("")
 
                 if self._popup_next_label is not None:
                     self._popup_next_label.setProperty("class", f"btn next {'disabled' if not is_next_enabled else ''}")
-                    self._popup_next_label.setCursor(
-                        Qt.CursorShape.PointingHandCursor if is_next_enabled else Qt.CursorShape.PointingHandCursor
-                    )
+                    # self._popup_next_label.setCursor(
+                    #     Qt.CursorShape.PointingHandCursor if is_next_enabled else Qt.CursorShape.PointingHandCursor
+                    # )
                     self._popup_next_label.setStyleSheet("")
 
         except RuntimeError:
@@ -1061,12 +984,7 @@ class MediaWidget(BaseWidget):
         try:
             # Draw rounded rectangle
             painter.rounded_rectangle(
-                [0, 0, hr_size[0] - 1, hr_size[1] - 1],
-                hr_radius,
-                self._thumbnail_alpha,
-                None,
-                0,
-                corners=corners,
+                [0, 0, hr_size[0] - 1, hr_size[1] - 1], hr_radius, self._thumbnail_alpha, None, 0, corners=corners
             )
 
         except Exception as e:
@@ -1119,10 +1037,7 @@ class MediaWidget(BaseWidget):
 
     def _create_media_button(self, icon, action):
         if not self._controls_hide:
-            label = ClickableLabel(self)
-            label.setProperty("class", "btn disabled")
-            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            label.setText(icon)
+            label = ClickableLabel(self, icon, class_name="btn disabled")
             label.data = action
             self._widget_container_layout.addWidget(label)
             return label
@@ -1401,17 +1316,18 @@ class MediaWidget(BaseWidget):
             self._app_mute_button.setText(self._menu_config_icons[icon_key])
             self._app_mute_button.setProperty("class", f"{icon_key}-button")
             self._app_mute_button.setEnabled(True)
-            self._app_mute_button.style().unpolish(self._app_mute_button)
-            self._app_mute_button.style().polish(self._app_mute_button)
+            style = self._app_mute_button.style()
+            style.unpolish(self._app_mute_button)
+            style.polish(self._app_mute_button)
 
         except Exception as e:
             logging.error(f"MediaWidget: Failed to update mute button: {e}")
             self._app_mute_button.setEnabled(False)
 
 
-class ClickableLabel(QLabel):
-    def __init__(self, parent=None):
-        super().__init__(parent)
+class ClickableLabel(BaseLabel):
+    def __init__(self, parent=None, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
         self.parent_widget = parent
         self.data = None
 

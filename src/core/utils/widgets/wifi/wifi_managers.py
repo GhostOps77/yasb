@@ -2,27 +2,13 @@ import ctypes as ct
 import logging
 import re
 import threading
-from ctypes import (
-    POINTER,
-    Array,
-    WinError,
-    addressof,
-    byref,
-    c_void_p,
-    create_unicode_buffer,
-    sizeof,
-)
+from ctypes import POINTER, Array, WinError, addressof, byref, c_void_p, create_unicode_buffer, sizeof
 from ctypes.wintypes import DWORD, HANDLE, LPWSTR
 from dataclasses import dataclass
 from enum import IntFlag, StrEnum, auto
 
 from PyQt6.QtCore import QObject, QThread, pyqtSignal
-from winrt.windows.devices.wifi import (
-    WiFiAdapter,
-    WiFiConnectionStatus,
-    WiFiNetworkReport,
-    WiFiReconnectionKind,
-)
+from winrt.windows.devices.wifi import WiFiAdapter, WiFiConnectionStatus, WiFiNetworkReport, WiFiReconnectionKind
 from winrt.windows.security.credentials import PasswordCredential
 
 from core.utils.win32.bindings import (
@@ -36,11 +22,7 @@ from core.utils.win32.bindings import (
     WlanScan,
     WlanSetProfile,
 )
-from core.utils.win32.bindings.wlanapi import (
-    WlanDeleteProfile,
-    WlanGetProfile,
-    WlanRegisterNotification,
-)
+from core.utils.win32.bindings.wlanapi import WlanDeleteProfile, WlanGetProfile, WlanRegisterNotification
 from core.utils.win32.constants import (
     ACCESS_DENIED,
     ERROR_NDIS_DOT11_POWER_STATE_INVALID,
@@ -215,13 +197,7 @@ class WiFiManager(QObject):
             raise WinError(result)
 
         result = WlanRegisterNotification(
-            self._client_handle,
-            WLAN_NOTIFICATION_SOURCE_ACM,
-            True,
-            self._notification_callback,
-            None,
-            None,
-            None,
+            self._client_handle, WLAN_NOTIFICATION_SOURCE_ACM, True, self._notification_callback, None, None, None
         )
         if result != ERROR_SUCCESS:
             self.uninit_wlan()
@@ -232,13 +208,7 @@ class WiFiManager(QObject):
         if self._client_handle:
             # Unregister notification callback
             result = WlanRegisterNotification(
-                self._client_handle,
-                WLAN_NOTIFICATION_SOURCE_NONE,
-                True,
-                None,
-                None,
-                None,
-                None,
+                self._client_handle, WLAN_NOTIFICATION_SOURCE_NONE, True, None, None, None, None
             )
             if result != ERROR_SUCCESS:
                 raise WinError(result)
@@ -549,15 +519,7 @@ class WiFiManager(QObject):
     def _get_wlan_profile(self, client_handle: HANDLE, interface_guid: GUID, ssid: str) -> str:
         """Get the profile XML of a WiFi network"""
         profile_str_ptr = LPWSTR()
-        result = WlanGetProfile(
-            client_handle,
-            byref(interface_guid),
-            ssid,
-            None,
-            byref(profile_str_ptr),
-            None,
-            None,
-        )
+        result = WlanGetProfile(client_handle, byref(interface_guid), ssid, None, byref(profile_str_ptr), None, None)
         if result == ERROR_SUCCESS and profile_str_ptr.value is not None:
             return profile_str_ptr.value
         if result == ERROR_NOT_FOUND:  # No need to log this, expected behavior
@@ -569,14 +531,7 @@ class WiFiManager(QObject):
         try:
             reason_code = DWORD()
             result = WlanSetProfile(
-                client_handle,
-                byref(interface_guid),
-                0,
-                profile_xml,
-                None,
-                True,
-                None,
-                byref(reason_code),
+                client_handle, byref(interface_guid), 0, profile_xml, None, True, None, byref(reason_code)
             )
 
             if result == ERROR_SUCCESS:

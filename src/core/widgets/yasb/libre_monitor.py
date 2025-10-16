@@ -10,18 +10,15 @@ from PyQt6.QtNetwork import (
     QNetworkRequest,
 )
 from PyQt6.QtWidgets import (
-    QFrame,
     QGridLayout,
     QHBoxLayout,
     QLabel,
-    QVBoxLayout,
     QWidget,
 )
 
-from core.utils.utilities import PopupWidget, add_shadow, build_widget_label, iterate_label_as_parts
-from core.utils.widgets.animation_manager import AnimationManager
+from core.utils.utilities import PopupWidget, build_widget_label, iterate_label_as_parts
 from core.validation.widgets.yasb.libre_monitor import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseFrame, BaseLabel, BaseVBoxLayout, BaseWidget
 
 
 class LibreHardwareMonitorWidget(BaseWidget):
@@ -48,13 +45,11 @@ class LibreHardwareMonitorWidget(BaseWidget):
         server_username: str,
         server_password: str,
         animation: dict[str, str],
-        container_padding: dict[str, int],
         callbacks: dict,
         libre_menu: dict,
-        label_shadow: dict = None,
-        container_shadow: dict = None,
+        **kwargs,
     ):
-        super().__init__(update_interval, class_name=class_name)
+        super().__init__(update_interval, class_name=class_name, **kwargs)
         self._show_alt_label = False
         self._label_content = label
         self._label_alt_content = label_alt
@@ -74,31 +69,9 @@ class LibreHardwareMonitorWidget(BaseWidget):
         self._server_username = server_username
         self._server_password = server_password
         self._animation = animation
-        self._padding = container_padding
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
         self._libre_menu = libre_menu
-        # UI
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-        self.widget_layout.addWidget(self._widget_container)
 
         build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
-
-        self.register_callback("toggle_label", self._toggle_label)
-        self.register_callback("update_label", self._update_label)
-        self.register_callback("toggle_menu", self._toggle_menu)
 
         self._data = None
         # Create a network manager to handle the LHM connection asynchronously
@@ -111,35 +84,32 @@ class LibreHardwareMonitorWidget(BaseWidget):
         # Create a request
         url = QUrl(f"http://{self._server_host}:{self._server_port}/Sensor?action=Get&id={quote(self._sensor_id)}")
         self.request = QNetworkRequest(url)
-        self.request.setHeader(
-            QNetworkRequest.KnownHeaders.ContentTypeHeader,
-            "application/x-www-form-urlencoded",
-        )
+        self.request.setHeader(QNetworkRequest.KnownHeaders.ContentTypeHeader, "application/x-www-form-urlencoded")
 
         # Callbacks
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
-        self.callback_middle = callbacks["on_middle"]
-        self.callback_timer = "update_label"
+        self.register_callback("toggle_label", self._toggle_label)
+        self.register_callback("update_label", self._update_label)
+        self.register_callback("toggle_menu", self._toggle_menu)
+        self.register_callback("timer", self._update_label)
+
+        self.map_callbacks(callbacks)
 
         # Timer
         self.start_timer()
 
     def _toggle_label(self):
         """Toggle between main and alt labels"""
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         self._show_alt_label = not self._show_alt_label
-        for widget in self._widgets:
-            widget.setVisible(not self._show_alt_label)
-        for widget in self._widgets_alt:
-            widget.setVisible(self._show_alt_label)
+        # for widget in self._widgets:
+        #     widget.setVisible(not self._show_alt_label)
+        # for widget in self._widgets_alt:
+        #     widget.setVisible(self._show_alt_label)
         self._update_label()
 
     def _toggle_menu(self):
         """Toggle the popup menu"""
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         self._show_popup_menu()
 
     def _show_popup_menu(self):
@@ -153,14 +123,10 @@ class LibreHardwareMonitorWidget(BaseWidget):
         )
         self._menu.setProperty("class", "libre-menu")
 
-        layout = QVBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        layout = BaseVBoxLayout()
 
         if self._libre_menu["header_label"]:
-            header_label = QLabel(self._libre_menu["header_label"])
-            header_label.setProperty("class", "header")
-            header_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            header_label = BaseLabel(self._libre_menu["header_label"], class_name="header")
             layout.addWidget(header_label)
 
         self.sensors_container = QWidget()
@@ -173,8 +139,7 @@ class LibreHardwareMonitorWidget(BaseWidget):
             sensor_id = sensor["id"]
             sensor_name = sensor["name"]
 
-            sensor_widget = QFrame()
-            sensor_widget.setProperty("class", "sensor-item")
+            sensor_widget = BaseFrame(class_name="sensor-item")
             sensor_layout = QHBoxLayout(sensor_widget)
 
             name_label = QLabel(sensor_name)
@@ -227,10 +192,7 @@ class LibreHardwareMonitorWidget(BaseWidget):
 
         url = QUrl(f"http://{self._server_host}:{self._server_port}/Sensor?action=Get&id={quote(sensor_id)}")
         request = QNetworkRequest(url)
-        request.setHeader(
-            QNetworkRequest.KnownHeaders.ContentTypeHeader,
-            "application/x-www-form-urlencoded",
-        )
+        request.setHeader(QNetworkRequest.KnownHeaders.ContentTypeHeader, "application/x-www-form-urlencoded")
         manager = QNetworkAccessManager()
         manager.authenticationRequired.connect(self._handle_authentication)
         reply = manager.post(request, b"")
@@ -305,11 +267,7 @@ class LibreHardwareMonitorWidget(BaseWidget):
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         active_label_content = active_label_content.format(info=info)
 
-        for _ in iterate_label_as_parts(
-            active_widgets,
-            active_label_content,
-            # layout=self._widget_container_layout
-        ):
+        for _ in iterate_label_as_parts(self, active_widgets, active_label_content):
             pass
 
         # Update popup menu if it's visible

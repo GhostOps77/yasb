@@ -2,21 +2,19 @@ import atexit
 import logging
 import os
 import re
+from typing import Any, Callable, Iterable
 
 import win32gui
 from PIL import Image
-from PyQt6.QtCore import QElapsedTimer, Qt, QTimer, pyqtSignal
+from PyQt6.QtCore import QElapsedTimer, QTimer, pyqtSignal
 from PyQt6.QtGui import QImage, QPixmap
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel
 
 from core.event_service import EventService
-from core.utils.utilities import add_shadow
-from core.utils.widgets.animation_manager import AnimationManager
 from core.utils.win32.app_icons import get_window_icon
 from core.utils.win32.utilities import get_hwnd_info
 from core.utils.win32.windows import WinEvent
 from core.validation.widgets.yasb.active_window import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseWidget, BaseYasbWidgetLabel
 from settings import APP_BAR_TITLE
 
 # Get the current process ID to exclude our own windows
@@ -63,7 +61,6 @@ class ActiveWindowWidget(BaseWidget):
         label: str,
         label_alt: str,
         class_name: str,
-        callbacks: dict[str, str],
         label_no_window: str,
         label_icon: bool,
         label_icon_size: int,
@@ -72,12 +69,12 @@ class ActiveWindowWidget(BaseWidget):
         animation: dict[str, str],
         max_length: int,
         max_length_ellipsis: str,
-        container_padding: dict[str, int],
-        label_shadow: dict = None,
-        container_shadow: dict = None,
+        callbacks: dict[str, str],
         rewrite: list[dict] = None,
+        **kwargs,
     ):
-        super().__init__(class_name=f"active-window-widget {class_name}")
+        super().__init__(class_name=f"active-window-widget {class_name}", **kwargs)
+
         self.dpi = None
         self._win_info = None
         self._tracked_hwnd = None
@@ -94,77 +91,56 @@ class ActiveWindowWidget(BaseWidget):
         self._event_service = EventService()
         self._update_retry_count = 0
         self._animation = animation
-        self._padding = container_padding
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
         self._rewrite_rules = rewrite
-        # Construct container
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-        # Initialize container
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-        # Add the container to the main widget layout
-        self.widget_layout.addWidget(self._widget_container)
 
-        self._window_title_text = QLabel()
-        self._window_title_text.setProperty("class", "label")
-        self._window_title_text.setTextFormat(Qt.TextFormat.PlainText)
-        self._window_title_text.setText(self._label_no_window)
-        add_shadow(self._window_title_text, self._label_shadow)
+        self._window_title_text = BaseYasbWidgetLabel(self._label_no_window, shadows=self._label_shadow)
+        # self._window_title_text.setTextFormat(Qt.TextFormat.PlainText)
 
         if self._label_icon:
-            self._window_icon_label = QLabel()
-            self._window_icon_label.setProperty("class", "label icon")
-            self._window_icon_label.setText(self._label_no_window)
-            add_shadow(self._window_icon_label, self._label_shadow)
+            self._window_icon_label = BaseYasbWidgetLabel(
+                self._label_no_window, class_name="icon", shadows=self._label_shadow
+            )
+
         self._ignore_window = ignore_window
         self._ignore_window["classes"] += IGNORED_CLASSES
         self._ignore_window["processes"] += IGNORED_PROCESSES
         self._ignore_window["titles"] += IGNORED_TITLES
-        self._icon_cache = dict()
+
+        self._icon_cache = {}
         if self._label_icon:
             self._widget_container_layout.addWidget(self._window_icon_label)
+
         self._widget_container_layout.addWidget(self._window_title_text)
+
         self.register_callback("toggle_label", self._toggle_title_text)
-        if not callbacks:
-            callbacks = {
-                "on_left": "toggle_label",
-                "on_middle": "do_nothing",
-                "on_right": "toggle_label",
-            }
+        self.map_callbacks(callbacks)
 
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
-        self.callback_middle = callbacks["on_middle"]
+        self.register_events_to_signal(
+            self.foreground_change,
+            [WinEvent.EventSystemForeground, WinEvent.EventSystemMoveSizeEnd],
+            self._on_focus_change_event,
+        )
 
-        self.foreground_change.connect(self._on_focus_change_event)
-        self._event_service.register_event(WinEvent.EventSystemForeground, self.foreground_change)
-        self._event_service.register_event(WinEvent.EventSystemMoveSizeEnd, self.foreground_change)
+        self.register_events_to_signal(
+            self.window_name_change,
+            [WinEvent.EventObjectNameChange, WinEvent.EventObjectStateChange],
+            self._on_window_name_change_event,
+        )
 
-        self.window_name_change.connect(self._on_window_name_change_event)
-        self._event_service.register_event(WinEvent.EventObjectNameChange, self.window_name_change)
-        self._event_service.register_event(WinEvent.EventObjectStateChange, self.window_name_change)
+        self.register_events_to_signal(
+            self.window_destroy, [WinEvent.EventObjectDestroy], self._on_window_destroy_event
+        )
 
-        self.window_destroy.connect(self._on_window_destroy_event)
-        self._event_service.register_event(WinEvent.EventObjectDestroy, self.window_destroy)
-
-        self.focus_change_workspaces.connect(self._on_focus_change_workspaces)
-        self._event_service.register_event("workspace_update", self.focus_change_workspaces)
+        self.register_events_to_signal(
+            self.focus_change_workspaces, ["workspace_update"], self._on_focus_change_workspaces
+        )
 
         # Parent timer to widget so it auto-stops/cleans up on deletion
-        self._window_update_timer = QTimer(self)
+        self._window_update_timer = self.timer
         self._window_update_timer.setSingleShot(True)
         self._window_update_timer.timeout.connect(self._process_debounced_update)
         self._pending_window_update = None
+
         self._last_update_time = QElapsedTimer()
         self._last_update_time.start()
 
@@ -176,14 +152,36 @@ class ActiveWindowWidget(BaseWidget):
         except Exception:
             pass
 
+    def register_events_to_signal(
+        self, signal_obj: pyqtSignal, events: Iterable[WinEvent | str], callback: Callable[[Any], Any]
+    ):
+        signal_obj.connect(callback)
+        for event in events:
+            self._event_service.register_event(event, signal_obj)
+
+    def unregister_events_from_signal(
+        self, signal_obj: pyqtSignal, events: Iterable[WinEvent | str], callback: Callable[[Any], Any]
+    ):
+        signal_obj.connect(callback)
+        for event in events:
+            self._event_service.unregister_event(event, signal_obj)
+
     def _on_destroyed(self, *args):
         try:
             # Unregister all events we registered
-            self._event_service.unregister_event(WinEvent.EventSystemForeground, self.foreground_change)
-            self._event_service.unregister_event(WinEvent.EventSystemMoveSizeEnd, self.foreground_change)
-            self._event_service.unregister_event(WinEvent.EventObjectNameChange, self.window_name_change)
-            self._event_service.unregister_event(WinEvent.EventObjectStateChange, self.window_name_change)
-            self._event_service.unregister_event("workspace_update", self.focus_change_workspaces)
+            self.unregister_events_from_signal(
+                self.foreground_change,
+                [WinEvent.EventSystemForeground, WinEvent.EventSystemMoveSizeEnd],
+                self._on_focus_change_event,
+            )
+            self.unregister_events_from_signal(
+                self.window_name_change,
+                [WinEvent.EventObjectNameChange, WinEvent.EventObjectStateChange],
+                self._on_window_name_change_event,
+            )
+            self.unregister_events_from_signal(
+                self.focus_change_workspaces, ["workspace_update"], self._on_focus_change_workspaces
+            )
         except Exception:
             pass
 
@@ -192,7 +190,6 @@ class ActiveWindowWidget(BaseWidget):
         if not text or not self._rewrite_rules:
             return text
 
-        result = text
         for rule in self._rewrite_rules:
             pattern, replacement, case = (rule.get(k, "") for k in ("pattern", "replacement", "case"))
 
@@ -200,49 +197,50 @@ class ActiveWindowWidget(BaseWidget):
                 continue
 
             try:
-                result, count = re.subn(pattern, replacement, result)
+                text, count = re.subn(pattern, replacement, text)
                 if count > 0:
-                    transform = getattr(result, case, None)
+                    transform = getattr(text, case, None)
                     if callable(transform):
-                        result = transform()
+                        text = transform()
             except re.error as e:
                 logging.warning(f"Invalid regex pattern '{pattern}': {e}")
                 continue
 
-        return result
+        return text
 
     def _set_no_window_or_hide(self) -> None:
         self._tracked_hwnd = None
-        if self._label_no_window:
-            self._window_title_text.setText(self._label_no_window)
-            if self._label_icon:
-                self._window_icon_label.hide()
-        else:
+        if not self._label_no_window:
             self.hide()
+            return
+
+        self._window_title_text.setText(self._label_no_window)
+        if self._label_icon:
+            self._window_icon_label.hide()
 
     def _stop_events(self) -> None:
         self._event_service.clear()
 
     def _on_focus_change_workspaces(self, event: str) -> None:
-        # Temporary fix for MoveWindow event from Komorebi: MoveWindow event is not sending enough data to know on which monitor the window is being moved also animation is a problem and because of that we are using singleShot to try catch the window after the animation is done and this will run only on MoveWindow event
-        if event in ["Hide", "Destroy"]:
+        # Temporary fix for MoveWindow event from Komorebi: MoveWindow event is not sending enough data to know on which
+        # monitor the window is being moved also animation is a problem and because of that we are using singleShot to
+        # try catch the window after the animation is done and this will run only on MoveWindow event
+        if event in ("Hide", "Destroy"):
             self.hide()
             return
+
         hwnd = win32gui.GetForegroundWindow()
         if hwnd == 0:
             self._set_no_window_or_hide()
             return
 
         self._on_focus_change_event(hwnd, WinEvent.WinEventOutOfContext)
-        if self._update_retry_count < 3 and event in ["MoveWindow"]:
-            self._update_retry_count += 1
-            QTimer.singleShot(
-                200,
-                lambda: self._on_focus_change_event(hwnd, WinEvent.WinEventOutOfContext),
-            )
-            return
-        else:
+        if self._update_retry_count >= 3 or event not in ["MoveWindow"]:
             self._update_retry_count = 0
+            return
+
+        self._update_retry_count += 1
+        QTimer.singleShot(200, lambda: self._on_focus_change_event(hwnd, WinEvent.WinEventOutOfContext))
 
     def _on_window_destroy_event(self, hwnd: int, event: WinEvent) -> None:
         """Handle top-level window destruction. Only react when the destroyed HWND matches the tracked window."""
@@ -274,8 +272,7 @@ class ActiveWindowWidget(BaseWidget):
             logging.exception(f"Failed handling destroy event for HWND {hwnd}")
 
     def _toggle_title_text(self) -> None:
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         self._show_alt = not self._show_alt
         self._active_label = self._label_alt if self._show_alt else self._label
         self._update_text()
@@ -339,6 +336,7 @@ class ActiveWindowWidget(BaseWidget):
         try:
             if hwnd != win32gui.GetForegroundWindow():
                 return
+
             title = win_info["title"]
             process = win_info["process"]
             class_name = win_info["class_name"]
@@ -352,23 +350,15 @@ class ActiveWindowWidget(BaseWidget):
                     self.dpi = self.screen().devicePixelRatio()
                     icon_img = get_window_icon(hwnd)
                     if icon_img:
-                        icon_img = icon_img.resize(
-                            (
-                                int(self._label_icon_size * self.dpi),
-                                int(self._label_icon_size * self.dpi),
-                            ),
-                            Image.LANCZOS,
-                        ).convert("RGBA")
+                        side_length = int(self._label_icon_size * self.dpi)
+                        icon_img = icon_img.resize((side_length, side_length), Image.LANCZOS).convert("RGBA")
+
                     if not process["name"] == "explorer.exe":
                         # Do not cache icons for explorer.exe windows
                         self._icon_cache[cache_key] = icon_img
+
                 if icon_img:
-                    qimage = QImage(
-                        icon_img.tobytes(),
-                        icon_img.width,
-                        icon_img.height,
-                        QImage.Format.Format_RGBA8888,
-                    )
+                    qimage = QImage(icon_img.tobytes(), icon_img.width, icon_img.height, QImage.Format.Format_RGBA8888)
                     self.pixmap = QPixmap.fromImage(qimage)
                     self.pixmap.setDevicePixelRatio(self.dpi)
                 else:
@@ -381,9 +371,11 @@ class ActiveWindowWidget(BaseWidget):
             ):
                 win_info["title"] = ""
                 return win_info["title"]
+
             else:
                 if "title" in win_info and len(win_info["title"]) > 0:
                     win_info["title"] = self._rewrite_filter(win_info["title"])
+
                 if "process" in win_info and "name" in win_info["process"]:
                     win_info["process"]["name"] = self._rewrite_filter(win_info["process"]["name"])
 
@@ -401,10 +393,11 @@ class ActiveWindowWidget(BaseWidget):
                     self._tracked_hwnd = None
                 self._update_text()
 
-                if self._window_title_text.isHidden():
-                    self._window_title_text.show()
-                if self.isHidden():
-                    self.show()
+                # if self._window_title_text.isHidden():
+                self._window_title_text.show()
+                # if self.isHidden():
+                self.show()
+
         except Exception:
             logging.exception(
                 f"Failed to update active window title for window with HWND {hwnd} emitted by event {event}"

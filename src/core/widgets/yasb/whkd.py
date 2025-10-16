@@ -6,8 +6,6 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
     QApplication,
     QDialog,
-    QFrame,
-    QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
@@ -18,10 +16,9 @@ from PyQt6.QtWidgets import (
 )
 
 from core.utils.alert_dialog import raise_info_alert
-from core.utils.utilities import add_shadow, build_widget_label
-from core.utils.widgets.animation_manager import AnimationManager
+from core.utils.utilities import build_widget_label
 from core.validation.widgets.yasb.whkd import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseHBoxLayout, BaseWidget
 from settings import SCRIPT_PATH
 
 
@@ -158,7 +155,7 @@ class KeybindsDialog(QDialog):
     def update_display(self):
         no_plus_modifiers = {key.lower() for key in self.special_keys.keys()}
         # Clear any existing content
-        for i in reversed(range(self.container_layout.count())):
+        for i in range(self.container_layout.count() - 1, -1, -1):
             self.widget = self.container_layout.itemAt(i).widget()
             if self.widget:
                 self.widget.deleteLater()
@@ -183,20 +180,14 @@ class KeybindsDialog(QDialog):
             # Render keybind row
             self.row = QWidget()
             self.row.setProperty("class", "keybind-row")
-            self.row_layout = QHBoxLayout(self.row)
-
-            self.row_layout.setContentsMargins(5, 5, 5, 5)
-            self.row_layout.setSpacing(0)
+            self.row_layout = BaseHBoxLayout(self.row, paddings=5)
             self.row_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
-            # Create a container widget for buttons
             # Create a container widget for buttons
             buttons_container = QWidget(self.row)
             buttons_container.setProperty("class", "keybind-buttons-container")
 
-            buttons_layout = QHBoxLayout(buttons_container)
-            buttons_layout.setContentsMargins(0, 0, 0, 0)
-
+            buttons_layout = BaseHBoxLayout(buttons_container)
             buttons_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
             def create_key_button(key_text):
@@ -259,51 +250,23 @@ class WhkdWidget(BaseWidget):
     validation_schema = VALIDATION_SCHEMA
 
     def __init__(
-        self,
-        label: str,
-        animation: dict[str, str],
-        special_keys: list = None,
-        container_padding: dict = None,
-        callbacks: dict = None,
-        label_shadow: dict = None,
-        container_shadow: dict = None,
+        self, label: str, animation: dict[str, str], special_keys: list = None, callbacks: dict = None, **kwargs
     ):
-        super().__init__(class_name="whkd-widget")
+        super().__init__(class_name="whkd-widget", **kwargs)
         self._label_content = label
-        self._padding = container_padding
         self._animation = animation
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
         # Handle the case where special_keys is not provided - initialize as empty
         special_keys = special_keys or []
         self._special_keys = {item["key"]: item["key_replace"] for item in special_keys}
-        # Construct container
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-        # Initialize container
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-
-        # Add the container to the main widget layout
-        self.widget_layout.addWidget(self._widget_container)
 
         build_widget_label(self, self._label_content, None, self._label_shadow)
 
         self.register_callback("open_popup", self._open_popup)
-        callbacks = {"on_left": "open_popup"}
-        self.callback_left = callbacks["on_left"]
+        callbacks = callbacks or {"on_left": "open_popup"}
+        self.map_callbacks(callbacks)
 
     def _open_popup(self):
-        if self._animation.get("enabled"):
-            AnimationManager.animate(self, self._animation.get("type"), self._animation.get("duration"))
+        self._animate()
 
         # Determine config file location
         whkd_config_home = os.getenv("WHKD_CONFIG_HOME")
@@ -335,26 +298,45 @@ class WhkdWidget(BaseWidget):
         dialog.exec()
 
     def _process_file(self, lines):
-        # Filter lines: keep headers and non-comment lines
-        filtered_lines = []
-        for line in lines:
-            stripped = line.strip()
-            if stripped.startswith("##"):
-                filtered_lines.append(stripped)
-            elif not (stripped.startswith("#") or stripped.startswith(".shell")):
-                # Remove inline comments; only add non-empty lines
-                line_no_comment = line.split("#")[0].strip()
-                if line_no_comment:
-                    filtered_lines.append(line_no_comment)
+        # # Filter lines: keep headers and non-comment lines
+        # filtered_lines = []
+        # for line in lines:
+        #     stripped = line.strip()
+        #     if stripped.startswith("##"):
+        #         filtered_lines.append(stripped)
+        #     elif not (stripped.startswith("#") or stripped.startswith(".shell")):
+        #         # Remove inline comments; only add non-empty lines
+        #         line_no_comment = line.split("#")[0].strip()
+        #         if line_no_comment:
+        #             filtered_lines.append(line_no_comment)
 
-        # Format the filtered lines into content tuples
+        # # Format the filtered lines into content tuples
+        # formatted_lines = []
+        # for line in filtered_lines:
+        #     # Check if line is a header
+        #     if line.startswith("##"):
+        #         header_text = line.lstrip("#").strip()
+        #         formatted_lines.append((None, header_text))
+        #     elif ":" in line:
+        #         keybind, command = line.split(":", 1)
+        #         formatted_lines.append((keybind.strip(), command.strip()))
+
         formatted_lines = []
-        for line in filtered_lines:
-            # Check if line is a header
+
+        # Filter the lines, keep headers and non-comment lines, and
+        # Format the filtered lines into content tuples
+        for line in lines:
+            line = line.strip()
+
             if line.startswith("##"):
                 header_text = line.lstrip("#").strip()
                 formatted_lines.append((None, header_text))
-            elif ":" in line:
-                keybind, command = line.split(":", 1)
-                formatted_lines.append((keybind.strip(), command.strip()))
+
+            elif not line.startswith(("#", ".shell")):
+                # Remove inline comments; only add non-empty lines
+                line_no_comment = line.split("#")[0].strip()
+                if line_no_comment and ":" in line:
+                    keybind, command = line.split(":", 1)
+                    formatted_lines.append((keybind.strip(), command.strip()))
+
         return formatted_lines

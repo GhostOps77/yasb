@@ -291,11 +291,12 @@ class TrafficDataManager:
             interface_data = cls._interface_data[interface]
             data = {
                 "interface": interface,
-                "total_sent": interface_data["total_bytes_sent"],
-                "total_recv": interface_data["total_bytes_recv"],
-                "today_sent": interface_data["today_sent"],
-                "today_recv": interface_data["today_recv"],
-                "today_date": interface_data["today_date"],
+                **interface_data,
+                # "total_sent": interface_data["total_bytes_sent"],
+                # "total_recv": interface_data["total_bytes_recv"],
+                # "today_sent": interface_data["today_sent"],
+                # "today_recv": interface_data["today_recv"],
+                # "today_date": interface_data["today_date"],
             }
 
             with open(data_file, "w") as f:
@@ -427,10 +428,7 @@ class TrafficDataManager:
             if interface not in cls._interface_data:
                 return 0, 0
 
-            return (
-                cls._interface_data[interface]["today_sent"],
-                cls._interface_data[interface]["today_recv"],
-            )
+            return (cls._interface_data[interface]["today_sent"], cls._interface_data[interface]["today_recv"])
         except Exception as e:
             logging.debug(f"Error getting today totals for {interface}: {e}")
         return 0, 0
@@ -515,8 +513,7 @@ class TrafficDataManager:
         if bytes_per_sec < threshold:
             if speed_unit == "bytes":
                 return "0 KB/s"
-            else:
-                return "0 Kbps"
+            return "0 Kbps"
         decimal_places = 0 if hide_decimal else 1
 
         if speed_unit == "bytes":

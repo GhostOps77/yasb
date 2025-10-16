@@ -32,10 +32,8 @@ from PyQt6.QtGui import (
 )
 from PyQt6.QtWidgets import (
     QApplication,
-    QBoxLayout,
     QFrame,
     QGraphicsDropShadowEffect,
-    QLabel,
     QMenu,
     QWidget,
 )
@@ -43,6 +41,7 @@ from winrt.windows.data.xml.dom import XmlDocument
 from winrt.windows.ui.notifications import ToastNotification, ToastNotificationManager
 
 from core.utils.win32.win32_accent import Blur
+from core.widgets.base import BaseBoxLayout, BaseLabel, BaseWidget
 
 CAPTURE_SPAN_TAG_REGEX = re.compile(r"(<span[^>]*?>.*?</span>)")
 REPLACE_SPAN_TAG_REGEX = re.compile(r"<span[^>]*?>|</span>")
@@ -118,14 +117,12 @@ def add_shadow(el: QWidget, options: dict[str, Any]) -> None:
 
 
 def iterate_label_as_parts(
-    widgets: list[QLabel],
-    content: str,
-    class_name: str = "label",
-    layout: QBoxLayout | None = None,
-    content_shadow: dict = None,
-) -> Generator[QLabel, None, None]:
+    widget: BaseWidget, labels: list[BaseLabel], content: str, class_name: str = ""
+) -> Generator[BaseLabel, None, None]:
+    widget_container_layout: BaseBoxLayout = widget._widget_container_layout
+
     label_parts = CAPTURE_SPAN_TAG_REGEX.split(content)
-    widgets_len = len(widgets)
+    widgets_len = len(labels)
     widgets_idx = 0
 
     for part in label_parts:
@@ -133,63 +130,53 @@ def iterate_label_as_parts(
         if not part:
             continue
 
-        class_result = class_name
+        is_icon = False
+        class_result = "label"
+        if class_name:
+            class_result += " " + class_name
+
         if part.startswith("<span") and part.endswith("</span>"):
-            class_name = HTML_TAG_CLASS_ATTR_REGEX.search(part)
-            class_result += " " + (class_name.group(2) if class_name else "icon")
+            is_icon = True
+            icon_class_name = HTML_TAG_CLASS_ATTR_REGEX.search(part)
+            class_result += " " + (icon_class_name.group(2) if icon_class_name else "icon")
             part = REPLACE_SPAN_TAG_REGEX.sub("", part).strip()
 
-        while widgets_idx < widgets_len and not isinstance(widgets[widgets_idx], QLabel):
-            widgets_idx += 1
+        # while widgets_idx < widgets_len and not isinstance(labels[widgets_idx], QLabel):
+        #     widgets_idx += 1
 
         if widgets_idx < widgets_len:
-            label = widgets[widgets_idx]
+            label = labels[widgets_idx]
             # if not isinstance(label, QLabel):
             #     continue
             label.setText(part)
+            label.setProperty("class", class_result)
             widgets_idx += 1
         else:
-            label = QLabel(part)
-            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            label.setCursor(Qt.CursorShape.PointingHandCursor)
-            widgets.append(label)
-            if layout is not None:
-                layout.addWidget(label)
+            label = widget.init_label(part, class_name=class_result)
+            labels.append(label)
+            widget_container_layout.addWidget(label)
 
-        label.setProperty("class", class_result)
-        if content_shadow:
-            add_shadow(label, content_shadow)
-
-        if label.isHidden():
-            label.setVisible(True)
+        label.is_icon = is_icon
+        label.setVisible(True)
 
         yield label
 
     for i in range(widgets_idx, widgets_len):
         # if not widgets[i].isHidden():
-        widgets[i].setVisible(False)
+        labels[i].setVisible(False)
 
 
-def build_widget_label(self, content: str, content_alt: str = None, content_shadow: dict = None):
+def build_widget_label(widget: BaseWidget, content: str, content_alt: str | None = None):
     def process_content(content, is_alt=False):
-        widgets = []
+        labels = []
+        for label in iterate_label_as_parts(widget, labels, content, "alt" if is_alt else ""):
+            label.setVisible(not is_alt)
+        return labels
 
-        label_parts_gen = iterate_label_as_parts(
-            widgets, content, "label alt" if is_alt else "label", self._widget_container_layout, content_shadow
-        )
-
-        for label in label_parts_gen:
-            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            label.setCursor(Qt.CursorShape.PointingHandCursor)
-            if is_alt:
-                label.setVisible(False)
-            else:
-                label.setVisible(True)
-        return widgets
-
-    self._widgets = process_content(content)
-    if content_alt:
-        self._widgets_alt = process_content(content_alt, is_alt=True)
+    widget._widgets = process_content(content)
+    # if content_alt:
+    #     widget._widgets_alt = process_content(content_alt, is_alt=True)
+    widget._widgets_alt = widget._widgets
 
 
 def build_progress_widget(self, options: dict[str, Any]) -> None:
@@ -557,7 +544,7 @@ class ToastNotifier:
         self.toaster.show(notification)
 
 
-class ScrollingLabel(QLabel):
+class ScrollingLabel(BaseLabel):
     """
     A QLabel that scrolls its text based on a speed parameter.
     Compatible with the default QtCSS styling.
@@ -586,10 +573,12 @@ class ScrollingLabel(QLabel):
         self,
         parent: QWidget | None = None,
         text: str = "",
+        *args,
         max_width: int | None = None,
         options: dict[str, Any] | None = None,
+        **kwargs,
     ):
-        super().__init__(parent)
+        super().__init__(parent, text=text, *args, **kwargs)
         if options is None:
             options = {}
         self._update_interval: int = max(min(options.get("update_interval_ms", 33), 1000), 4)

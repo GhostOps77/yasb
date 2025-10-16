@@ -5,28 +5,9 @@ from ctypes import byref
 from dataclasses import dataclass
 from typing import override
 
-from PyQt6.QtCore import (
-    QMimeData,
-    QPoint,
-    QSize,
-    Qt,
-    pyqtSignal,
-)
-from PyQt6.QtGui import (
-    QDrag,
-    QDragEnterEvent,
-    QDragLeaveEvent,
-    QDragMoveEvent,
-    QDropEvent,
-    QIcon,
-    QMouseEvent,
-)
-from PyQt6.QtWidgets import (
-    QFrame,
-    QHBoxLayout,
-    QPushButton,
-    QWidget,
-)
+from PyQt6.QtCore import QMimeData, QPoint, QSize, Qt, pyqtSignal
+from PyQt6.QtGui import QDrag, QDragEnterEvent, QDragLeaveEvent, QDragMoveEvent, QDropEvent, QIcon, QMouseEvent
+from PyQt6.QtWidgets import QFrame, QHBoxLayout, QPushButton, QWidget
 from win32con import (
     WM_LBUTTONDBLCLK,
     WM_LBUTTONDOWN,
@@ -41,16 +22,8 @@ import core.utils.widgets.systray.utils as utils
 from core.utils.tooltip import set_tooltip
 from core.utils.widgets.systray.tray_monitor import IconData
 from core.utils.widgets.systray.utils import pack_i32
-from core.utils.win32.bindings import (
-    AllowSetForegroundWindow,
-    GetWindowThreadProcessId,
-    IsWindow,
-    SendNotifyMessage,
-)
-from core.utils.win32.constants import (
-    NIN_CONTEXTMENU,
-    NIN_SELECT,
-)
+from core.utils.win32.bindings import AllowSetForegroundWindow, GetWindowThreadProcessId, IsWindow, SendNotifyMessage
+from core.utils.win32.constants import NIN_CONTEXTMENU, NIN_SELECT
 
 
 @dataclass
@@ -127,11 +100,14 @@ class IconWidget(QPushButton):
     def mouseReleaseEvent(self, e: QMouseEvent | None) -> None:
         if e is None:
             return super().mouseReleaseEvent(e)
+
         if self.ignore_next_release:
             self.ignore_next_release = False
             return super().mouseReleaseEvent(e)
+
         self.lmb_pressed = False
         btn = e.button()
+
         if btn == Qt.MouseButton.LeftButton and (self.last_cursor_pos - e.pos()).manhattanLength() > 8:
             return super().mouseReleaseEvent(e)
         if btn == Qt.MouseButton.LeftButton:
@@ -149,6 +125,7 @@ class IconWidget(QPushButton):
     def mouseDoubleClickEvent(self, a0: QMouseEvent | None) -> None:
         if a0 is None:
             return super().mouseDoubleClickEvent(a0)
+
         self.ignore_next_release = True
         self.send_action(WM_LBUTTONDBLCLK)
         return super().mouseDoubleClickEvent(a0)
@@ -245,7 +222,6 @@ class DropWidget(QFrame):
             self.dragged_button.setProperty("dragging", True)
             self.refresh_styles()
             a0.acceptProposedAction()
-
             self.drag_started.emit()
 
     @override
@@ -262,7 +238,6 @@ class DropWidget(QFrame):
             self.current_indicator_index = insert_index
 
         a0.acceptProposedAction()
-
         self.drag_started.emit()
 
     @override
@@ -271,12 +246,10 @@ class DropWidget(QFrame):
             return
 
         self.hide_drop_indicator()
-
         if self.dragged_button:
             self.dragged_button.setProperty("dragging", False)
             self.refresh_styles()
             self.dragged_button = None
-
         self.current_indicator_index = -1
 
     @override
@@ -295,15 +268,20 @@ class DropWidget(QFrame):
 
         # Only move the button if it's coming from another parent or the position is different
         button_current_index = -1
-        for i in range(self.main_layout.count()):
-            if (w := self.main_layout.itemAt(i)) and w.widget() == source:
+        for i, w in enumerate(self.main_layout.children()):
+            if w == source:
                 button_current_index = i
                 break
+        # for i in range(self.main_layout.count()):
+        #     if (w := self.main_layout.itemAt(i)) and w.widget() == source:
+        #         button_current_index = i
+        #         break
 
         # If the button is already in this layout
         if source.parent() == self:
             # If it would be placed at the same index or right after itself, do nothing
-            if insert_index == button_current_index or insert_index == button_current_index + 1:
+            # if insert_index == button_current_index or insert_index == button_current_index + 1:
+            if insert_index - button_current_index in (0, 1):
                 self.hide_drop_indicator()
                 a0.acceptProposedAction()
                 self.drag_ended.emit()
@@ -377,6 +355,7 @@ class DropWidget(QFrame):
                 x - self.drop_indicator.width() // 2,
                 (self.height() - self.drop_indicator.height()) // 2,
             )
+
         elif index >= self.main_layout.count():
             # Position after the last widget
             item = self.main_layout.itemAt(self.main_layout.count() - 1)

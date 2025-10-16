@@ -5,7 +5,7 @@ from typing import Literal
 from PIL import Image
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QCursor, QImage, QMouseEvent, QPixmap
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QWidget
+from PyQt6.QtWidgets import QPushButton, QWidget
 
 from core.event_enums import KomorebiEvent
 from core.event_service import EventService
@@ -15,7 +15,7 @@ from core.utils.widgets.komorebi.client import KomorebiClient
 from core.utils.win32.app_icons import get_window_icon
 from core.utils.win32.utilities import get_monitor_hwnd, get_process_info
 from core.validation.widgets.komorebi.workspaces import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseFrame, BaseHBoxLayout, BaseLabel, BaseWidget, BaseYasbWidgetLabel
 from settings import DEBUG
 
 try:
@@ -87,7 +87,7 @@ class WorkspaceButton(QPushButton):
             logging.exception(f"Failed to focus workspace at index {self.workspace_index}")
 
 
-class WorkspaceButtonWithIcons(QFrame):
+class WorkspaceButtonWithIcons(BaseFrame):
     def __init__(
         self,
         workspace_index: int,
@@ -97,28 +97,22 @@ class WorkspaceButtonWithIcons(QFrame):
         populated_label: str = None,
         animation: bool = False,
     ):
-        super().__init__()
+        super().__init__(class_name="ws-btn")
         self._animation_initialized = False
         self.komorebic = KomorebiClient()
         self.workspace_index = workspace_index
         self.parent_widget = parent_widget
         self.status = WORKSPACE_STATUS_EMPTY
-        self.setProperty("class", "ws-btn")
         self.default_label = label if label else str(workspace_index + 1)
         self.active_label = active_label if active_label else self.default_label
         self.populated_label = populated_label if populated_label else self.default_label
         self._animation = animation
         self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
-        self.button_layout = QHBoxLayout(self)
-        self.button_layout.setContentsMargins(0, 0, 0, 0)
-        self.button_layout.setSpacing(0)
+        self.button_layout = BaseHBoxLayout(self)
 
-        self.text_label = QLabel(self.default_label)
-        self.text_label.setProperty("class", "label")
-        self.text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.text_label = BaseLabel(self.default_label, shadows=self.parent_widget._label_shadow)
         self.button_layout.addWidget(self.text_label)
-        add_shadow(self.text_label, self.parent_widget._label_shadow)
 
         self.icons = {}
         self.icon_labels = []
@@ -131,7 +125,6 @@ class WorkspaceButtonWithIcons(QFrame):
 
     def update_visible_buttons(self):
         buttons_index = 1
-
         for button in self.parent_widget._workspace_buttons:
             if not button.isVisible():
                 continue
@@ -192,11 +185,11 @@ class WorkspaceButtonWithIcons(QFrame):
             if index < len(self.icon_labels):
                 self.icon_labels[index].setPixmap(icon)
             else:
-                icon_label = QLabel()
-                icon_label.setProperty("class", f"icon icon-{index + 1}")
+                icon_label = BaseLabel(
+                    "", class_name=f"icon icon-{index + 1}", shadows=self.parent_widget._label_shadow
+                )
                 icon_label.setPixmap(icon)
                 self.button_layout.addWidget(icon_label)
-                add_shadow(icon_label, self.parent_widget._label_shadow)
                 self.icon_labels.append(icon_label)
 
         curr_icon_count = len(icons_list)
@@ -246,15 +239,13 @@ class WorkspaceWidget(BaseWidget):
         label_zero_index: bool,
         hide_empty_workspaces: bool,
         app_icons: dict,
-        container_padding: dict,
         animation: bool,
         enable_scroll_switching: bool,
         reverse_scroll_direction: bool,
         btn_shadow: dict = None,
-        label_shadow: dict = None,
-        container_shadow: dict = None,
+        **kwargs,
     ):
-        super().__init__(class_name="komorebi-workspaces")
+        super().__init__(class_name="komorebi-workspaces", **kwargs)
         self._event_service = EventService()
         self._komorebic = KomorebiClient()
         self._label_workspace_btn = label_workspace_btn
@@ -269,11 +260,9 @@ class WorkspaceWidget(BaseWidget):
             self._workspace_app_icons["enabled_populated"] or self._workspace_app_icons["enabled_active"]
         )
         self._hide_if_offline = hide_if_offline
-        self._padding = container_padding
         self._animation = animation
         self._btn_shadow = btn_shadow
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
+        # self._container_shadow = container_shadow
         self._komorebi_screen = None
         self._komorebi_workspaces = []
         self._prev_workspace_index = None
@@ -303,49 +292,32 @@ class WorkspaceWidget(BaseWidget):
             KomorebiEvent.WorkspaceName.value,
             KomorebiEvent.Cloak.value,
         ]
+
         # Disable default mouse event handling inherited from BaseWidget
         self.mousePressEvent = None
         if self._hide_if_offline:
             self.hide()
-        # Status text shown when komorebi state can't be retrieved
-        self._offline_text = QLabel()
-        self._offline_text.setText(label_offline)
-        add_shadow(self._offline_text, self._label_shadow)
-        self._offline_text.setProperty("class", "offline-status")
-        # Construct container which holds workspace buttons
-        self._workspace_container_layout = QHBoxLayout()
-        self._workspace_container_layout.setSpacing(0)
-        self._workspace_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-        self._workspace_container_layout.addWidget(self._offline_text)
-        self._workspace_container = QFrame()
-        self._workspace_container.setLayout(self._workspace_container_layout)
-        self._workspace_container.setProperty("class", "widget-container")
-        add_shadow(self._workspace_container, self._container_shadow)
-        self._workspace_container.hide()
-        self.widget_layout.addWidget(self._offline_text)
-        self.widget_layout.addWidget(self._workspace_container)
 
-        self.float_override_label = QLabel()
-        self.float_override_label.setText(self._label_float_override)
-        self.float_override_label.setProperty("class", "float-override")
-        add_shadow(self.float_override_label, self._label_shadow)
+        # Status text shown when komorebi state can't be retrieved
+        self._offline_text = BaseYasbWidgetLabel(label_offline, class_name="offline-status", shadows=self._label_shadow)
+
+        self._widget_container_layout.addWidget(self._offline_text)
+        self._widget_container.hide()
+
+        self.float_override_label = BaseYasbWidgetLabel(
+            self._label_float_override, class_name="float-override", shadows=self._label_shadow
+        )
         self.float_override_label.hide()
-        self.widget_layout.addWidget(self.float_override_label)
+
+        self._widget_frame_layout.addWidgets(self._offline_text, self._widget_container, self.float_override_label)
 
         if self._toggle_workspace_layer["enabled"]:
-            self.workspace_layer_label = QLabel()
-            self.workspace_layer_label.setProperty("class", "workspace-layer")
-            add_shadow(self.workspace_layer_label, self._label_shadow)
-            self.widget_layout.addWidget(self.workspace_layer_label)
+            self.workspace_layer_label = BaseYasbWidgetLabel(class_name="workspace-layer", shadows=self._label_shadow)
+            self._widget_frame_layout.addWidget(self.workspace_layer_label)
 
         self._enable_scroll_switching = enable_scroll_switching
         self._reverse_scroll_direction = reverse_scroll_direction
-        self._icon_cache = dict()
+        self._icon_cache = {}
         self.dpi = None
 
         self._register_signals_and_events()
@@ -432,6 +404,7 @@ class WorkspaceWidget(BaseWidget):
                     self._update_button(new_workspace_button)
                 except (IndexError, TypeError):
                     self._add_or_update_buttons()
+
             elif event["type"] in self._update_buttons_event_watchlist:
                 self._add_or_update_buttons()
 
@@ -458,19 +431,20 @@ class WorkspaceWidget(BaseWidget):
                 self._get_workspace_layer(self._curr_workspace_index)
 
             # Show float override label if float override is active
-            if state.get("float_override") and self._label_float_override:
-                self.float_override_label.show()
-            else:
-                self.float_override_label.hide()
+            # if state.get("float_override") and self._label_float_override:
+            #     self.float_override_label.show()
+            # else:
+            #     self.float_override_label.hide()
+            self.float_override_label.setVisible(state.get("float_override") and self._label_float_override)
 
         # send workspace_update event to active_window widgets
-        if event["type"] in ["MoveWindow", "Show", "Hide", "Destroy"]:
+        if event["type"] in ("MoveWindow", "Show", "Hide", "Destroy"):
             self._event_service.emit_event("workspace_update", event["type"])
 
     def _clear_container_layout(self):
-        for i in range(self._workspace_container_layout.count() - 1, -1, -1):
-            old_workspace_widget = self._workspace_container_layout.itemAt(i).widget()
-            self._workspace_container_layout.removeWidget(old_workspace_widget)
+        for i in range(self._widget_container_layout.count() - 1, -1, -1):
+            old_workspace_widget = self._widget_container_layout.itemAt(i).widget()
+            self._widget_container_layout.removeWidget(old_workspace_widget)
             old_workspace_widget.setParent(None)
 
     def _update_komorebi_state(self, komorebi_state: dict) -> bool:
@@ -487,9 +461,11 @@ class WorkspaceWidget(BaseWidget):
                 self._prev_workspace_index = self._curr_workspace_index
                 self._curr_workspace_index = focused_workspace["index"]
 
-            self._curr_num_windows_in_workspaces = self._curr_num_windows_in_workspaces[
-                : len(self._komorebi_workspaces)
-            ] + [0] * (len(self._komorebi_workspaces) - len(self._curr_num_windows_in_workspaces))
+            total_komorebi_workspaces = len(self._komorebi_workspaces)
+
+            self._curr_num_windows_in_workspaces = self._curr_num_windows_in_workspaces[:total_komorebi_workspaces] + [
+                0
+            ] * (total_komorebi_workspaces - len(self._curr_num_windows_in_workspaces))
             self._prev_num_windows_in_workspaces = self._curr_num_windows_in_workspaces.copy()
             for i in range(len(self._komorebi_workspaces)):
                 windows = self._get_all_windows_in_workspace(i)
@@ -510,8 +486,7 @@ class WorkspaceWidget(BaseWidget):
             return WORKSPACE_STATUS_ACTIVE
         elif self._komorebic.get_num_windows(workspace) > 0:
             return WORKSPACE_STATUS_POPULATED
-        else:
-            return WORKSPACE_STATUS_EMPTY
+        return WORKSPACE_STATUS_EMPTY
 
     def _get_workspace_layer(self, workspace_index: int) -> None:
         """
@@ -530,13 +505,17 @@ class WorkspaceWidget(BaseWidget):
                     self.workspace_layer_label.setText(self._toggle_workspace_layer["tiling_label"])
                 elif workspace["layer"] == "Floating":
                     self.workspace_layer_label.setText(self._toggle_workspace_layer["floating_label"])
-                self.workspace_layer_label.style().unpolish(self.workspace_layer_label)
-                self.workspace_layer_label.style().polish(self.workspace_layer_label)
+
+                label_style = self.workspace_layer_label.style()
+                label_style.unpolish(self.workspace_layer_label)
+                label_style.polish(self.workspace_layer_label)
             else:
                 self.workspace_layer_label.setProperty("class", "workspace-layer")
                 self.workspace_layer_label.setText("")
-                self.workspace_layer_label.style().unpolish(self.workspace_layer_label)
-                self.workspace_layer_label.style().polish(self.workspace_layer_label)
+
+                label_style = self.workspace_layer_label.style()
+                label_style.unpolish(self.workspace_layer_label)
+                label_style.polish(self.workspace_layer_label)
 
     def _update_button(self, workspace_btn: WorkspaceButton) -> None:
         workspace_index = workspace_btn.workspace_index
@@ -572,7 +551,7 @@ class WorkspaceWidget(BaseWidget):
             self._workspace_buttons.sort(key=lambda btn: btn.workspace_index)
             self._clear_container_layout()
             for workspace_btn in self._workspace_buttons:
-                self._workspace_container_layout.addWidget(workspace_btn)
+                self._widget_container_layout.addWidget(workspace_btn)
                 self._update_button(workspace_btn)
                 add_shadow(workspace_btn, self._btn_shadow)
 
@@ -602,21 +581,11 @@ class WorkspaceWidget(BaseWidget):
         default_label, active_label, populated_label = self._get_workspace_label(workspace_index)
         if self._workspace_app_icons_enabled:
             workspace_btn = WorkspaceButtonWithIcons(
-                workspace_index,
-                self,
-                default_label,
-                active_label,
-                populated_label,
-                self._animation,
+                workspace_index, self, default_label, active_label, populated_label, self._animation
             )
         else:
             workspace_btn = WorkspaceButton(
-                workspace_index,
-                self,
-                default_label,
-                active_label,
-                populated_label,
-                self._animation,
+                workspace_index, self, default_label, active_label, populated_label, self._animation
             )
         self._workspace_buttons.append(workspace_btn)
         return workspace_btn
@@ -628,13 +597,13 @@ class WorkspaceWidget(BaseWidget):
 
     def _show_offline_status(self):
         self._offline_text.show()
-        self._workspace_container.hide()
+        self._widget_container.hide()
         if self._toggle_workspace_layer["enabled"]:
             self.workspace_layer_label.hide()
 
     def _hide_offline_status(self):
         self._offline_text.hide()
-        self._workspace_container.show()
+        self._widget_container.show()
         if self._toggle_workspace_layer["enabled"]:
             self.workspace_layer_label.show()
 
@@ -716,12 +685,7 @@ class WorkspaceWidget(BaseWidget):
                 Image.LANCZOS,
             ).convert("RGBA")
             self._icon_cache[cache_key] = icon_img
-            qimage = QImage(
-                icon_img.tobytes(),
-                icon_img.width,
-                icon_img.height,
-                QImage.Format.Format_RGBA8888,
-            )
+            qimage = QImage(icon_img.tobytes(), icon_img.width, icon_img.height, QImage.Format.Format_RGBA8888)
             pixmap = QPixmap.fromImage(qimage)
             pixmap.setDevicePixelRatio(self.dpi)
             return pixmap

@@ -1,22 +1,15 @@
 import logging
 
 from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtWidgets import (
-    QFrame,
-    QHBoxLayout,
-    QLabel,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-)
+from PyQt6.QtWidgets import QFrame, QPushButton, QWidget
 
 from core.utils.tooltip import set_tooltip
-from core.utils.utilities import PopupWidget, add_shadow, build_widget_label, iterate_label_as_parts
+from core.utils.utilities import PopupWidget, build_widget_label, iterate_label_as_parts
 from core.utils.widgets.animation_manager import AnimationManager
 from core.utils.widgets.traffic.connection_monitor import InternetChecker
 from core.utils.widgets.traffic.traffic_manager import TrafficDataManager
 from core.validation.widgets.yasb.traffic import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseFrame, BaseHBoxLayout, BaseLabel, BaseVBoxLayout, BaseWidget
 from settings import DEBUG
 
 
@@ -41,20 +34,17 @@ class TrafficWidget(BaseWidget):
         speed_threshold: dict,
         speed_unit: str,
         animation: dict[str, str],
-        container_padding: dict[str, int],
         callbacks: dict[str, str],
         menu: dict,
-        label_shadow: dict,
-        container_shadow: dict,
+        **kwargs,
     ):
-        super().__init__(class_name=f"traffic-widget {class_name}")
+        super().__init__(class_name=f"traffic-widget {class_name}", **kwargs)
 
         self.interval = update_interval / 1000
         self._show_alt_label = False
         self._label_content = label
         self._label_alt_content = label_alt
         self._animation = animation
-        self._padding = container_padding
         self._interface = interface
         self._hide_if_offline = hide_if_offline
         self._max_label_length = max_label_length
@@ -62,8 +52,6 @@ class TrafficWidget(BaseWidget):
         self._hide_decimal = hide_decimal
         self._speed_threshold = speed_threshold
         self._speed_unit = speed_unit.lower()
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
         self._menu = menu
 
         TrafficDataManager.setup_global_data_storage()
@@ -71,23 +59,7 @@ class TrafficWidget(BaseWidget):
         # Initialize session bytes sent and received
         self.session_bytes_sent, self.session_bytes_recv = TrafficDataManager.initialize_interface(self._interface)
 
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-
-        add_shadow(self._widget_container, self._container_shadow)
-
-        self.widget_layout.addWidget(self._widget_container)
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(self, self._label_content, self._label_alt_content)
 
         self._initialize_instance_counters()
         self._setup_callbacks_and_timers(update_interval, callbacks)
@@ -115,10 +87,7 @@ class TrafficWidget(BaseWidget):
         self.register_callback("update_label", self._update_label)
         self.register_callback("toggle_menu", self._toggle_menu)
         self.register_callback("reset_data", self._reset_traffic_data)
-
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
-        self.callback_middle = callbacks["on_middle"]
+        self.map_callbacks(callbacks)
 
         if self._interface not in TrafficWidget._instances_by_interface:
             TrafficWidget._instances_by_interface[self._interface] = []
@@ -259,28 +228,25 @@ class TrafficWidget(BaseWidget):
     def _update_label_with_data(self, shared_data):
         """Update label with provided data"""
 
-        active_widgets = self._widgets_alt if self._show_alt_label else self._widgets  # type: ignore
+        # active_widgets = self._widgets_alt if self._show_alt_label else self._widgets  # type: ignore
+        active_widgets = self._widgets  # type: ignore
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         active_label_content = active_label_content.format_map(shared_data)
 
         for label in iterate_label_as_parts(
-            active_widgets,
-            active_label_content,
-            "label alt" if self._show_alt_label else "label",
-            self._widget_container_layout,
+            self, active_widgets, active_label_content, "alt" if self._show_alt_label else ""
         ):
             # Update CSS class based on internet connection status
-            class_names = label.property("class").split()
             if not self._is_internet_connected:
-                if "offline" not in class_names:
-                    class_names.append("offline")
+                class_names = label.property("class")
+                class_names += " offline"
+                label.setProperty("class", class_names)
 
-            elif "offline" in class_names:
-                # Remove offline class if connected
-                class_names.remove("offline")
+                # elif "offline" in class_names:
+                #     # Remove offline class if connected
+                #     class_names.remove("offline")
 
-            label.setProperty("class", " ".join(class_names))
-            label.setStyleSheet("")
+                label.setStyleSheet("")
 
     def _on_connection_changed(self, is_connected: bool):
         """Handle internet connection status changes"""
@@ -316,10 +282,10 @@ class TrafficWidget(BaseWidget):
             AnimationManager.animate(self, self._animation["type"], self._animation["duration"])  # type: ignore
 
         self._show_alt_label = not self._show_alt_label
-        for widget in self._widgets:  # type: ignore
-            widget.setVisible(not self._show_alt_label)
-        for widget in self._widgets_alt:  # type: ignore
-            widget.setVisible(self._show_alt_label)
+        # for widget in self._widgets:  # type: ignore
+        #     widget.setVisible(not self._show_alt_label)
+        # for widget in self._widgets_alt:  # type: ignore
+        #     widget.setVisible(self._show_alt_label)
 
         # Force update with current shared data
         if self._interface in TrafficWidget._shared_data:
@@ -340,47 +306,32 @@ class TrafficWidget(BaseWidget):
         )
         self._menu_widget.setProperty("class", "traffic-menu")
 
-        layout = QVBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        layout = BaseVBoxLayout()
 
         # Helper function to create sections
         def create_section(title, class_name):
-            container = QFrame()
-            container.setProperty("class", f"section {class_name}-section")
+            container = BaseFrame(class_name=f"section {class_name}-section")
 
-            section_layout = QVBoxLayout(container)
-            section_layout.setContentsMargins(0, 0, 0, 0)
-            section_layout.setSpacing(0)
+            section_layout = BaseVBoxLayout(container)
             if title is not None:
-                title_label = QLabel(title)
-                title_label.setProperty("class", "section-title")
+                title_label = BaseLabel(title, class_name="section-title")
                 section_layout.addWidget(title_label)
 
             return container, section_layout
 
         # Helper function to create speed column
         def create_speed_column(label_prefix, placeholder_text):
-            column_container = QFrame()
-            column_container.setProperty("class", label_prefix)
-            column_layout = QVBoxLayout(column_container)
-            column_layout.setContentsMargins(0, 0, 0, 0)
-            column_layout.setSpacing(0)
+            column_container = BaseFrame(class_name=label_prefix)
+            column_layout = BaseVBoxLayout(column_container)
             column_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-            speed_value = QLabel()
-            speed_value.setProperty("class", f"speed-value {label_prefix}-value")
-            speed_value.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            speed_value = BaseLabel("", class_name=f"speed-value {label_prefix}-value")
             column_layout.addWidget(speed_value)
 
-            speed_unit = QLabel()
-            speed_unit.setProperty("class", f"speed-unit {label_prefix}-unit")
-            speed_unit.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            speed_unit = BaseLabel("", class_name=f"speed-unit {label_prefix}-unit")
             column_layout.addWidget(speed_unit)
 
-            placeholder = QLabel(placeholder_text)
-            placeholder.setProperty("class", f"speed-placeholder {label_prefix}-placeholder")
-            placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            placeholder = BaseLabel(placeholder_text, class_name=f"speed-placeholder {label_prefix}-placeholder")
             column_layout.addWidget(placeholder)
 
             return column_container, speed_value, speed_unit
@@ -388,12 +339,9 @@ class TrafficWidget(BaseWidget):
         # Header with reset button
         header_container = QWidget()
         header_container.setProperty("class", "header")
-        header_layout = QHBoxLayout(header_container)
-        header_layout.setContentsMargins(0, 0, 0, 0)
-        header_layout.setSpacing(0)
+        header_layout = BaseHBoxLayout(header_container)
 
-        header_label = QLabel("Network Traffic")
-        header_label.setProperty("class", "title")
+        header_label = BaseLabel("Network Traffic", class_name="title")
         header_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         header_layout.addWidget(header_label)
 
@@ -415,9 +363,7 @@ class TrafficWidget(BaseWidget):
         speed_container, speed_section_layout = create_section(None, "speeds")
 
         # Create horizontal layout for two columns
-        speed_columns_layout = QHBoxLayout()
-        speed_columns_layout.setContentsMargins(0, 0, 0, 0)
-        speed_columns_layout.setSpacing(0)
+        speed_columns_layout = BaseHBoxLayout()
 
         # Download column
         download_column, download_value, download_unit = create_speed_column("download-speed", "Download")
@@ -447,11 +393,7 @@ class TrafficWidget(BaseWidget):
 
         # Create other sections (updated titles and classes)
         other_sections = [
-            (
-                "Session Total",
-                "session",
-                ["session-upload", "session-download", "session-duration"],
-            ),
+            ("Session Total", "session", ["session-upload", "session-download", "session-duration"]),
             ("Today's Total", "today", ["today-upload", "today-download"]),
             ("All-Time Total", "alltime", ["alltime-upload", "alltime-download"]),
         ]
@@ -462,16 +404,12 @@ class TrafficWidget(BaseWidget):
             for label_class in label_classes:
                 # Create a horizontal container for each data row
                 data_container = QWidget()
-                data_layout = QHBoxLayout(data_container)
-                data_layout.setContentsMargins(0, 0, 0, 0)
-                data_layout.setSpacing(0)
+                data_layout = BaseHBoxLayout(data_container)
 
                 # Create separate labels for text and value
-                text_label = QLabel()
-                value_label = QLabel()
-                # Set CSS classes for styling
-                text_label.setProperty("class", f"data-text {label_class}-text")
-                value_label.setProperty("class", f"data-value {label_class}-value")
+                text_label = BaseLabel("", class_name=f"data-text {label_class}-text")
+                value_label = BaseLabel("", class_name=f"data-value {label_class}-value")
+                # Set alignments for styling
                 text_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
                 value_label.setAlignment(Qt.AlignmentFlag.AlignRight)
                 # Add labels to the horizontal layout
@@ -488,17 +426,15 @@ class TrafficWidget(BaseWidget):
             layout.addWidget(container)
 
         if self._menu["show_interface_name"]:
-            interface_label = QLabel(f"Network Interface: {self._interface.capitalize()}")
-            interface_label.setProperty("class", "interface-info")
+            interface_label = BaseLabel(
+                f"Network Interface: {self._interface.capitalize()}", class_name="interface-info"
+            )
             interface_label.setWordWrap(True)
-            interface_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             layout.addWidget(interface_label)
 
         if self._menu["show_internet_info"]:
             status_text = "Internet Connected" if self._is_internet_connected else "Internet Disconnected"
-            internet_info = QLabel(status_text)
-            internet_info.setProperty("class", "internet-info")
-            internet_info.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            internet_info = BaseLabel(status_text, class_name="internet-info")
             layout.addWidget(internet_info)
 
             self.menu_labels["internet-info"] = internet_info
@@ -522,10 +458,7 @@ class TrafficWidget(BaseWidget):
 
         try:
             if data is None:
-                if (
-                    self._interface in TrafficWidget._shared_data
-                    and TrafficWidget._shared_data[self._interface] is not None
-                ):
+                if TrafficWidget._shared_data.get(self._interface, None) is not None:
                     data = TrafficWidget._shared_data[self._interface]
                 else:
                     data = {

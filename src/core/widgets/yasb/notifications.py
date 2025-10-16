@@ -1,19 +1,15 @@
 import logging
 
 from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtWidgets import QFrame, QHBoxLayout
 
 from core.event_service import EventService
-from core.utils.utilities import add_shadow, build_widget_label, is_windows_10, iterate_label_as_parts
-from core.utils.widgets.animation_manager import AnimationManager
+from core.utils.utilities import build_widget_label, is_windows_10, iterate_label_as_parts
 from core.utils.win32.system_function import notification_center, quick_settings
 from core.validation.widgets.yasb.notifications import VALIDATION_SCHEMA
 from core.widgets.base import BaseWidget
 
 try:
-    from core.utils.widgets.notifications.windows_notification import (
-        WindowsNotificationEventListener,
-    )
+    from core.utils.widgets.notifications.windows_notification import WindowsNotificationEventListener
 except ImportError:
     WindowsNotificationEventListener = None
     logging.warning("Failed to load Windows Notification Event Listener")
@@ -32,13 +28,11 @@ class NotificationsWidget(BaseWidget):
         hide_empty: bool,
         tooltip: bool,
         icons: dict,
-        container_padding: dict,
         animation: dict[str, str],
         callbacks: dict[str, str],
-        label_shadow: dict = None,
-        container_shadow: dict = None,
+        **kwargs,
     ):
-        super().__init__(class_name=f"notification-widget {class_name}")
+        super().__init__(class_name=f"notification-widget {class_name}", **kwargs)
         self._show_alt_label = False
         self._label_content = label
         self._label_alt_content = label_alt
@@ -47,38 +41,15 @@ class NotificationsWidget(BaseWidget):
         self._hide_empty = hide_empty
         self._tooltip = tooltip
         self._icons = icons
-        self._padding = container_padding
         self._animation = animation
         self._callbacks = callbacks
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
-
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-        # Initialize container
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-
-        # Add the container to the main widget layout
-        self.widget_layout.addWidget(self._widget_container)
 
         build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
-
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
-        self.callback_middle = callbacks["on_middle"]
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("toggle_notification", self._toggle_notification)
         self.register_callback("clear_notifications", self._clear_notifications)
+        self.map_callbacks(callbacks)
 
         # Register the WindowsNotificationUpdate event
         self.event_service = EventService()
@@ -96,26 +67,23 @@ class NotificationsWidget(BaseWidget):
         self._update_label()
 
     def _toggle_notification(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         if is_windows_10():
             quick_settings()
         else:
             notification_center()
 
     def _toggle_label(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         self._show_alt_label = not self._show_alt_label
-        for widget in self._widgets:
-            widget.setVisible(not self._show_alt_label)
-        for widget in self._widgets_alt:
-            widget.setVisible(self._show_alt_label)
+        # for widget in self._widgets:
+        #     widget.setVisible(not self._show_alt_label)
+        # for widget in self._widgets_alt:
+        #     widget.setVisible(self._show_alt_label)
         self._update_label()
 
     def _clear_notifications(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         if WindowsNotificationEventListener:
             self.event_service.emit_event("WindowsNotificationClear", "clear_all_notifications")
 
@@ -131,17 +99,12 @@ class NotificationsWidget(BaseWidget):
             icon=(self._icons["new"] if self._notification_count > 0 else self._icons["default"]),
         )
 
-        for label in iterate_label_as_parts(active_widgets, active_label_content, layout=self._widget_container_layout):
+        for label in iterate_label_as_parts(self, active_widgets, active_label_content):
             # Update class based on notification count
-            current_class = label.property("class")
             if self._notification_count > 0:
-                if "new-notification" not in current_class:
-                    current_class.append("new-notification")
-            elif "new-notification" in current_class:
-                current_class.remove("new-notification")
-
-            label.setProperty("class", " ".join(current_class))
+                label.setProperty("class", label.property("class") + " new-notification")
 
         for widget in active_widgets:
-            widget.style().unpolish(widget)
-            widget.style().polish(widget)
+            style = widget.style()
+            style.unpolish(widget)
+            style.polish(widget)

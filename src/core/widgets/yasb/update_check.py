@@ -5,12 +5,11 @@ import threading
 
 import win32com.client
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
-from PyQt6.QtWidgets import QFrame, QHBoxLayout
 
 from core.utils.tooltip import set_tooltip
-from core.utils.utilities import add_shadow, iterate_label_as_parts
+from core.utils.utilities import iterate_label_as_parts
 from core.validation.widgets.yasb.update_check import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseFrame, BaseHBoxLayout, BaseWidget
 from settings import DEBUG
 
 
@@ -296,14 +295,8 @@ class UpdateManager:
 class UpdateCheckWidget(BaseWidget):
     validation_schema = VALIDATION_SCHEMA
 
-    def __init__(
-        self,
-        windows_update: dict[str, str],
-        winget_update: dict[str, str],
-        label_shadow: dict = None,
-        container_shadow: dict = None,
-    ):
-        super().__init__(class_name="update-check-widget")
+    def __init__(self, windows_update: dict[str, str], winget_update: dict[str, str], **kwargs):
+        super().__init__(class_name="update-check-widget", **kwargs)
 
         self._windows_update = windows_update
         self._winget_update = winget_update
@@ -318,9 +311,6 @@ class UpdateCheckWidget(BaseWidget):
         self._winget_update_enabled = self._winget_update.get("enabled", False)
         self._winget_update_label = self._winget_update.get("label", "")
         self._winget_update_exclude = self._winget_update.get("exclude", [])
-
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
 
         self.windows_update_data = 0
         self.winget_update_data = 0
@@ -354,23 +344,17 @@ class UpdateCheckWidget(BaseWidget):
         def process_content(label_text, label_type):
             class_name = "windows" if label_type == "windows" else "winget"
 
-            container_layout = QHBoxLayout()
-            container_layout.setSpacing(0)
-            container_layout.setContentsMargins(0, 0, 0, 0)
+            container_layout = BaseHBoxLayout()
 
-            container = QFrame()
+            container = BaseFrame(class_name=f"widget-container {class_name}", shadows=self._container_shadow)
             container.setLayout(container_layout)
-            container.setProperty("class", f"widget-container {class_name}")
 
-            add_shadow(container, self._container_shadow)
-            self.widget_layout.addWidget(container)
+            self._widget_frame_layout.addWidget(container)
             container.hide()
 
             widgets = []
 
-            for label in iterate_label_as_parts(
-                widgets, label_text, layout=container_layout, content_shadow=self._label_shadow
-            ):
+            for label in iterate_label_as_parts(self, widgets, label_text):
                 label.mousePressEvent = self.handle_mouse_events(label_type)
 
             return container, widgets

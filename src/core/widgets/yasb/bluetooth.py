@@ -8,10 +8,9 @@ import os
 from ctypes import wintypes
 
 from PyQt6.QtCore import QThread, QTimer, pyqtSignal
-from PyQt6.QtWidgets import QFrame, QHBoxLayout
 
 from core.utils.tooltip import set_tooltip
-from core.utils.utilities import add_shadow, build_widget_label, iterate_label_as_parts
+from core.utils.utilities import build_widget_label, iterate_label_as_parts
 from core.utils.widgets.animation_manager import AnimationManager
 from core.validation.widgets.yasb.bluetooth import VALIDATION_SCHEMA
 from core.widgets.base import BaseWidget
@@ -105,8 +104,10 @@ class BluetoothThread(QThread):
             ctypes.POINTER(BLUETOOTH_FIND_RADIO_PARAMS),
             ctypes.POINTER(wintypes.HANDLE),
         ]
+
         find_first_radio.restype = wintypes.HANDLE  # Correct restype for a handle
         radio_finder = find_first_radio(ctypes.byref(find_radio_params), ctypes.byref(radio_handle))
+
         if radio_finder and radio_finder != wintypes.HANDLE(0):
             # Define argtypes and restype for BluetoothFindRadioClose
             self.bt_api.BluetoothFindRadioClose.argtypes = [wintypes.HANDLE]
@@ -116,6 +117,7 @@ class BluetoothThread(QThread):
             self.bt_api.BluetoothFindRadioClose(radio_finder)
             ctypes.windll.kernel32.CloseHandle(radio_handle)
             return True
+
         return False
 
     def get_bluetooth_devices(self):
@@ -127,6 +129,7 @@ class BluetoothThread(QThread):
             ctypes.POINTER(BLUETOOTH_FIND_RADIO_PARAMS),
             ctypes.POINTER(wintypes.HANDLE),
         ]
+
         find_first_radio.restype = wintypes.HANDLE
         radio_finder = find_first_radio(ctypes.byref(find_radio_params), ctypes.byref(radio_handle))
         if not radio_finder or radio_finder == wintypes.HANDLE(0):
@@ -168,26 +171,23 @@ class BluetoothThread(QThread):
                             }
                         )
                         next_device = self.bt_api.BluetoothFindNextDevice
-                        next_device.argtypes = [
-                            wintypes.HANDLE,
-                            ctypes.POINTER(BLUETOOTH_DEVICE_INFO),
-                        ]
+                        next_device.argtypes = [wintypes.HANDLE, ctypes.POINTER(BLUETOOTH_DEVICE_INFO)]
                         next_device.restype = wintypes.BOOL
                         if not next_device(device_finder, ctypes.byref(device_info)):
                             break
+
                 finally:
                     self.bt_api.BluetoothFindDeviceClose.argtypes = [wintypes.HANDLE]
                     self.bt_api.BluetoothFindDeviceClose.restype = wintypes.BOOL
                     self.bt_api.BluetoothFindDeviceClose(device_finder)
+
                 # Move to the next radio (if any)
                 next_radio = self.bt_api.BluetoothFindNextRadio
-                next_radio.argtypes = [
-                    wintypes.HANDLE,
-                    ctypes.POINTER(wintypes.HANDLE),
-                ]
+                next_radio.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.HANDLE)]
                 next_radio.restype = wintypes.BOOL
                 if not next_radio(radio_finder, ctypes.byref(radio_handle)):
                     break
+
         finally:
             self.bt_api.BluetoothFindRadioClose(radio_finder)
             ctypes.windll.kernel32.CloseHandle(radio_handle)
@@ -226,12 +226,10 @@ class BluetoothWidget(BaseWidget):
         icons: dict[str, str],
         device_aliases: list[dict[str, str]],
         animation: dict[str, str],
-        container_padding: dict[str, int],
         callbacks: dict[str, str],
-        label_shadow: dict = None,
-        container_shadow: dict = None,
+        **kwargs,
     ):
-        super().__init__(class_name=f"bluetooth-widget {class_name}")
+        super().__init__(class_name=f"bluetooth-widget {class_name}", **kwargs)
         self._show_alt_label = False
         self._label_content = label
         self._label_alt_content = label_alt
@@ -241,42 +239,24 @@ class BluetoothWidget(BaseWidget):
         self._max_length_ellipsis = max_length_ellipsis
         self._device_aliases = device_aliases
         self._tooltip = tooltip
-        self._padding = container_padding
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
+
         try:
             self.bt_api = get_bluetooth_api()
         except RuntimeError as e:
             if DEBUG:
                 logging.error(f"Bluetooth support unavailable: {e}")
             self.bt_api = None
+
         self.current_status = None
         self._icons = icons
         self._animation = animation
         self.bluetooth_icon = None
         self.connected_devices = None
 
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-        self.widget_layout.addWidget(self._widget_container)
-
         build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
 
         self.register_callback("toggle_label", self._toggle_label)
-
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
-        self.callback_middle = callbacks["on_middle"]
+        self.map_callbacks(callbacks)
 
         self.current_status = None  # Store the current Bluetooth status
         self.bluetooth_thread = BluetoothThread(self.bt_api)

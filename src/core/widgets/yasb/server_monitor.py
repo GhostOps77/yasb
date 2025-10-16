@@ -16,9 +16,7 @@ from PyQt6.QtCore import (
     pyqtSignal,
 )
 from PyQt6.QtWidgets import (
-    QFrame,
     QGraphicsOpacityEffect,
-    QHBoxLayout,
     QLabel,
     QScrollArea,
     QVBoxLayout,
@@ -26,10 +24,9 @@ from PyQt6.QtWidgets import (
 )
 
 from core.utils.tooltip import set_tooltip
-from core.utils.utilities import PopupWidget, ToastNotifier, add_shadow, build_widget_label, iterate_label_as_parts
-from core.utils.widgets.animation_manager import AnimationManager
+from core.utils.utilities import PopupWidget, ToastNotifier, build_widget_label, iterate_label_as_parts
 from core.validation.widgets.yasb.server_monitor import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseHBoxLayout, BaseLabel, BaseVBoxLayout, BaseWidget
 from settings import DEBUG, SCRIPT_PATH
 
 
@@ -189,12 +186,10 @@ class ServerMonitor(BaseWidget):
         menu: dict[str, str],
         icons: dict[str, int],
         animation: dict[str, str],
-        container_padding: dict[str, int],
         callbacks: dict[str, str],
-        label_shadow: dict = None,
-        container_shadow: dict = None,
+        **kwargs,
     ):
-        super().__init__(class_name="server-widget")
+        super().__init__(class_name="server-widget", **kwargs)
         self._show_alt_label = False
         self._label_content = label
         self._servers = servers
@@ -207,11 +202,8 @@ class ServerMonitor(BaseWidget):
         self._desktop_notifications = desktop_notifications
         self._timeout = timeout
         self._label_alt_content = label_alt
-        self._padding = container_padding
         self._menu = menu
         self._animation = animation
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
 
         self._last_refresh_time = None
         self._server_status_data = None
@@ -219,31 +211,11 @@ class ServerMonitor(BaseWidget):
         self._animations = []
         self._icon_path = os.path.join(SCRIPT_PATH, "assets", "images", "app_transparent.png")
 
-        # Construct container
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-        # Initialize container
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-        # Add the container to the main widget layout
-        self.widget_layout.addWidget(self._widget_container)
-
         build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("toggle_menu", self._toggle_menu)
-
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
-        self.callback_middle = callbacks["on_middle"]
+        self.map_callbacks(callbacks)
 
         self._update_label()
 
@@ -306,19 +278,19 @@ class ServerMonitor(BaseWidget):
 
     def _toggle_label(self):
         self._show_alt_label = not self._show_alt_label
-        for widget in self._widgets:
-            widget.setVisible(not self._show_alt_label)
-        for widget in self._widgets_alt:
-            widget.setVisible(self._show_alt_label)
+        # for widget in self._widgets:
+        #     widget.setVisible(not self._show_alt_label)
+        # for widget in self._widgets_alt:
+        #     widget.setVisible(self._show_alt_label)
         self._update_label()
 
     def _toggle_menu(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         self.show_menu()
 
     def _update_label(self):
-        active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+        # active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+        active_widgets = self._widgets
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
 
         try:
@@ -345,10 +317,7 @@ class ServerMonitor(BaseWidget):
         self._widget_container.setStyleSheet(self._widget_container.styleSheet())
 
         for _ in iterate_label_as_parts(
-            active_widgets,
-            active_label_content,
-            "label alt" if self._show_alt_label else "label",
-            # self._widget_container_layout
+            self, active_widgets, active_label_content, "alt" if self._show_alt_label else ""
         ):
             pass
 
@@ -393,29 +362,22 @@ class ServerMonitor(BaseWidget):
         # Get server data list
         server_data_list = self._server_status_data or None
 
-        layout = QVBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        layout = BaseVBoxLayout()
 
         # Add header widget
         header_widget = QWidget()
         header_widget.setProperty("class", "server-menu-header")
-        header_layout = QHBoxLayout(header_widget)
-        header_layout.setContentsMargins(0, 0, 0, 0)
-        header_layout.setSpacing(0)
+        header_layout = BaseHBoxLayout(header_widget)
 
         # Add refresh time
         refresh_time = "Never" if not self._last_refresh_time else self._get_time_ago()
-        refresh_label = QLabel(f"Last check {refresh_time}")
-        refresh_label.setProperty("class", "refresh-time")
+        refresh_label = BaseLabel(f"Last check {refresh_time}", class_name="refresh-time")
         header_layout.addWidget(refresh_label)
 
         header_layout.addStretch()
 
         # Add reload button
-        reload_button = QLabel(self._icons["reload"])
-        reload_button.setProperty("class", "reload-button")
-        reload_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        reload_button = QLabel(self._icons["reload"], class_name="reload-button")
         reload_button.mousePressEvent = lambda _: self._trigger_reload()
         header_layout.addWidget(reload_button)
         if server_data_list is not None:
@@ -457,9 +419,7 @@ class ServerMonitor(BaseWidget):
         overlay_layout = QVBoxLayout(overlay)
 
         # Store label as instance variable
-        self._loading_label = QLabel()
-        self._loading_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._loading_label.setProperty("class", "text")
+        self._loading_label = BaseLabel(class_name="text")
 
         def update_progress(server, updated, total):
             if not self._loading_label.isVisible():
@@ -514,10 +474,7 @@ class ServerMonitor(BaseWidget):
 
             min_ssl = 0
             if status_data:
-                min_ssl = min(
-                    (s["ssl"] for s in status_data if isinstance(s["ssl"], int)),
-                    default=0,
-                )
+                min_ssl = min((s["ssl"] for s in status_data if isinstance(s["ssl"], int)), default=0)
 
             status_data.append(
                 {
@@ -576,13 +533,11 @@ class ServerMonitor(BaseWidget):
         row_container = QWidget()
         row_container.setProperty("class", "server-menu-container")
 
-        row_container_layout = QVBoxLayout(row_container)
-        # row_container_layout.setContentsMargins(0, 0, 0, 0)
+        row_container_layout = BaseVBoxLayout(row_container)
 
         if server_data_list is None:
             loading_widget = QWidget()
-            loading_layout = QVBoxLayout(loading_widget)
-            loading_layout.setContentsMargins(0, 0, 0, 0)
+            loading_layout = BaseVBoxLayout(loading_widget)
 
             # Create a label to show real-time progress
             self._loading_label_menu = QLabel(f"Checking 0/{len(self._servers)} servers<br><b>please wait...</b>")
@@ -652,8 +607,7 @@ class ServerMonitor(BaseWidget):
                 row_widget_layout.setSpacing(0)
 
                 name_status_widget = QWidget()
-                h_layout = QHBoxLayout(name_status_widget)
-                h_layout.setContentsMargins(0, 0, 0, 0)
+                h_layout = BaseHBoxLayout(name_status_widget)
 
                 server_name = QLabel(server_data["name"])
                 server_name.setProperty("class", "name")

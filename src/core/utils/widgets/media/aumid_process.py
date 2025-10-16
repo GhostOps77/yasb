@@ -144,12 +144,7 @@ def get_process_image_path(pid: int) -> str | None:
             return None
         try:
             QueryFullProcessImageName = kernel32.QueryFullProcessImageNameW
-            QueryFullProcessImageName.argtypes = [
-                wt.HANDLE,
-                wt.DWORD,
-                wt.LPWSTR,
-                ctypes.POINTER(wt.DWORD),
-            ]
+            QueryFullProcessImageName.argtypes = [wt.HANDLE, wt.DWORD, wt.LPWSTR, ctypes.POINTER(wt.DWORD)]
             QueryFullProcessImageName.restype = wt.BOOL
             size = wt.DWORD(260)
             buf = ctypes.create_unicode_buffer(size.value)

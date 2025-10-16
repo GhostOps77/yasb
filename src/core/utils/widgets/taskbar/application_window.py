@@ -121,23 +121,25 @@ class ApplicationWindow:
             cls = self.class_name
             if not cls:
                 return False
+
             ex_style = win32gui.GetWindowLong(self.hwnd, win32con.GWL_EXSTYLE)
 
-            if cls in (
+            if cls in {
                 "ApplicationFrameWindow",
                 "Windows.UI.Core.CoreWindow",
                 "StartMenuSizingFrame",
                 "Shell_LightDismissOverlay",
-            ):
+            }:
                 if (ex_style & win32con.WS_EX_WINDOWEDGE) == 0:
                     return True
-            elif cls in (
+
+            elif cls in {
                 "ImmersiveBackgroundWindow",
                 "SearchPane",
                 "NativeHWNDHost",
                 "Shell_CharmWindow",
                 "ImmersiveLauncher",
-            ):
+            }:
                 # Explorer-only gate: treat these windows as immersive shell (Start/Search, etc.)
                 # only when the owning process is explorer.exe, so they’re excluded from the taskbar
                 # without hiding third-party app windows that reuse similar classes.

@@ -12,9 +12,7 @@ from typing import Any
 from PyQt6.QtCore import QPoint, Qt, QTimer, QUrl
 from PyQt6.QtGui import QColor, QCursor, QDesktopServices, QPainter, QPaintEvent
 from PyQt6.QtWidgets import (
-    QFrame,
     QGraphicsOpacityEffect,
-    QHBoxLayout,
     QLabel,
     QScrollArea,
     QVBoxLayout,
@@ -22,10 +20,9 @@ from PyQt6.QtWidgets import (
 )
 
 from core.utils.tooltip import set_tooltip
-from core.utils.utilities import PopupWidget, add_shadow, iterate_label_as_parts
-from core.utils.widgets.animation_manager import AnimationManager
+from core.utils.utilities import PopupWidget, iterate_label_as_parts
 from core.validation.widgets.yasb.github import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseHBoxLayout, BaseLabel, BaseVBoxLayout, BaseWidget
 from settings import DEBUG
 
 
@@ -38,7 +35,7 @@ class Corner(StrEnum):
     BOTTOM_RIGHT = "bottom_right"
 
 
-class NotificationLabel(QLabel):
+class NotificationLabel(BaseLabel):
     """Draws a QLabel with a dot on any of the four corners of the icon."""
 
     def __init__(
@@ -101,6 +98,7 @@ class NotificationLabel(QLabel):
 
 class GithubWidget(BaseWidget):
     validation_schema = VALIDATION_SCHEMA
+    label_cls = NotificationLabel
 
     def __init__(
         self,
@@ -116,11 +114,10 @@ class GithubWidget(BaseWidget):
         icons: dict[str, str],
         update_interval: int,
         animation: dict[str, str],
-        container_padding: dict[str, int],
-        label_shadow: dict = None,
-        container_shadow: dict = None,
+        callbacks: dict[str, str] | None = None,
+        **kwargs,
     ):
-        super().__init__((update_interval * 1000), class_name="github-widget")
+        super().__init__((update_interval * 1000), class_name="github-widget", **kwargs)
 
         self._show_alt_label = False
         self._label_content = label
@@ -133,9 +130,6 @@ class GithubWidget(BaseWidget):
         self._only_unread = only_unread
         self._max_field_size = max_field_size
         self._animation = animation
-        self._padding = container_padding
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
 
         self._notification_label: NotificationLabel | None = None
         self._notification_label_alt: NotificationLabel | None = None
@@ -143,47 +137,42 @@ class GithubWidget(BaseWidget):
 
         self._github_data = []
 
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-
-        self.widget_layout.addWidget(self._widget_container)
         self._create_dynamically_label(self._label_content, self._label_alt_content)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("toggle_menu", self._toggle_menu)
         self.register_callback("get_github_data", self.get_github_data)
 
-        callbacks = {"on_left": "toggle_menu", "on_right": "toggle_label"}
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
+        self.register_callback("timer", self.get_github_data)
+        self.register_callback("on_left", self._toggle_menu)
+        self.register_callback("on_right", self._toggle_label)
 
-        self.callback_timer = "get_github_data"
+        self.map_callbacks(callbacks)
+
         self.start_timer()
 
     def _toggle_menu(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         self.show_menu()
 
+    def init_label(self, text, *args, class_name="", **kwargs):
+        return NotificationLabel(
+            *args,
+            text,
+            class_name=class_name,
+            corner=self._notification_dot["corner"],
+            color=self._notification_dot["color"],
+            margin=self._notification_dot["margin"],
+            **kwargs,
+        )
+
     def _toggle_label(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         self._show_alt_label = not self._show_alt_label
-        for widget in self._widgets:
-            widget.setVisible(not self._show_alt_label)
-        for widget in self._widgets_alt:
-            widget.setVisible(self._show_alt_label)
+        # for widget in self._widgets:
+        #     widget.setVisible(not self._show_alt_label)
+        # for widget in self._widgets_alt:
+        #     widget.setVisible(self._show_alt_label)
         self._update_label()
 
     def _create_dynamically_label(self, content: str, content_alt: str):
@@ -191,50 +180,27 @@ class GithubWidget(BaseWidget):
             label_parts = re.split(r"(<span[^>]*?>.*?</span>)", content)
             widgets = []
 
-            for part in label_parts:
-                part = part.strip()  # Remove any leading/trailing whitespace
-                if not part:
-                    continue
-
-                if part.startswith("<span") and part.endswith("</span>"):
-                    class_name = re.search(r'class=(["\'])([^"\']+?)\1', part)
-                    class_result = class_name.group(2) if class_name else "icon"
-                    icon = re.sub(r"<span[^>]*?>|</span>", "", part).strip()
-                    label = NotificationLabel(
-                        icon,
-                        corner=self._notification_dot["corner"],
-                        color=self._notification_dot["color"],
-                        margin=self._notification_dot["margin"],
-                    )
-                    label.setProperty("class", class_result)
-                    if is_alt:
-                        self._notification_label_alt = label
-                    else:
-                        self._notification_label = label
+            for label in iterate_label_as_parts(self, widgets, label_parts):
+                if is_alt:
+                    self._notification_label_alt = label
                 else:
-                    label = QLabel(part)
-                    label.setProperty("class", "label")
+                    self._notification_label = label
 
-                label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-                label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                add_shadow(label, self._label_shadow)
-                self._widget_container_layout.addWidget(label)
-
-                widgets.append(label)
                 # if is_alt:
                 #     label.hide()
                 # else:
                 #     label.show()
-                label.setVisible(not is_alt)
+                # label.setVisible(not is_alt)
 
             return widgets
 
         self._widgets = process_content(content)
-        self._widgets_alt = process_content(content_alt, is_alt=True)
+        # self._widgets_alt = process_content(content_alt, is_alt=True)
 
     def _update_label(self):
         notification_count = sum(1 for notification in self._github_data if notification["unread"])
-        active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+        # active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+        active_widgets = self._widgets
         # active_widgets_len = len(active_widgets)
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         active_label_content = active_label_content.format(data=notification_count)
@@ -252,24 +218,15 @@ class GithubWidget(BaseWidget):
 
         new_notification_class = "new-notification"
 
-        for label in iterate_label_as_parts(
-            active_widgets,
-            active_label_content,
-            # layout=self._widget_container_layout
-        ):
+        for label in iterate_label_as_parts(self, active_widgets, active_label_content):
             # Update class based on notification count
-            class_names = label.property("class").split()
-            if notification_count > 0 and new_notification_class not in class_names:
-                class_names.append(new_notification_class)
-            elif new_notification_class in class_names:
-                class_names.remove(new_notification_class)
-
-            label.setProperty("class", " ".join(class_names))
+            if notification_count > 0:
+                label.setProperty("class", f"{label.property('class')} {new_notification_class}")
 
             if self._tooltip:
                 set_tooltip(label, f"Notifications {notification_count}")
 
-            label.style().unpolish(label)
+            label._reload_css()
 
     def mark_as_read(self, notification_id, container_label):
         for notification in self._github_data:
@@ -331,12 +288,9 @@ class GithubWidget(BaseWidget):
         )
         self._menu.setProperty("class", "github-menu")
 
-        main_layout = QVBoxLayout(self._menu)
-        main_layout.setSpacing(0)
-        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout = BaseVBoxLayout(self._menu)
 
-        header_label = QLabel("<span style='font-weight:bold'>GitHub</span> Notifications")
-        header_label.setProperty("class", "header")
+        header_label = BaseLabel("<span style='font-weight:bold'>GitHub</span> Notifications", class_name="header")
         main_layout.addWidget(header_label)
 
         scroll_area = QScrollArea()
@@ -359,10 +313,8 @@ class GithubWidget(BaseWidget):
 
         scroll_widget = QWidget()
         scroll_widget.setProperty("class", "contents")
-        scroll_layout = QVBoxLayout(scroll_widget)
+        scroll_layout = BaseVBoxLayout(scroll_widget)
         scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        scroll_layout.setContentsMargins(0, 0, 0, 0)
-        scroll_layout.setSpacing(0)
         scroll_area.setWidget(scroll_widget)
 
         if notifications_count > 0:
@@ -375,16 +327,16 @@ class GithubWidget(BaseWidget):
                 if len(repo_description) > self._max_field_size:
                     repo_description = repo_description[: self._max_field_size - 3] + "..."
 
-                # icon_type = {
-                #     "Issue": self._icons["issue"],
-                #     "PullRequest": self._icons["pull_request"],
-                #     "Release": self._icons["release"],
-                #     "Discussion": self._icons["discussion"],
-                #     "CheckSuite": self._icons["checksuite"],
-                # }.get(notification["type"], self._icons["default"])
-                icon_type = self._icons.get(
-                    notification["type"].replace("_", " ").title().replace(" ", ""), notification["default"]
-                )
+                icon_type = {
+                    "Issue": self._icons["issue"],
+                    "PullRequest": self._icons["pull_request"],
+                    "Release": self._icons["release"],
+                    "Discussion": self._icons["discussion"],
+                    "CheckSuite": self._icons["checksuite"],
+                }.get(notification["type"], self._icons["default"])
+                # icon_type = self._icons.get(
+                #     notification["type"].replace("_", " ").title().replace(" ", ""), notification["default"]
+                # )
 
                 new_item_class = "new" if notification["unread"] else ""
 
@@ -393,30 +345,21 @@ class GithubWidget(BaseWidget):
                 container.setContentsMargins(0, 0, 8, 0)
                 container.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
-                icon_label = QLabel(icon_type)
-                type_class = notification["type"] if "type" in notification else ""
-                icon_label.setProperty("class", f"icon {type_class.lower()}")
-                title_label = QLabel(repo_title)
-                title_label.setProperty("class", "title")
-
-                description_label = QLabel(repo_description)
-                description_label.setProperty("class", "description")
+                icon_label = BaseLabel(
+                    icon_type, class_name=f"icon {(notification['type'] if 'type' in notification else '').lower()}"
+                )
+                title_label = BaseLabel(repo_title, class_name="title")
+                description_label = BaseLabel(repo_description, class_name="description")
 
                 text_content = QWidget()
-                text_content_layout = QVBoxLayout(text_content)
-                text_content_layout.addWidget(title_label)
-                text_content_layout.addWidget(description_label)
-                text_content_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-                text_content_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
-                text_content_layout.setContentsMargins(0, 0, 0, 0)
-                text_content_layout.setSpacing(0)
+                text_content_layout = BaseVBoxLayout(text_content)
+                text_content_layout.addWidgets(title_label, description_label)
+                text_content_layout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
 
-                container_layout = QHBoxLayout(container)
+                container_layout = BaseHBoxLayout(container)
                 container_layout.addWidget(icon_label)
                 container_layout.addWidget(text_content, 1)
                 container_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-                container_layout.setContentsMargins(0, 0, 0, 0)
-                container_layout.setSpacing(0)
                 scroll_layout.addWidget(container)
 
                 container.mousePressEvent = self._create_container_mouse_press_event(
@@ -457,7 +400,6 @@ class GithubWidget(BaseWidget):
             offset_left=self._menu_popup["offset_left"],
             offset_top=self._menu_popup["offset_top"],
         )
-
         self._menu.show()
 
     def get_github_data(self):

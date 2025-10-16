@@ -3,11 +3,7 @@
 import atexit
 import logging
 import os
-from ctypes import (
-    POINTER,
-    cast,
-    windll,
-)
+from ctypes import POINTER, cast, windll
 from dataclasses import dataclass
 from pathlib import Path
 from uuid import UUID
@@ -33,12 +29,7 @@ from win32con import (
 )
 
 import core.utils.widgets.systray.utils as utils
-from core.utils.widgets.systray.utils import (
-    NativeWindowEx,
-    array_to_str,
-    get_exe_path_from_hwnd,
-    pack_i32,
-)
+from core.utils.widgets.systray.utils import NativeWindowEx, array_to_str, get_exe_path_from_hwnd, pack_i32
 from core.utils.win32.app_icons import hicon_to_image
 from core.utils.win32.bindings import (
     DefWindowProc,
@@ -64,12 +55,7 @@ from core.utils.win32.constants import (
     NIM_MODIFY,
     NIM_SETVERSION,
 )
-from core.utils.win32.structs import (
-    COPYDATASTRUCT,
-    NOTIFYICONDATA,
-    SHELLTRAYDATA,
-    WINNOTIFYICONIDENTIFIER,
-)
+from core.utils.win32.structs import COPYDATASTRUCT, NOTIFYICONDATA, SHELLTRAYDATA, WINNOTIFYICONIDENTIFIER
 
 logger = logging.getLogger("systray_widget")
 

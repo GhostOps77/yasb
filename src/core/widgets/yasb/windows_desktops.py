@@ -11,8 +11,6 @@ from PyQt6.QtCore import (
 from PyQt6.QtGui import QAction, QCursor
 from PyQt6.QtWidgets import (
     QFileDialog,
-    QFrame,
-    QHBoxLayout,
     QInputDialog,
     QMenu,
     QPushButton,
@@ -257,11 +255,11 @@ class WorkspaceWidget(BaseWidget):
         label_workspace_active_btn: str,
         switch_workspace_animation: bool,
         animation: bool,
-        container_padding: dict,
+        callbacks: dict,
         btn_shadow: dict = None,
-        container_shadow: dict = None,
+        **kwargs,
     ):
-        super().__init__(class_name="windows-desktops")
+        super().__init__(class_name="windows-desktops", **kwargs)
         self._event_service = EventService()
 
         self.d_signal_virtual_desktop_changed.connect(self._on_desktop_changed)
@@ -272,11 +270,9 @@ class WorkspaceWidget(BaseWidget):
 
         self._label_workspace_btn = label_workspace_btn
         self._label_workspace_active_btn = label_workspace_active_btn
-        self._padding = container_padding
         self._switch_workspace_animation = switch_workspace_animation
         self._animation = animation
         self._btn_shadow = btn_shadow
-        self._container_shadow = container_shadow
         self._virtual_desktops = range(1, len(get_virtual_desktops()) + 1)
         self._prev_workspace_index = None
         self._curr_workspace_index = VirtualDesktop.current().number
@@ -285,22 +281,8 @@ class WorkspaceWidget(BaseWidget):
         # Disable default mouse event handling inherited from BaseWidget
         self.mousePressEvent = None
 
-        # Construct container which holds workspace buttons
-        self._workspace_container_layout = QHBoxLayout()
-        self._workspace_container_layout.setSpacing(0)
-        self._workspace_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-        self._workspace_container = QFrame()
-        self._workspace_container.setLayout(self._workspace_container_layout)
-        self._workspace_container.setProperty("class", "widget-container")
-        add_shadow(self._workspace_container, self._container_shadow)
-        self.widget_layout.addWidget(self._workspace_container)
-
         self.register_callback("update_desktops", self.on_update_desktops)
+        self.map_callbacks(callbacks)
 
         # Register this instance to the class-wide shared timer (one timer per widget class)
         if self not in WorkspaceWidget._instances:
@@ -327,19 +309,22 @@ class WorkspaceWidget(BaseWidget):
 
     def _on_desktop_changed(self, event_data: dict):
         # Keep track of previous index for animation coordination
-        new_index = event_data["index"]
         self._prev_workspace_index = self._curr_workspace_index
-        self._curr_workspace_index = new_index
+        self._curr_workspace_index = event_data["index"]
 
-        # Update only affected buttons (previous and current) and animate both simultaneously
-        prev_btn = next(
-            (b for b in self._workspace_buttons if b.workspace_index == self._prev_workspace_index),
-            None,
-        )
-        curr_btn = next(
-            (b for b in self._workspace_buttons if b.workspace_index == self._curr_workspace_index),
-            None,
-        )
+        # Update only affected buttons (previous and current) and animate both simultaneously.
+        prev_btn = curr_btn = None
+
+        for b in self._workspace_buttons:
+            if b.workspace_index == self._prev_workspace_index:
+                if prev_btn is None:
+                    prev_btn = b
+            elif b.workspace_index == self._curr_workspace_index:
+                if curr_btn is None:
+                    curr_btn = b
+
+            if prev_btn and curr_btn:
+                break
 
         # Update labels without scheduling the automatic update/animation, we'll start animations explicitly
         if prev_btn is not None:
@@ -365,6 +350,7 @@ class WorkspaceWidget(BaseWidget):
         self._virtual_desktops_check = list(range(1, len(get_virtual_desktops()) + 1))
         self._curr_workspace_index_check = VirtualDesktop.current().number
         update_buttons = options.get("update_buttons") if options else False
+
         if (
             self._virtual_desktops != self._virtual_desktops_check
             or self._curr_workspace_index != self._curr_workspace_index_check
@@ -389,9 +375,9 @@ class WorkspaceWidget(BaseWidget):
                     pass
 
     def _clear_container_layout(self):
-        for i in range(self._workspace_container_layout.count() - 1, -1, -1):
-            old_workspace_widget = self._workspace_container_layout.itemAt(i).widget()
-            self._workspace_container_layout.removeWidget(old_workspace_widget)
+        for i in range(self._widget_container_layout.count() - 1, -1, -1):
+            old_workspace_widget = self._widget_container_layout.itemAt(i).widget()
+            self._widget_container_layout.removeWidget(old_workspace_widget)
             old_workspace_widget.setParent(None)
 
     def _update_button(self, workspace_btn: WorkspaceButton, schedule_update: bool = True) -> None:
@@ -442,7 +428,7 @@ class WorkspaceWidget(BaseWidget):
             self._clear_container_layout()
 
             for workspace_btn in self._workspace_buttons:
-                self._workspace_container_layout.addWidget(workspace_btn)
+                self._widget_container_layout.addWidget(workspace_btn)
                 add_shadow(workspace_btn, self._btn_shadow)
             try:
                 QTimer.singleShot(

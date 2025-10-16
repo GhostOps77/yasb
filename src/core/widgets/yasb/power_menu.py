@@ -3,10 +3,8 @@ import datetime
 import psutil
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import QPropertyAnimation, Qt, pyqtSignal
-from PyQt6.QtGui import QCursor
 from PyQt6.QtWidgets import (
     QApplication,
-    QFrame,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -18,12 +16,12 @@ from PyQt6.QtWidgets import (
 
 from core.config import get_stylesheet
 from core.event_service import EventService
-from core.utils.utilities import add_shadow, is_windows_10
+from core.utils.utilities import is_windows_10
 from core.utils.widgets.power_menu.power_commands import PowerOperations
 from core.utils.win32.utilities import get_foreground_hwnd, set_foreground_hwnd
 from core.utils.win32.win32_accent import Blur
 from core.validation.widgets.yasb.power_menu import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseLabel, BaseWidget
 
 
 class BaseStyledWidget(QWidget):
@@ -32,7 +30,7 @@ class BaseStyledWidget(QWidget):
         self.setStyleSheet(stylesheet)
 
 
-class ClickableLabel(QLabel):
+class ClickableLabel(BaseLabel):
     clicked = pyqtSignal()
 
     def __init__(self, *args, **kwargs):
@@ -133,12 +131,10 @@ class PowerMenuWidget(BaseWidget):
         blur_background: bool,
         animation_duration: int,
         button_row: int,
-        container_padding: dict[str, int],
         buttons: dict[str, list[str]],
-        label_shadow: dict = None,
-        container_shadow: dict = None,
+        **kwargs,
     ):
-        super().__init__(0, class_name="power-menu-widget")
+        super().__init__(0, class_name="power-menu-widget", **kwargs)
 
         self.buttons = buttons
         self.blur = blur
@@ -146,35 +142,12 @@ class PowerMenuWidget(BaseWidget):
         self.blur_background = blur_background
         self.animation_duration = animation_duration
         self.button_row = button_row
-        self._padding = container_padding
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
 
-        self._button = ClickableLabel(label)
-        self._button.setProperty("class", "label power-button")
-        self._button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self._button.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        add_shadow(self._button, self._label_shadow)
-        # Construct container
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-        # Initialize container
+        self._button = ClickableLabel(label, class_name="session", shadows=self._label_shadow)
+        self._button.clicked.connect(self.show_main_window)
 
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-        # Add the container to the main widget layout
-        self.widget_layout.addWidget(self._widget_container)
         self._widget_container_layout.addWidget(self._button)
 
-        self._button.clicked.connect(self.show_main_window)
         self.main_window = None
 
         self._popup_from_cli = False
@@ -332,6 +305,7 @@ class MainWindow(BaseStyledWidget, AnimatedWidget):
         screen = QApplication.screenAt(self.parent_button.mapToGlobal(QtCore.QPoint(0, 0)))
         if screen is None:
             screen = QApplication.primaryScreen()
+
         screen_geometry = screen.geometry()
         window_geometry = self.geometry()
         x = (screen_geometry.width() - window_geometry.width()) // 2 + screen_geometry.x()

@@ -3,15 +3,14 @@ import os
 import traceback
 import urllib.parse
 from datetime import datetime
-from typing import Any, cast
+from typing import Any
 
 from PyQt6.QtCore import Qt, QTimer, QUrl
 from PyQt6.QtGui import QPixmap
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QStyle, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from core.utils.tooltip import set_tooltip
-from core.utils.utilities import PopupWidget, add_shadow, iterate_label_as_parts
-from core.utils.widgets.animation_manager import AnimationManager
+from core.utils.utilities import PopupWidget, iterate_label_as_parts
 from core.utils.widgets.weather.api import IconFetcher, WeatherDataFetcher
 from core.utils.widgets.weather.widgets import (
     ClickableWidget,
@@ -20,7 +19,7 @@ from core.utils.widgets.weather.widgets import (
     HourlyTemperatureScrollArea,
 )
 from core.validation.widgets.yasb.weather import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseHBoxLayout, BaseLabel, BaseVBoxLayout, BaseWidget
 
 
 class WeatherWidget(BaseWidget):
@@ -41,12 +40,10 @@ class WeatherWidget(BaseWidget):
         callbacks: dict[str, str],
         tooltip: bool,
         icons: dict[str, str],
-        container_padding: dict[str, int],
         animation: dict[str, str],
-        label_shadow: dict[str, Any],
-        container_shadow: dict[str, Any],
+        **kwargs,
     ):
-        super().__init__(class_name=f"weather-widget {class_name}")
+        super().__init__(class_name=f"weather-widget {class_name}", **kwargs)
         self._label_content = label
         self._label_alt_content = label_alt
         self._location = location if location != "env" else os.getenv("YASB_WEATHER_LOCATION")
@@ -75,9 +72,6 @@ class WeatherWidget(BaseWidget):
         # Set weather data formatting
         self._units = units
         self._show_alerts = show_alerts
-        self._padding = container_padding
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
 
         # Store weather data
         self._weather_data: dict[str, Any] | None = None
@@ -90,50 +84,27 @@ class WeatherWidget(BaseWidget):
         self._weather_card: dict[str, Any] = weather_card
         self._weather_card_daily_widgets: list[ClickableWidget] = []
 
-        # Construct container
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-
-        # Initialize container
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-
-        # Add the container to the main widget layout
-        self.widget_layout.addWidget(self._widget_container)
         self._create_dynamically_label(self._label_content, self._label_alt_content)
 
         self.register_callback("toggle_label", self._toggle_label)  # type: ignore
         self.register_callback("toggle_card", self._toggle_card)  # type: ignore
         self.register_callback("update_label", self._update_label)  # type: ignore
-
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
-        self.callback_middle = callbacks["on_middle"]
+        self.map_callbacks(callbacks)
 
         if not self._weather_fetcher.started:
             self._weather_fetcher.start()
 
     def _toggle_label(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])  # type: ignore
+        self._animate()
         self._show_alt_label = not self._show_alt_label
-        for widget in self._widgets:
-            widget.setVisible(not self._show_alt_label)
-        for widget in self._widgets_alt:
-            widget.setVisible(self._show_alt_label)
+        # for widget in self._widgets:
+        #     widget.setVisible(not self._show_alt_label)
+        # for widget in self._widgets_alt:
+        #     widget.setVisible(self._show_alt_label)
         self._update_label(update_class=False)
 
     def _toggle_card(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])  # type: ignore
+        self._animate()
         self._popup_card()
 
     def _popup_card(self):
@@ -153,39 +124,34 @@ class WeatherWidget(BaseWidget):
         main_layout = QVBoxLayout()
         frame_today = QWidget()
         frame_today.setProperty("class", "weather-card-today")
-        layout_today = QVBoxLayout(frame_today)
+        layout_today = BaseVBoxLayout(frame_today)
 
-        today_label0 = QLabel(f"{self._weather_data['location']} {self._weather_data['temp']}")
-        today_label0.setProperty("class", "label location")
-        today_label0.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        today_label0 = BaseLabel(
+            f"{self._weather_data['location']} {self._weather_data['temp']}", class_name="label alert"
+        )
 
-        today_label1 = QLabel(
+        today_label1 = BaseLabel(
             f"Feels like {self._weather_data['feelslike']} - {self._weather_data['condition_text']}"
             f" - Humidity {self._weather_data['humidity']}\nPressure {self._weather_data['pressure']}"
-            f" - Visibility {self._weather_data['vis']} - Cloud {self._weather_data['cloud']}%"
+            f" - Visibility {self._weather_data['vis']}"
+            f" - Cloud {self._weather_data['cloud']}%",
+            class_name="label",
         )
-        today_label1.setProperty("class", "label")
-        today_label1.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        today_label2 = QLabel(
-            f"{self._weather_data['alert_title']}"
-            f"{'<br>Alert expires ' + self._weather_data['alert_end_date'] if self._weather_data['alert_end_date'] else ''}"
-            f"<br>{self._weather_data['alert_desc']}"
-        )
-        today_label2.setProperty("class", "label alert")
-        today_label2.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        today_label2.setWordWrap(True)
+        layout_today.addWidgets(today_label0, today_label1)
 
-        layout_today.addWidget(today_label0)
-        layout_today.addWidget(today_label1)
         if self._show_alerts and self._weather_data["alert_title"] and self._weather_data["alert_desc"]:
+            today_label2_text = self._weather_data["alert_title"]
+            if self._weather_data["alert_end_date"]:
+                today_label2_text += "<br>Alert expires " + self._weather_data["alert_end_date"]
+            today_label2_text += f"<br>{self._weather_data['alert_desc']}"
+
+            today_label2 = BaseLabel(today_label2_text, class_name="label alert")
+            today_label2.setWordWrap(True)
             layout_today.addWidget(today_label2)
 
         # Create hourly layout and add frames (before the daily widget to pass it to press event)
-        hourly_temperature_widget = HourlyTemperatureLineWidget(
-            units=self._units,
-            config=self._weather_card,
-        )
+        hourly_temperature_widget = HourlyTemperatureLineWidget(units=self._units, config=self._weather_card)
         hourly_temperature_widget.setProperty("class", "hourly-data")
         hourly_temperature_scroll_area = HourlyTemperatureScrollArea()
         hourly_temperature_scroll_area.setWidget(hourly_temperature_widget)
@@ -246,16 +212,15 @@ class WeatherWidget(BaseWidget):
                 min_temp = self._weather_data["min_temp"]
                 max_temp = self._weather_data["max_temp"]
             else:
-                name = self._weather_data[f"{{day{i}_name}}"]
-                min_temp = self._weather_data[f"{{day{i}_min_temp}}"]
-                max_temp = self._weather_data[f"{{day{i}_max_temp}}"]
+                name = self._weather_data[f"day{i}_name"]
+                min_temp = self._weather_data[f"day{i}_min_temp"]
+                max_temp = self._weather_data[f"day{i}_max_temp"]
 
-            row_day_label = QLabel(f"{name}\nMin: {min_temp}\nMax: {max_temp}", frame_day)
-            row_day_label.setProperty("class", "label")
+            row_day_label = BaseLabel(f"{name}\nMin: {min_temp}\nMax: {max_temp}", frame_day, class_name="label")
 
             # Create the icon label and pixmap
             row_day_icon_label = QLabel(frame_day)
-            icon_url = self._weather_data[f"{{day{i}_icon}}"]
+            icon_url = self._weather_data[f"day{i}_icon"]
             icon_data_day = self._icon_fetcher.get_icon(icon_url)
             if bool(icon_data_day):
                 self._set_pixmap(row_day_icon_label, icon_data_day)
@@ -263,10 +228,9 @@ class WeatherWidget(BaseWidget):
                 failed_icons.append((row_day_icon_label, icon_url))
 
             # Add widgets to frame layouts
-            layout_day = QHBoxLayout()
+            layout_day = BaseHBoxLayout()
             frame_day.setLayout(layout_day)
-            layout_day.addWidget(row_day_label)
-            layout_day.addWidget(row_day_icon_label)
+            layout_day.addWidget(row_day_label, row_day_icon_label)
             day_widgets.append(frame_day)
 
         # Create days layout and add frames
@@ -338,28 +302,15 @@ class WeatherWidget(BaseWidget):
         def process_content(content: str, is_alt: bool = False) -> list[QLabel]:
             widgets: list[QLabel] = []
 
-            for label in iterate_label_as_parts(
-                widgets, content, "label alt" if is_alt else "label", self._widget_container_layout, self._label_shadow
-            ):
-                class_names = label.property("class").split()
-                if "icon" in class_names or len(class_names) > (is_alt + 1):
-                    label.hide()
-                else:
-                    label.setText("weather update...")
-
-                if is_alt:
-                    label.hide()
+            for label in iterate_label_as_parts(self, widgets, content, "alt" if is_alt else ""):
+                if label.is_icon:
+                    label.setText("Weather update...")
 
             return widgets
 
         self._widgets = process_content(content)
-        self._widgets_alt = process_content(content_alt, is_alt=True)
-
-    def _reload_css(self, label: QLabel):
-        style = cast(QStyle, label.style())
-        style.unpolish(label)
-        style.polish(label)
-        label.update()
+        self._widgets_alt = self._widgets
+        # self._widgets_alt = process_content(content_alt, is_alt=True)
 
     def _update_label(self, update_class: bool = True):
         if self._weather_data is None:
@@ -370,17 +321,9 @@ class WeatherWidget(BaseWidget):
         active_label_content = self._show_alt_label and self._label_alt_content or self._label_content
         active_label_content = active_label_content.format_map(self._weather_data)
 
-        weather_class_names = [
-            "Sunny",
-            "Clear",
-            "Cloudy",
-            "Foggy",
-            "Rainy",
-            "Snowy",
-            "Thunderstorm",
-            "Blizzard",
-            "Cloudy",
-        ]
+        # weather_class_names = [
+        #     "Sunny", "Clear", "Cloudy", "Foggy", "Rainy", "Snowy", "Thunderstorm", "Blizzard", "Cloudy"
+        # ]
 
         if self._tooltip:
             set_tooltip(
@@ -391,32 +334,21 @@ class WeatherWidget(BaseWidget):
             )
 
         try:
-            for label in iterate_label_as_parts(
-                active_widgets, active_label_content, "label alt" if self._show_alt_label else "label"
-            ):
-                class_names = set(label.property("class").split())
+            append_class_icon = self._weather_data.get("icon_class", "")
 
+            for label in iterate_label_as_parts(
+                self, active_widgets, active_label_content, "alt" if self._show_alt_label else ""
+            ):
                 # If the current label is not from a span tag, ignore it.
-                if not ("icon" in class_names or len(class_names) > (self._show_alt_label + 1)):
+                if label.is_icon:
                     continue
 
-                if update_class:
-                    for cn in weather_class_names:
-                        if cn in class_names:
-                            class_names.remove(cn)
+                # append new class based on weather conditions
+                if append_class_icon:
+                    label.setProperty("class", label.property("class") + " " + append_class_icon)
 
-                    # append new class based on weather conditions
-                    append_class_icon = self._weather_data.get("icon_class", "")
-                    if append_class_icon:
-                        # Create the new class string
-                        class_names.add(append_class_icon)
-                        label.setProperty("class", " ".join(class_names))
-
-                    # Update css
-                    self._reload_css(label)
-
-                # if not label.isVisible():
-                #     label.show()
+                # Update css
+                label._reload_css()
 
         except Exception as e:
             logging.exception(f"Failed to update label: {e}")

@@ -9,19 +9,11 @@ from typing import Any
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QCursor
-from PyQt6.QtWidgets import (
-    QFrame,
-    QHBoxLayout,
-    QLabel,
-    QScrollArea,
-    QVBoxLayout,
-    QWidget,
-)
+from PyQt6.QtWidgets import QLabel, QScrollArea, QWidget
 
-from core.utils.utilities import PopupWidget, add_shadow, build_widget_label, iterate_label_as_parts
-from core.utils.widgets.animation_manager import AnimationManager
+from core.utils.utilities import PopupWidget, build_widget_label, iterate_label_as_parts
 from core.validation.widgets.yasb.vscode import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseHBoxLayout, BaseLabel, BaseVBoxLayout, BaseWidget
 
 
 class VSCodeWidget(BaseWidget):
@@ -44,13 +36,11 @@ class VSCodeWidget(BaseWidget):
         modified_date_format: str,
         cli_command: str,
         menu: dict[str, str],
-        container_padding: dict[str, int],
         animation: dict[str, str],
         callbacks: dict[str, str],
-        label_shadow: dict = None,
-        container_shadow: dict = None,
+        **kwargs,
     ):
-        super().__init__(class_name="vscode-widget")
+        super().__init__(class_name="vscode-widget", **kwargs)
         self._label_content = label
         self._label_alt_content = label_alt
         self._menu_title = menu_title
@@ -66,39 +56,17 @@ class VSCodeWidget(BaseWidget):
         self._cli_command = cli_command
         self._menu_popup = menu
         self._show_alt_label = False
-        self._padding = container_padding
         self._animation = animation
-        self._container_shadow = container_shadow
-        self._label_shadow = label_shadow
 
         if state_storage_path == "":
             state_storage_path = os.path.expandvars(r"%APPDATA%\Code\User\globalStorage\state.vscdb")
         self._state_file_path = state_storage_path
 
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-
-        self.widget_layout.addWidget(self._widget_container)
-
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(self, self._label_content, self._label_alt_content)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("toggle_menu", self._toggle_menu)
-
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
-        self.callback_middle = callbacks["on_middle"]
+        self.map_callbacks(callbacks)
 
     def _uri_to_windows_path(self, uri):
         parsed = urllib.parse.urlparse(uri)
@@ -153,26 +121,25 @@ class VSCodeWidget(BaseWidget):
             return []
 
     def _toggle_menu(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         self.show_menu()
 
     def _toggle_label(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         self._show_alt_label = not self._show_alt_label
-        for widget in self._widgets:
-            widget.setVisible(not self._show_alt_label)
-        for widget in self._widgets_alt:
-            widget.setVisible(self._show_alt_label)
+        # for widget in self._widgets:
+        #     widget.setVisible(not self._show_alt_label)
+        # for widget in self._widgets_alt:
+        #     widget.setVisible(self._show_alt_label)
         self._update_label()
 
     def _update_label(self):
-        active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+        # active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+        active_widgets = self._widgets
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
 
         for _ in iterate_label_as_parts(
-            active_widgets, active_label_content, "label alt" if self._show_alt_label else "label"
+            self, active_widgets, active_label_content, "alt" if self._show_alt_label else ""
         ):
             pass
 
@@ -212,8 +179,7 @@ class VSCodeWidget(BaseWidget):
         return menu
 
     def _create_menu_header(self, layout):
-        header_label = QLabel(self._menu_title)
-        header_label.setProperty("class", "header")
+        header_label = BaseLabel(self._menu_title, class_name="header")
         layout.addWidget(header_label)
 
     def _create_scroll_area(self):
@@ -235,9 +201,7 @@ class VSCodeWidget(BaseWidget):
         return scroll_area
 
     def _create_no_recents_label(self):
-        no_recent_label = QLabel("No recent workspaces found.")
-        no_recent_label.setProperty("class", "no-recent")
-        no_recent_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        no_recent_label = BaseLabel("No recent workspaces found.", class_name="no-recent")
         no_recent_label.setContentsMargins(0, 20, 0, 20)
         return no_recent_label
 
@@ -247,10 +211,8 @@ class VSCodeWidget(BaseWidget):
         container.setContentsMargins(0, 0, 8, 0)
         container.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
-        container_layout = QHBoxLayout(container)
+        container_layout = BaseHBoxLayout(container)
         container_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        container_layout.setContentsMargins(0, 0, 0, 0)
-        container_layout.setSpacing(0)
 
         is_folder = "folder" in workspace_data
 
@@ -279,12 +241,9 @@ class VSCodeWidget(BaseWidget):
         date_label.setProperty("class", "modified-date")
 
         text_content = QWidget()
-        text_content_layout = QVBoxLayout(text_content)
-        text_content_layout.addWidget(title_label)
-        text_content_layout.addWidget(date_label)
+        text_content_layout = BaseVBoxLayout(text_content)
+        text_content_layout.addWidgets(title_label, date_label)
         text_content_layout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        text_content_layout.setContentsMargins(0, 0, 0, 0)
-        text_content_layout.setSpacing(0)
 
         container_layout.addWidget(text_content, 1)
         container.mousePressEvent = self._create_container_mouse_press_event(path)
@@ -292,9 +251,7 @@ class VSCodeWidget(BaseWidget):
         return container
 
     def _populate_menu_content(self):
-        main_layout = QVBoxLayout(self._menu)
-        main_layout.setSpacing(0)
-        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout = BaseVBoxLayout(self._menu)
 
         self._create_menu_header(main_layout)
 
@@ -303,10 +260,8 @@ class VSCodeWidget(BaseWidget):
 
         scroll_widget = QWidget()
         scroll_widget.setProperty("class", "contents")
-        scroll_layout = QVBoxLayout(scroll_widget)
+        scroll_layout = BaseVBoxLayout(scroll_widget)
         scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        scroll_layout.setContentsMargins(0, 0, 0, 0)
-        scroll_layout.setSpacing(0)
         scroll_area.setWidget(scroll_widget)
 
         recent_workspaces = self._load_recent_workspaces()

@@ -2,14 +2,12 @@ import json
 import subprocess
 import threading
 
-from PyQt6.QtCore import QObject, Qt, pyqtSignal
-from PyQt6.QtWidgets import QFrame, QHBoxLayout
+from PyQt6.QtCore import QObject, pyqtSignal
 
-from core.utils.utilities import add_shadow, iterate_label_as_parts
-from core.utils.widgets.animation_manager import AnimationManager
+from core.utils.utilities import build_widget_label, iterate_label_as_parts
 from core.utils.win32.system_function import function_map
 from core.validation.widgets.yasb.custom import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseWidget, TruncatedLabel
 
 
 class CustomWorker(QObject):
@@ -49,6 +47,7 @@ class CustomWorker(QObject):
 
 class CustomWidget(BaseWidget):
     validation_schema = VALIDATION_SCHEMA
+    label_cls = TruncatedLabel
 
     def __init__(
         self,
@@ -57,14 +56,12 @@ class CustomWidget(BaseWidget):
         label_placeholder: str,
         label_max_length: int,
         exec_options: dict,
-        callbacks: dict,
         animation: dict[str, str],
-        container_padding: dict[str, int],
         class_name: str,
-        label_shadow: dict = None,
-        container_shadow: dict = None,
+        callbacks: dict[str, str],
+        **kwargs,
     ):
-        super().__init__(exec_options["run_interval"], class_name=f"custom-widget {class_name}")
+        super().__init__(exec_options["run_interval"], class_name=f"custom-widget {class_name}", **kwargs)
         self._label_max_length = label_max_length
         self._exec_data = None
         self._exec_cmd = exec_options["run_cmd"].split(" ") if exec_options.get("run_cmd", False) else None
@@ -77,92 +74,62 @@ class CustomWidget(BaseWidget):
         self._label_alt_content = label_alt
         self._label_placeholder = label_placeholder
         self._animation = animation
-        self._padding = container_padding
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
-
-        # Construct container
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-        # Initialize container
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-        # Add the container to the main widget layout
-        self.widget_layout.addWidget(self._widget_container)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("exec_custom", self._exec_callback)
+        self.register_callback("timer", self._exec_callback)
+        self.map_callbacks(callbacks)
 
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
-        self.callback_middle = callbacks["on_middle"]
-        self.callback_timer = "exec_custom"
-
-        self._create_dynamically_label(self._label_content, self._label_alt_content)
+        build_widget_label(self, self._label_content, self._label_alt_content)
 
         if exec_options["run_once"]:
             self._exec_callback()
         else:
             self.start_timer()
 
-    def _set_cursor(self, label):
-        if any(cb != "do_nothing" for cb in [self.callback_left, self.callback_right, self.callback_middle]):
-            label.setCursor(Qt.CursorShape.PointingHandCursor)
-
     def _toggle_label(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         self._show_alt_label = not self._show_alt_label
-        for widget in self._widgets:
-            widget.setVisible(not self._show_alt_label)
-        for widget in self._widgets_alt:
-            widget.setVisible(self._show_alt_label)
+        # for widget in self._widgets:
+        #     widget.setVisible(not self._show_alt_label)
+        # for widget in self._widgets_alt:
+        #     widget.setVisible(self._show_alt_label)
         self._update_label()
 
-    def _create_dynamically_label(self, content: str, content_alt: str):
-        def process_content(content, is_alt=False):
-            widgets = []
+    # def _create_dynamically_label(self, content: str, content_alt: str = ""):
+    #     give_pointing_cursor = any(
+    #         cb != "do_nothing"
+    #         for cb in [self.callbacks["on_left"], self.callbacks["on_right"], self.callbacks["on_middle"]]
+    #     )
 
-            for label in iterate_label_as_parts(
-                widgets,
-                content,
-                "label alt" if is_alt else "label",
-                self._widget_container_layout,
-                self._label_shadow,
-            ):
-                self._set_cursor(label)
-                widgets.append(label)
-                if is_alt:
-                    label.hide()
-                else:
-                    label.show()
+    #     def process_content(content, is_alt=False):
+    #         widgets = []
 
-            return widgets
+    #         for label in iterate_label_as_parts(
+    #             self,
+    #             widgets,
+    #             content,
+    #             "label alt" if is_alt else "label",
+    #             self._widget_container_layout,
+    #             self._label_shadow,
+    #         ):
+    #             if give_pointing_cursor:
+    #                 label.setCursor(Qt.CursorShape.PointingHandCursor)
+    #             # label.setVisible(is_alt)
 
-        self._widgets = process_content(content)
-        self._widgets_alt = process_content(content_alt, is_alt=True)
+    #         return widgets
 
-    def _truncate_label(self, label):
-        if self._label_max_length and len(label) > self._label_max_length:
-            return label[: self._label_max_length] + "..."
-        return label
+    #     self._widgets = process_content(content)
+    #     # self._widgets_alt = process_content(content_alt, is_alt=True)
 
     def _update_label(self):
-        active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+        active_widgets = self._widgets
+        # active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         active_label_content = active_label_content.format(data=self._exec_data)
 
-        for label in iterate_label_as_parts(active_widgets, active_label_content, layout=self._widget_container_layout):
-            text = self._truncate_label(label.text())
-            label.setText(text)
+        for _ in iterate_label_as_parts(active_widgets, active_label_content, layout=self._widget_container_layout):
+            ...
 
         self.setVisible(bool(self._exec_data) or not self._hide_empty)
 

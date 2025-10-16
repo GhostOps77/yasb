@@ -17,7 +17,7 @@ from core.utils.win32.app_icons import get_window_icon
 from core.utils.win32.utilities import get_monitor_hwnd
 from core.utils.win32.window_actions import close_application
 from core.validation.widgets.komorebi.stack import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseLabel, BaseWidget
 from settings import DEBUG
 
 try:
@@ -85,7 +85,7 @@ class WindowButton(QFrame):
         visible_buttons = [btn for btn in self.parent_widget._window_buttons if btn.isVisible()]
         for index, button in enumerate(visible_buttons):
             current_class = button.property("class")
-            new_class = " ".join([cls for cls in current_class.split() if not cls.startswith("button-")])
+            new_class = " ".join(cls for cls in current_class.split() if not cls.startswith("button-"))
             new_class = f"{new_class} button-{index + 1}"
             button.setProperty("class", new_class)
             button.setStyleSheet("")
@@ -179,16 +179,14 @@ class StackWidget(BaseWidget):
         max_length_ellipsis: str,
         hide_if_offline: bool,
         show_only_stack: bool,
-        container_padding: dict,
         animation: bool,
         enable_scroll_switching: bool,
         reverse_scroll_direction: bool,
         rewrite: list[dict] = None,
         btn_shadow: dict = None,
-        label_shadow: dict = None,
-        container_shadow: dict = None,
+        **kwargs,
     ):
-        super().__init__(class_name="komorebi-stack")
+        super().__init__(class_name="komorebi-stack", **kwargs)
         self._event_service = EventService()
         self._komorebic = KomorebiClient()
         self._label_window = label_window
@@ -202,12 +200,9 @@ class StackWidget(BaseWidget):
         self._max_length_ellipsis = max_length_ellipsis
         self._hide_if_offline = hide_if_offline
         self._show_only_stack = show_only_stack
-        self._padding = container_padding
         self._animation = animation
         self._rewrite_rules = rewrite
         self._btn_shadow = btn_shadow
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
         self._komorebi_screen = None
         self._curr_focus_container = None
         self._prev_focus_container = None
@@ -238,43 +233,15 @@ class StackWidget(BaseWidget):
             self.hide()
 
         # Status text shown when komorebi state can't be retrieved
-        self._offline_text = QLabel()
-        self._offline_text.setText(label_offline)
-        add_shadow(self._offline_text, self._label_shadow)
-        self._offline_text.setProperty("class", "offline-status")
+        self._offline_text = BaseLabel(label_offline, class_name="offline-status", shadows=self._label_shadow)
 
         # Status text shown when there is no active window
-        self._no_window_text = QLabel()
-        self._no_window_text.setText(label_no_window)
-        add_shadow(self._no_window_text, self._label_shadow)
-        self._no_window_text.setProperty("class", "no-window")
+        self._no_window_text = BaseLabel(label_no_window, class_name="no-window", shadows=self._label_shadow)
         self._rewrite_rules = rewrite
-
-        # Construct container which holds windows buttons
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-        self._widget_container_layout.addWidget(self._offline_text)
-        self._widget_container_layout.addWidget(self._no_window_text)
-
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-        self._widget_container.hide()
-
-        self.widget_layout.addWidget(self._offline_text)
-        self.widget_layout.addWidget(self._no_window_text)
-        self.widget_layout.addWidget(self._widget_container)
 
         self._enable_scroll_switching = enable_scroll_switching
         self._reverse_scroll_direction = reverse_scroll_direction
-        self._icon_cache = dict()
+        self._icon_cache = {}
         self.dpi = None
 
         self._hide_no_window_text()
@@ -407,7 +374,7 @@ class StackWidget(BaseWidget):
         self.setVisible(not (self._show_only_stack and len(self._window_buttons) <= 1))
 
     def _clear_container_layout(self):
-        for i in reversed(range(self._widget_container_layout.count())):
+        for i in range(self._widget_container_layout.count() - 1, -1, -1):
             old_widget = self._widget_container_layout.itemAt(i).widget()
             self._widget_container_layout.removeWidget(old_widget)
             old_widget.setParent(None)
@@ -509,6 +476,7 @@ class StackWidget(BaseWidget):
             except IndexError:
                 button = self._try_add_window_button(window_index)
                 buttons_added = True
+
         if buttons_added:
             self._window_buttons.sort(key=lambda btn: btn.window_index)
             self._clear_container_layout()

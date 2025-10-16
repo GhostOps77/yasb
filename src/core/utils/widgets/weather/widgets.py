@@ -286,13 +286,7 @@ class HourlyTemperatureLineWidget(QFrame):
             pixmap = QPixmap.fromImage(QImage.fromData(icon))
             icon_x = x_offset - icon_size.width() / 2
             icon_y = wind_y - wind_rect.height() - icon_size.height()
-            painter.drawPixmap(
-                int(icon_x),
-                int(icon_y),
-                icon_size.width(),
-                icon_size.height(),
-                pixmap,
-            )
+            painter.drawPixmap(int(icon_x), int(icon_y), icon_size.width(), icon_size.height(), pixmap)
             # Set temp, wind and icon combined height
             text_wind_icon_height = time_rect.height() + wind_rect.height() + icon_size.height()
 
@@ -355,10 +349,5 @@ class HourlyTemperatureLineWidget(QFrame):
                     line_from = temp_rect.height() + 10
                 line_to = height - text_wind_icon_height - 10
 
-                painter.drawLine(
-                    int(line_x),
-                    int(line_from),
-                    int(line_x),
-                    int(line_to),
-                )
+                painter.drawLine(int(line_x), int(line_from), int(line_x), int(line_to))
         painter.end()

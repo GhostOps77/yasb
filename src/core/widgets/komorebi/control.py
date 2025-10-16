@@ -3,22 +3,14 @@ import re
 import subprocess
 
 from PyQt6.QtCore import QEvent, Qt, QThread, pyqtSignal
-from PyQt6.QtWidgets import (
-    QFrame,
-    QHBoxLayout,
-    QLabel,
-    QSizePolicy,
-    QVBoxLayout,
-    QWidget,
-)
+from PyQt6.QtWidgets import QLabel, QSizePolicy, QWidget
 
 from core.event_enums import KomorebiEvent
 from core.event_service import EventService
-from core.utils.utilities import PopupWidget, add_shadow, build_widget_label
-from core.utils.widgets.animation_manager import AnimationManager
+from core.utils.utilities import PopupWidget, build_widget_label
 from core.utils.widgets.komorebi.client import KomorebiClient
 from core.validation.widgets.komorebi.control import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseHBoxLayout, BaseVBoxLayout, BaseWidget, BaseYasbWidgetLabel
 
 try:
     from core.utils.widgets.komorebi.event_listener import KomorebiEventListener
@@ -53,13 +45,11 @@ class KomorebiControlWidget(BaseWidget):
         config_path: str | None,
         show_version: bool,
         komorebi_menu: dict[str, str],
-        container_padding: dict[str, int],
         animation: dict[str, str],
         callbacks: dict[str, str],
-        label_shadow: dict = None,
-        container_shadow: dict = None,
+        **kwargs,
     ):
-        super().__init__(class_name="komorebi-control-widget")
+        super().__init__(class_name="komorebi-control-widget", **kwargs)
 
         self._label_content = label
         self._icons = icons
@@ -69,9 +59,6 @@ class KomorebiControlWidget(BaseWidget):
         self._show_version = show_version
         self._komorebi_menu = komorebi_menu
         self._animation = animation
-        self._padding = container_padding
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
         self._is_komorebi_connected = False
         self._locked_ui = False
         self._lock_menu = False
@@ -81,30 +68,10 @@ class KomorebiControlWidget(BaseWidget):
         self._event_service = EventService()
         self._komorebic = KomorebiClient()
 
-        # Construct container
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-        # Initialize container
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-        # Add the container to the main widget layout
-        self.widget_layout.addWidget(self._widget_container)
-
-        build_widget_label(self, self._label_content, None, self._label_shadow)
+        build_widget_label(self, self._label_content)
 
         self.register_callback("toggle_menu", self._toggle_menu)
-
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
-        self.callback_middle = callbacks["on_middle"]
+        self.map_callbacks(callbacks)
 
         # Register events
         self._register_signals_and_events()
@@ -151,8 +118,7 @@ class KomorebiControlWidget(BaseWidget):
             self._version_label.setText(self._version_text if self._version_text else "")
 
     def _toggle_menu(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         self.show_menu()
 
     def show_menu(self):
@@ -170,24 +136,17 @@ class KomorebiControlWidget(BaseWidget):
         )
         self.dialog.setProperty("class", "komorebi-control-menu")
 
-        layout = QVBoxLayout()
+        layout = BaseVBoxLayout()
 
         # Top row with buttons
         buttons_row = QWidget()
-        buttons_layout = QHBoxLayout(buttons_row)
-        buttons_layout.setContentsMargins(10, 10, 10, 10)
-        buttons_layout.setSpacing(5)
+        buttons_layout = BaseHBoxLayout(buttons_row, spacing=5, paddings=10)
         buttons_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Store buttons as class attributes so we can update them
-        self.start_btn = QLabel(self._icons["start"])
-        self.start_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-
-        self.stop_btn = QLabel(self._icons["stop"])
-        self.stop_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-
-        self.reload_btn = QLabel(self._icons["reload"])
-        self.reload_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.start_btn = BaseYasbWidgetLabel(self._icons["start"])
+        self.stop_btn = BaseYasbWidgetLabel(self._icons["stop"])
+        self.reload_btn = BaseYasbWidgetLabel(self._icons["reload"])
 
         # Connect button click events
         self.start_btn.mousePressEvent = lambda e: self._start_komorebi()
@@ -197,16 +156,13 @@ class KomorebiControlWidget(BaseWidget):
         # Update the button states based on current connection status
         self._update_menu_button_states()
 
-        buttons_layout.addWidget(self.start_btn)
-        buttons_layout.addWidget(self.stop_btn)
-        buttons_layout.addWidget(self.reload_btn)
+        buttons_layout.addWidgets(self.start_btn, self.stop_btn, self.reload_btn)
 
         # Bottom row with version info
         version_row = QWidget()
         version_row.setProperty("class", "footer")
-        version_layout = QVBoxLayout(version_row)
-        version_layout.setContentsMargins(0, 0, 0, 0)
-        version_layout.setSpacing(0)
+
+        version_layout = BaseVBoxLayout(version_row)
         version_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Keep the version label as an instance attribute so we can update it later
@@ -292,8 +248,9 @@ class KomorebiControlWidget(BaseWidget):
 
         # Force style refresh on each button
         for btn in (self.start_btn, self.stop_btn, self.reload_btn):
-            btn.style().unpolish(btn)
-            btn.style().polish(btn)
+            style = btn.style()
+            style.unpolish(btn)
+            style.polish(btn)
 
     def _run_komorebi_command(self, command: str):
         """Runs a Komorebi command with locked UI and error handling."""
@@ -348,7 +305,11 @@ class KomorebiControlWidget(BaseWidget):
             self._is_reloading = True
             stop_flags = self._build_komorebi_flags(include_config=False)
             start_flags = self._build_komorebi_flags(include_config=True)
-            command = f"{self._komorebic._komorebic_path} stop {stop_flags} && {self._komorebic._komorebic_path} start {start_flags}"
+            command = (
+                f"{self._komorebic._komorebic_path} stop {stop_flags} && "
+                f" {self._komorebic._komorebic_path} start {start_flags}"
+            )
+
             if hasattr(self, "_version_label") and getattr(self, "dialog", None) and self.dialog.isVisible():
                 try:
                     self._version_label.setText("Reloading...")

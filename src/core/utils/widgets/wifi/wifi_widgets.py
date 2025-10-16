@@ -40,7 +40,8 @@ from core.utils.widgets.wifi.wifi_managers import (
     WiFiManager,
     WifiState,
 )
-from core.utils.win32.utilities import qmenu_rounded_corners  # type: ignore
+from core.utils.win32.utilities import qmenu_rounded_corners
+from core.widgets.base import BaseFrame, BaseHBoxLayout, BaseLabel, BaseVBoxLayout  # type: ignore
 
 logger = logging.getLogger("wifi_widget")
 
@@ -90,61 +91,38 @@ class WifiItem(QFrame):
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_context_menu)  # type: ignore
 
-        self.main_layout = QVBoxLayout(self)
-        self.main_layout.setSpacing(0)
-        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self.main_layout = BaseVBoxLayout(self)
         self.main_layout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
 
-        self.wifi_details_container = QFrame(self)
-        self.wifi_details_container.setContentsMargins(0, 0, 0, 0)
-        self.wifi_details_container.setProperty("class", "details-container")
-        self.wifi_details_container_layout = QHBoxLayout(self.wifi_details_container)
-        self.wifi_details_container_layout.setSpacing(0)
-        self.wifi_details_container_layout.setContentsMargins(0, 0, 0, 0)
+        self.wifi_details_container = BaseFrame(self, class_name="details-container")
+        self.wifi_details_container_layout = BaseHBoxLayout(self.wifi_details_container)
 
-        self.wifi_icon = QLabel(self)
-        self.wifi_icon.setProperty("class", "icon")
-        self.wifi_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.wifi_icon.setContentsMargins(0, 0, 0, 0)
-
-        self.wifi_name = QLabel(self)
-        self.wifi_name.setProperty("class", "name")
+        self.wifi_icon = BaseLabel(self, class_name="icon")
+        self.wifi_name = BaseLabel(self, class_name="name")
 
         # Right container
-        self.right_container = QFrame(self)
-        self.right_container.setProperty("class", "right-container")
-        self.right_container.setContentsMargins(0, 0, 0, 0)
-        self.right_container_layout = QVBoxLayout(self.right_container)
-        self.right_container_layout.setSpacing(0)
-        self.right_container_layout.setContentsMargins(0, 0, 0, 0)
+        self.right_container = BaseFrame(self, class_name="right-container")
 
-        self.status_label = QLabel(self)
+        self.status_label = QLabel(self, text="N/A")
         self.status_label.setProperty("class", "status")
         self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignRight)
         self.status_label.setContentsMargins(0, 0, 0, 0)
-        self.status_label.setText("N/A")
 
-        self.wifi_strength = QLabel(self)
+        self.wifi_strength = QLabel(self, text="N/A")
         self.wifi_strength.setProperty("class", "strength")
         self.wifi_strength.setAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignRight)
         self.wifi_strength.setContentsMargins(0, 0, 0, 0)
-        self.wifi_strength.setText("N/A")
 
-        self.right_container_layout.addWidget(self.status_label)
-        self.right_container_layout.addWidget(self.wifi_strength)
+        self.right_container_layout = BaseVBoxLayout(self.right_container)
+        self.right_container_layout.addWidgets(self.status_label, self.wifi_strength)
 
-        self.wifi_details_container_layout.addWidget(self.wifi_icon)
-        self.wifi_details_container_layout.addWidget(self.wifi_name)
+        self.wifi_details_container_layout.addWidgets(self.wifi_icon, self.wifi_name)
         self.wifi_details_container_layout.addStretch()
         self.wifi_details_container_layout.addWidget(self.right_container)
 
         # Controls container
-        self.wifi_controls_container = QFrame(self)
-        self.wifi_controls_container.setContentsMargins(0, 0, 0, 0)
-        self.wifi_controls_container.setProperty("class", "controls-container")
-        self.wifi_controls_container_layout = QHBoxLayout(self.wifi_controls_container)
-        self.wifi_controls_container_layout.setSpacing(0)
-        self.wifi_controls_container_layout.setContentsMargins(0, 0, 0, 0)
+        self.wifi_controls_container = BaseFrame(self, class_name="controls-container")
+        self.wifi_controls_container_layout = BaseHBoxLayout(self.wifi_controls_container)
 
         self.ssid_field = QLineEdit(self)
         self.ssid_field.setPlaceholderText("SSID")
@@ -162,13 +140,11 @@ class WifiItem(QFrame):
         self.connect_button.setText("Connect")
         self.connect_button.clicked.connect(self._manage_connection_click)  # pyright: ignore[reportUnknownMemberType]
 
-        self.wifi_controls_container_layout.addWidget(self.ssid_field)
-        self.wifi_controls_container_layout.addWidget(self.password_field)
+        self.wifi_controls_container_layout.addWidgets(self.ssid_field, self.password_field)
         self.wifi_controls_container_layout.addStretch()
         self.wifi_controls_container_layout.addWidget(self.connect_button)
 
-        self.main_layout.addWidget(self.wifi_details_container)
-        self.main_layout.addWidget(self.wifi_controls_container)
+        self.main_layout.addWidgets(self.wifi_details_container, self.wifi_controls_container)
 
     @pyqtSlot(QPoint)
     def show_context_menu(self, pos: QPoint):
@@ -275,6 +251,7 @@ class WifiItem(QFrame):
             known_profile = self.data.profile_exists
             self.password_field.setVisible(requires_pass and not known_profile)
             self.connect_button.setText("Disconnect" if self.state & WifiState.CONNECTED else "Connect")
+
         # Update the status label
         if self.state == WifiState.CONNECTED:
             self.status_label.setText("Connected")
@@ -375,12 +352,14 @@ class WifiList(QScrollArea):
                 items_list.remove(item)
                 items_list.insert(0, item)
                 break
+
         # Find a hidden network and move it to the bottom
         for item in items_list:
             if item[1].data.ssid == "<Hidden Network>":
                 items_list.remove(item)
                 items_list.append(item)
                 break
+
         self._items = dict(items_list)
         # Remove all widgets from layout except the stretch at the end
         while self._main_layout.count() > 1:  # Keep the stretch
@@ -418,11 +397,7 @@ class WifiMenu(QWidget):
 
     _networks_cache: dict[str, NetworkInfo] = {}
 
-    def __init__(
-        self,
-        parent: QWidget,
-        menu_config: dict[str, Any],
-    ):
+    def __init__(self, parent: QWidget, menu_config: dict[str, Any]):
         super().__init__(parent)
         self._parent = parent
         self.menu_config = menu_config
@@ -450,9 +425,7 @@ class WifiMenu(QWidget):
             self.menu_config["border_color"],
         )
         self.popup_window.setProperty("class", "wifi-menu")
-        main_layout = QVBoxLayout(self.popup_window)
-        main_layout.setSpacing(0)
-        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout = BaseVBoxLayout(self.popup_window)
 
         header_label = QLabel("WiFi Networks")
         header_label.setProperty("class", "header")
@@ -475,12 +448,9 @@ class WifiMenu(QWidget):
         self.menu_wifi_list.forget_pressed.connect(self._forget_network)  # pyright: ignore[reportUnknownMemberType]
         self.menu_wifi_list.auto_connect_toggled.connect(self._on_auto_connect_toggled)  # pyright: ignore[reportUnknownMemberType]
 
-        footer_container = QFrame(self.popup_window)
-        footer_container.setProperty("class", "footer")
+        footer_container = BaseFrame(self.popup_window, "footer")
 
-        footer_layout = QHBoxLayout(footer_container)
-        footer_layout.setSpacing(0)
-        footer_layout.setContentsMargins(0, 0, 0, 0)
+        footer_layout = BaseHBoxLayout(footer_container)
 
         more_settings_button = QPushButton("More Wi-Fi settings")
         more_settings_button.setProperty("class", "settings-button")
@@ -498,11 +468,9 @@ class WifiMenu(QWidget):
         footer_layout.addStretch()
         footer_layout.addWidget(refresh_icon)
 
-        main_layout.addWidget(header_label)
-        main_layout.addWidget(self.menu_progress_bar)
-        main_layout.addWidget(self.error_message)
-        main_layout.addWidget(self.menu_wifi_list)
-        main_layout.addWidget(footer_container)
+        main_layout.addWidgets(
+            header_label, self.menu_progress_bar, self.error_message, self.menu_wifi_list, footer_container
+        )
 
         self.popup_window.adjustSize()
         self.popup_window.setPosition(
@@ -545,15 +513,18 @@ class WifiMenu(QWidget):
         if is_valid_qobject(self.wifi_connection_worker) and self.wifi_connection_worker.isRunning():
             logger.debug("Already connecting to a network")
             return
+
         logger.debug("Connecting to wifi network...")
         if network.ssid == "<Hidden Network>":
             self.wifi_connection_worker = WiFiConnectWorker(network, ssid, password, True)
         else:
             self.wifi_connection_worker = WiFiConnectWorker(network, network.ssid, password, False)
+
         self.wifi_connection_worker.result.connect(self._on_connection_attempt_completed)  # pyright: ignore[reportUnknownMemberType]
         self.wifi_connection_worker.start()
         if not is_valid_qobject(self.popup_window):
             return
+
         self.menu_progress_bar.setVisible(True)
 
     @pyqtSlot(WiFiConnectionStatus, str, NetworkInfo)
@@ -578,9 +549,11 @@ class WifiMenu(QWidget):
 
         if not is_valid_qobject(self.popup_window):
             return
+
         menu_wifi_list = self.menu_wifi_list.get_items()
         if item := menu_wifi_list.get(profile_name):
             item.data = replace(item.data, state=item.data.state | WifiState.CONNECTED)
+
         self._update_wifi_items_list()
         self.menu_wifi_list.activate_item(profile_name)
         self.menu_wifi_list.clear_fields()
@@ -620,20 +593,15 @@ class WifiMenu(QWidget):
         # Update the cache
         if network.ssid in WifiMenu._networks_cache:
             WifiMenu._networks_cache[network.ssid] = replace(
-                network,
-                state=network.state & ~WifiState.CONNECTED,
-                profile_exists=False,
+                network, state=network.state & ~WifiState.CONNECTED, profile_exists=False
             )
 
         if not is_valid_qobject(self.popup_window):
             return
+
         # Update the menu
         if item := self.menu_wifi_list.get_item(network.ssid):
-            item.data = replace(
-                network,
-                state=network.state & ~WifiState.CONNECTED,
-                profile_exists=False,
-            )
+            item.data = replace(network, state=network.state & ~WifiState.CONNECTED, profile_exists=False)
 
     @pyqtSlot()
     def _scan_wifi(self):
@@ -657,6 +625,7 @@ class WifiMenu(QWidget):
                     self.error_connection = self.error_message.clicked.connect(  # type: ignore[reportUnknownMemberType]
                         partial(self._run_and_hide, "ms-settings:privacy-location"),
                     )
+
                 elif result == ScanResultStatus.POWER_STATE_INVALID:
                     self.error_message.setText("Error: WiFi adapter is disabled...")
                     self.error_message.clickable = True
@@ -665,9 +634,11 @@ class WifiMenu(QWidget):
                     self.error_connection = self.error_message.clicked.connect(  # type: ignore[reportUnknownMemberType]
                         partial(self._run_and_hide, "ms-settings:network-wifi"),
                     )
+
                 elif result == ScanResultStatus.ERROR:
                     self.error_message.clickable = False
                     self.error_message.setText("Unknown error...")
+
                 self.menu_wifi_list.clear_items()
                 WifiMenu._networks_cache = {}
                 self.menu_progress_bar.setVisible(False)
@@ -686,10 +657,8 @@ class WifiMenu(QWidget):
     def _on_auto_connect_toggled(self, network: NetworkInfo):
         """Handle the auto-connect setting is toggled event"""
         if network.ssid in self._networks_cache:
-            self._networks_cache[network.ssid] = replace(
-                network,
-                auto_connect=network.auto_connect,
-            )
+            self._networks_cache[network.ssid] = replace(network, auto_connect=network.auto_connect)
+
         current_connection = self.wifi_manager.get_current_connection()
         active_connection = current_connection and current_connection.ssid == network.ssid
         if active_connection:
@@ -708,6 +677,7 @@ class WifiMenu(QWidget):
         """Update the WiFi items list"""
         if not is_valid_qobject(self.popup_window):
             return
+
         self.menu_progress_bar.setVisible(False)
         active_connection = self.wifi_manager.get_current_connection()
         if active_connection:
@@ -720,32 +690,38 @@ class WifiMenu(QWidget):
             item.active = bool(active_connection.state & WifiState.CONNECTED)
             self.menu_wifi_list.update_or_add_item(item)
             self._networks_cache[active_connection.ssid] = active_connection
+
         # Add cached networks except for the current one
         for ssid, network in WifiMenu._networks_cache.items():
             if active_connection and network.ssid == active_connection.ssid:
                 WifiMenu._networks_cache[ssid] = active_connection
                 continue
+
             is_secured = bool(network.state & WifiState.SECURED)
             item = WifiItem(self.menu_wifi_list)
             network.icon = self._get_wifi_icon(network.quality, is_secured)
             item.data = network
             item.active = bool(network.state & WifiState.CONNECTED)
             self.menu_wifi_list.update_or_add_item(item)
+
         # Cleanup missing networks
         cached_networks_ssid = list(WifiMenu._networks_cache)
         current_networks = list(self.menu_wifi_list.get_items())
         for ssid in current_networks:
             if ssid not in cached_networks_ssid:
                 self.menu_wifi_list.remove_item(ssid)
+
         # Re-sort items
         self.menu_wifi_list.sort_items()
         # Focus the first active item
         active_items = [item for item in self.menu_wifi_list.get_items().values() if item.active]
         if not active_items:
             return
+
         password_field = active_items[0].password_field
         if password_field.isHidden() or password_field.hasFocus():
             return
+
         password_field.setFocus()
 
     def _get_wifi_icon(self, strength: int, secured: bool) -> str:

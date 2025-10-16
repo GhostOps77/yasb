@@ -12,28 +12,14 @@ from PyQt6.QtCore import (
     QTimer,
     pyqtSlot,  # pyright: ignore [reportUnknownVariableType]
 )
-from PyQt6.QtWidgets import (
-    QApplication,
-    QFrame,
-    QHBoxLayout,
-    QLayout,
-    QMenu,
-    QPushButton,
-)
+from PyQt6.QtWidgets import QApplication, QHBoxLayout, QLayout, QMenu, QPushButton
 
 from core.utils.utilities import add_shadow, app_data_path
 from core.utils.widgets.systray.systray_widget import DropWidget, IconState, IconWidget
 from core.utils.widgets.systray.tasks_service import TasksService
 from core.utils.widgets.systray.tray_monitor import IconData, TrayMonitor
 from core.utils.win32.bindings import IsWindow
-from core.utils.win32.constants import (
-    NIF_GUID,
-    NIF_ICON,
-    NIF_INFO,
-    NIF_MESSAGE,
-    NIF_STATE,
-    NIF_TIP,
-)
+from core.utils.win32.constants import NIF_GUID, NIF_ICON, NIF_INFO, NIF_MESSAGE, NIF_STATE, NIF_TIP
 from core.utils.win32.utilities import qmenu_rounded_corners
 from core.validation.widgets.yasb.systray import VALIDATION_SCHEMA
 from core.widgets.base import BaseWidget
@@ -93,12 +79,7 @@ class SystrayWidget(BaseWidget):
             cls._tasks_service_instance = TasksService()
             cls._tasks_thread = TaskbarServiceThread(cls._tasks_service_instance)
 
-        return (
-            cls._systray_instance,
-            cls._systray_thread,
-            cls._tasks_service_instance,
-            cls._tasks_thread,
-        )
+        return (cls._systray_instance, cls._systray_thread, cls._tasks_service_instance, cls._tasks_thread)
 
     def __init__(
         self,
@@ -114,22 +95,19 @@ class SystrayWidget(BaseWidget):
         show_volume: bool,
         show_network: bool,
         tooltip: bool,
-        container_padding: dict[str, int],
-        container_shadow: dict[str, Any],
         unpinned_shadow: dict[str, Any],
         pinned_shadow: dict[str, Any],
         unpinned_vis_btn_shadow: dict[str, Any],
         btn_shadow: dict[str, Any],
+        **kwargs,
     ):
-        super().__init__(class_name=class_name)  # type: ignore
+        super().__init__(class_name=class_name, **kwargs)  # type: ignore
         self.label_collapsed = label_collapsed
         self.label_expanded = label_expanded
         self.label_position = label_position if label_position in {"left", "right"} else "left"
         self.icon_size = icon_size
         self.show_unpinned = show_unpinned
         self.show_unpinned_button = show_unpinned_button
-        self.container_padding = container_padding
-        self.container_shadow = container_shadow
         self.unpinned_shadow = unpinned_shadow
         self.pinned_shadow = pinned_shadow
         self.unpinned_vis_btn_shadow = unpinned_vis_btn_shadow
@@ -168,19 +146,6 @@ class SystrayWidget(BaseWidget):
         self.pinned_vis_check_timer.timeout.connect(self.update_pinned_widget_visibility)  # type: ignore
         self.pinned_vis_check_timer.setSingleShot(True)
 
-        self.widget_container_layout = QHBoxLayout()
-        self.widget_container_layout.setSpacing(0)
-        self.widget_container_layout.setContentsMargins(
-            self.container_padding["left"],
-            self.container_padding["top"],
-            self.container_padding["right"],
-            self.container_padding["bottom"],
-        )
-
-        self.widget_container = QFrame(self)
-        self.widget_container.setLayout(self.widget_container_layout)
-        self.widget_container.setProperty("class", "widget-container")
-
         self.unpinned_vis_btn = QPushButton(self)
         self.unpinned_vis_btn.setCheckable(True)
         self.unpinned_vis_btn.clicked.connect(self.toggle_unpinned_widget_visibility)  # type: ignore
@@ -204,20 +169,17 @@ class SystrayWidget(BaseWidget):
         self.pinned_widget.drag_started.connect(self.on_drag_started)  # type: ignore
         self.pinned_widget.drag_ended.connect(self.on_drag_ended)  # type: ignore
 
-        add_shadow(self.widget_container, self.container_shadow)
         add_shadow(self.unpinned_widget, self.unpinned_shadow)
         add_shadow(self.pinned_widget, self.pinned_shadow)
         add_shadow(self.unpinned_vis_btn, self.unpinned_vis_btn_shadow)
 
-        self.widget_container_layout.addWidget(self.unpinned_widget)
-        self.widget_container_layout.addWidget(self.pinned_widget)
+        self._widget_container_layout.addWidget(self.unpinned_widget)
+        self._widget_container_layout.addWidget(self.pinned_widget)
 
         if self.label_position == "left":
-            self.widget_container_layout.insertWidget(0, self.unpinned_vis_btn)
+            self._widget_container_layout.insertWidget(0, self.unpinned_vis_btn)
         else:
-            self.widget_container_layout.insertWidget(-1, self.unpinned_vis_btn)
-
-        self.widget_layout.addWidget(self.widget_container)
+            self._widget_container_layout.insertWidget(-1, self.unpinned_vis_btn)
 
         self.unpinned_vis_btn.setVisible(self.show_unpinned_button)
 
@@ -416,16 +378,7 @@ class SystrayWidget(BaseWidget):
         if old_data is None:
             return
 
-        direct_attributes = [
-            "message_type",
-            "hWnd",
-            "uID",
-            "uFlags",
-            "icon_image",
-            "exe",
-            "exe_path",
-        ]
-
+        direct_attributes = ("message_type", "hWnd", "uID", "uFlags", "icon_image", "exe", "exe_path")
         for attr in direct_attributes:
             if attr in ("hWnd", "uID"):
                 continue
@@ -582,8 +535,11 @@ class SystrayWidget(BaseWidget):
     def get_widgets_from_layout(self, layout: QLayout) -> list[IconWidget]:
         """Get all the widgets from a layout."""
         widgets: list[IconWidget] = []
-        for i in range(layout.count()):
-            item = layout.itemAt(i)
-            if item is not None and (w := item.widget()) and isinstance(w, IconWidget):
+        # for i in range(layout.count()):
+        #     item = layout.itemAt(i)
+        #     if item is not None and (w := item.widget()) and isinstance(w, IconWidget):
+        #         widgets.append(w)
+        for w in range(layout.children()):
+            if isinstance(w, IconWidget):
                 widgets.append(w)
         return widgets

@@ -3,7 +3,7 @@ from typing import Any
 
 from PyQt6.QtCore import Qt, pyqtSlot
 from PyQt6.QtGui import QCursor
-from PyQt6.QtWidgets import QHBoxLayout, QPushButton
+from PyQt6.QtWidgets import QPushButton
 
 from core.utils.utilities import add_shadow
 from core.utils.widgets.glazewm.client import GlazewmClient, TilingDirection
@@ -37,29 +37,20 @@ class GlazewmTilingDirectionWidget(BaseWidget):
         self.btn_shadow = btn_shadow
         self.current_tiling_direction = TilingDirection.HORIZONTAL
 
-        self.workspace_container_layout = QHBoxLayout()
-        self.workspace_container_layout.setSpacing(0)
-        self.workspace_container_layout.setContentsMargins(0, 0, 0, 0)
-
         self.tiling_direction_button = QPushButton()
         self.tiling_direction_button.setProperty("class", "btn")
         self.tiling_direction_button.setVisible(False)
-        self.tiling_direction_button.setLayout(self.workspace_container_layout)
+        self.tiling_direction_button.setLayout(self._widget_container_layout)
         self.tiling_direction_button.clicked.connect(self.toggle_tiling_direction)  # type: ignore
 
-        add_shadow(self._widget_frame, self.container_shadow)
         add_shadow(self.tiling_direction_button, self.btn_shadow)
-
-        self.widget_layout.addWidget(self.tiling_direction_button)
+        self._widget_container_layout.addWidget(self.tiling_direction_button)
 
         self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         self.glazewm_client = GlazewmClient(
             glazewm_server_uri,
-            [
-                "sub -e focus_changed tiling_direction_changed focused_container_moved",
-                "query tiling-direction",
-            ],
+            ["sub -e focus_changed tiling_direction_changed focused_container_moved", "query tiling-direction"],
         )
         self.glazewm_client.glazewm_connection_status.connect(self._update_connection_status)  # type: ignore
         self.glazewm_client.tiling_direction_processed.connect(self._update_tiling_direction)  # type: ignore

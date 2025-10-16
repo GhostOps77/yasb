@@ -118,8 +118,7 @@ class KomorebiAnimation:
         start_width: int | None = None,
     ) -> None:
         QTimer.singleShot(
-            0,
-            lambda: KomorebiAnimation.animate_width(widget, width_duration, easing, start_width=start_width),
+            0, lambda: KomorebiAnimation.animate_width(widget, width_duration, easing, start_width=start_width)
         )
 
     @staticmethod

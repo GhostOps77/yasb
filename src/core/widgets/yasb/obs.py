@@ -1,12 +1,11 @@
 import logging
 
 from obswebsocket import events, obsws, requests
-from PyQt6.QtCore import Q_ARG, QMetaObject, Qt, QThread, QTimer, pyqtSignal
-from PyQt6.QtGui import QCursor
-from PyQt6.QtWidgets import QFrame, QGraphicsOpacityEffect, QHBoxLayout, QLabel
+from PyQt6.QtCore import Q_ARG, QMetaObject, QThread, QTimer, pyqtSignal
+from PyQt6.QtWidgets import QGraphicsOpacityEffect
 
 from core.validation.widgets.yasb.obs import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseLabel, BaseWidget
 from settings import DEBUG
 
 # Set OBS WebSocket logger to WARNING
@@ -72,42 +71,22 @@ class ObsWidget(BaseWidget):
         connection: dict[str, str],
         hide_when_not_recording: bool,
         blinking_icon: bool,
-        container_padding: dict,
+        **kwargs,
     ):
-        super().__init__(class_name="obs-widget")
+        super().__init__(class_name="obs-widget", **kwargs)
         self._icons = icons
         self._connection = connection
         self._hide_when_not_recording = hide_when_not_recording
         self._blinking_icon = blinking_icon
-        self._padding = container_padding
         self.is_recording = False
 
-        # Construct container
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-
-        # Initialize container
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-
-        self.record_button = QLabel()
-        self.record_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.record_button.setText(self._icons["stopped"])
-        self.record_button.setProperty("class", "stopped")
+        self.record_button = BaseLabel(self._icons["stopped"], class_name="stopped")
 
         self.opacity_effect = QGraphicsOpacityEffect()
         self.record_button.setGraphicsEffect(self.opacity_effect)
 
         self._widget_container_layout.addWidget(self.record_button)
 
-        self.widget_layout.addWidget(self._widget_container)
         self.hide_widget()
         # Connect button click to slot
         self.record_button.mousePressEvent = self.on_record_button_click
@@ -153,9 +132,7 @@ class ObsWidget(BaseWidget):
             self.hide_widget()
             QMetaObject.invokeMethod(self.blink_timer, "stop")
 
-        self.record_button.style().unpolish(self.record_button)
-        self.record_button.style().polish(self.record_button)
-        self.record_button.update()
+        self.record_button._reload_css()
         self.record_button.repaint()
 
     def blink_record_button(self):

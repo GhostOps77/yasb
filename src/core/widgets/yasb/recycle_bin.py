@@ -1,7 +1,5 @@
-from PyQt6.QtWidgets import QFrame, QHBoxLayout
-
 from core.utils.tooltip import set_tooltip
-from core.utils.utilities import add_shadow, build_widget_label, iterate_label_as_parts
+from core.utils.utilities import build_widget_label, iterate_label_as_parts
 from core.utils.widgets.animation_manager import AnimationManager
 from core.utils.widgets.recycle_bin.recycle_bin_monitor import RecycleBinMonitor
 from core.validation.widgets.yasb.recycle_bin import VALIDATION_SCHEMA
@@ -20,23 +18,18 @@ class RecycleBinWidget(BaseWidget):
         tooltip: bool,
         animation: dict[str, str],
         callbacks: dict[str, str],
-        container_padding: dict[str, int],
-        label_shadow: dict = None,
-        container_shadow: dict = None,
+        **kwargs,
     ):
-        super().__init__(class_name=f"recycle-bin-widget {class_name}")
+        super().__init__(class_name=f"recycle-bin-widget {class_name}", **kwargs)
         self._label_content = label
         self._label_alt_content = label_alt
         self._icons = icons
         self._tooltip = tooltip
         self._animation = animation
-        self._padding = container_padding
         self._show_alt_label = False
         self._bin_info = {"num_items": 0, "size_bytes": 0}
         self._is_emptying = False
         self._empty_thread = None
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
 
         # Get the singleton monitor instance - monitoring starts automatically
         self.monitor = RecycleBinMonitor.get_instance()
@@ -44,47 +37,29 @@ class RecycleBinWidget(BaseWidget):
         # Connect to the monitor's signal
         self.monitor.bin_updated.connect(self._on_bin_update)
 
-        # Construct container
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-        self.widget_layout.addWidget(self._widget_container)
-
         build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("empty_bin", self._empty_bin)
         self.register_callback("open_bin", self._open_bin)
-
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
-        self.callback_middle = callbacks["on_middle"]
+        self.map_callbacks(callbacks)
 
         # Get initial bin info
         self._bin_info = self.monitor.get_recycle_bin_info()
         self._update_label()
 
     def _toggle_label(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         self._show_alt_label = not self._show_alt_label
-        for widget in self._widgets:
-            widget.setVisible(not self._show_alt_label)
-        for widget in self._widgets_alt:
-            widget.setVisible(self._show_alt_label)
+        # for widget in self._widgets:
+        #     widget.setVisible(not self._show_alt_label)
+        # for widget in self._widgets_alt:
+        #     widget.setVisible(self._show_alt_label)
         self._update_label()
 
     def _update_label(self):
-        active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+        # active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+        active_widgets = self._widgets
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
 
         bin_class_name = "bin-filled" if self._bin_info["num_items"] > 0 else "bin-empty"
@@ -96,20 +71,9 @@ class RecycleBinWidget(BaseWidget):
         )
 
         for label in iterate_label_as_parts(
-            active_widgets,
-            active_label_content,
-            "label alt" if self._show_alt_label else "label",
-            # self._widget_container_layout
+            self, active_widgets, active_label_content, "alt" if self._show_alt_label else ""
         ):
-            class_names = label.property("class").split()
-            for i, cn in enumerate(class_names):
-                if cn.startswith("bin-"):
-                    class_names[i] = bin_class_name
-                    break
-            else:
-                class_names.append(bin_class_name)
-
-            label.setProperty("class", " ".join(class_names))
+            label.setProperty("class", label.property("class") + " " + bin_class_name)
             label.setStyleSheet("")
 
         if self._tooltip:

@@ -4,7 +4,6 @@ import os
 from PyQt6.QtCore import QPropertyAnimation, QRectF, Qt, QTimer, pyqtProperty
 from PyQt6.QtGui import QColor, QCursor, QPainter, QPen
 from PyQt6.QtWidgets import (
-    QFrame,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -15,14 +14,12 @@ from PyQt6.QtWidgets import (
 from core.utils.utilities import (
     PopupWidget,
     ToastNotifier,
-    add_shadow,
     build_progress_widget,
     build_widget_label,
     iterate_label_as_parts,
 )
-from core.utils.widgets.animation_manager import AnimationManager
 from core.validation.widgets.yasb.pomodoro import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseHBoxLayout, BaseLabel, BaseVBoxLayout, BaseWidget
 from settings import SCRIPT_PATH
 
 
@@ -59,14 +56,12 @@ class PomodoroWidget(BaseWidget):
         hide_on_break: bool,
         icons: dict,
         animation: dict,
-        container_padding: dict,
         callbacks: dict,
         menu: dict,
-        label_shadow: dict = None,
-        container_shadow: dict = None,
         progress_bar: dict = None,
+        **kwargs,
     ):
-        super().__init__(class_name=f"pomodoro-widget {class_name}")
+        super().__init__(class_name=f"pomodoro-widget {class_name}", **kwargs)
 
         self._show_alt_label = False
         self._label_content = label
@@ -83,13 +78,9 @@ class PomodoroWidget(BaseWidget):
         self._hide_on_break = hide_on_break
         self._icons = icons
         self._animation = animation
-        self._padding = container_padding
         self._menu_config = menu
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
         self._progress_bar = progress_bar
 
-        self.progress_widget = None
         self.progress_widget = build_progress_widget(self, self._progress_bar)
         # Add this instance to the shared instances list
         if self not in PomodoroWidget._instances:
@@ -99,32 +90,13 @@ class PomodoroWidget(BaseWidget):
         if PomodoroWidget._shared_state["remaining_time"] is None:
             PomodoroWidget._shared_state["remaining_time"] = self._work_duration
 
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-
-        # Initialize container
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-        self.widget_layout.addWidget(self._widget_container)
-
         build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
 
         self.register_callback("toggle_timer", self._toggle_timer)
         self.register_callback("reset_timer", self._reset_timer)
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("toggle_menu", self._toggle_menu)
-
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
-        self.callback_middle = callbacks["on_middle"]
+        self.map_callbacks(callbacks)
 
         # Start shared timer if not already running
         if PomodoroWidget._shared_timer is None:
@@ -198,13 +170,12 @@ class PomodoroWidget(BaseWidget):
             pass
 
     def _toggle_label(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         self._show_alt_label = not self._show_alt_label
-        for widget in self._widgets:
-            widget.setVisible(not self._show_alt_label)
-        for widget in self._widgets_alt:
-            widget.setVisible(self._show_alt_label)
+        # for widget in self._widgets:
+        #     widget.setVisible(not self._show_alt_label)
+        # for widget in self._widgets_alt:
+        #     widget.setVisible(self._show_alt_label)
         self._update_label()
 
     def _update_label(self):
@@ -238,20 +209,9 @@ class PomodoroWidget(BaseWidget):
         #         )
 
         for label in iterate_label_as_parts(
-            active_widgets,
-            active_label_content,
-            "label alt" if self._show_alt_label else "label",
-            # self._widget_container_layout
+            self, active_widgets, active_label_content, "alt" if self._show_alt_label else ""
         ):
-            class_names = label.property("class").split()
-            for i, cn in enumerate(class_names):
-                if cn in {"paused", "break", "work"}:
-                    class_names[i] = status_class
-                    break
-            else:
-                class_names.append(status_class)
-
-            label.setProperty("class", " ".join(class_names))
+            label.setProperty("class", label.property("class") + " " + status_class)
             label.setStyleSheet("")
 
         if add_progress_widget:
@@ -305,6 +265,7 @@ class PomodoroWidget(BaseWidget):
         s["is_running"] = False
         s["is_paused"] = True
         PomodoroWidget._update_all_instances()
+
         try:
             for inst in PomodoroWidget._instances:
                 if hasattr(inst, "_dialog") and inst._dialog is not None and inst._dialog.isVisible():
@@ -325,6 +286,7 @@ class PomodoroWidget(BaseWidget):
         s["remaining_time"] = self._work_duration
         s["elapsed_time"] = 0
         PomodoroWidget._update_all_instances()
+
         try:
             for inst in PomodoroWidget._instances:
                 if hasattr(inst, "_dialog") and inst._dialog is not None and inst._dialog.isVisible():
@@ -445,14 +407,11 @@ class PomodoroWidget(BaseWidget):
         self._dialog.setProperty("class", "pomodoro-menu")
 
         # Main layout for the popup
-        layout = QVBoxLayout()
-        layout.setSpacing(8)
-        layout.setContentsMargins(12, 14, 12, 14)
+        layout = BaseVBoxLayout(spacing=8, paddings={"left": 12, "top": 14, "right": 12, "bottom": 14})
 
         # Header widget
         header_widget = QWidget()
-        header_layout = QHBoxLayout()
-        header_layout.setContentsMargins(0, 0, 0, 8)
+        header_layout = BaseHBoxLayout()
         header_widget.setLayout(header_layout)
 
         # Add header title
@@ -486,17 +445,14 @@ class PomodoroWidget(BaseWidget):
 
         # Info widget only for session count now
         info_widget = QWidget()
-        info_layout = QVBoxLayout()
-        info_layout.setSpacing(2)
-        info_layout.setContentsMargins(0, 0, 0, 0)
+        info_layout = BaseVBoxLayout(spacing=2)
         info_widget.setLayout(info_layout)
 
         # Session count
-        self._session_label = QLabel(
-            f"Session: {self._session_count + 1}" + (f"/{self._session_target}" if self._session_target > 0 else "")
+        self._session_label = BaseLabel(
+            f"Session: {self._session_count + 1}" + (f"/{self._session_target}" if self._session_target > 0 else ""),
+            class_name="session",
         )
-        self._session_label.setProperty("class", "session")
-        self._session_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         info_layout.addWidget(self._session_label)
 
         layout.addWidget(info_widget)

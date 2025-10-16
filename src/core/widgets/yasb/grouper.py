@@ -2,10 +2,8 @@ import logging
 from typing import Any
 
 from PyQt6.QtCore import QEvent
-from PyQt6.QtWidgets import QFrame, QHBoxLayout
 
 from core.config import get_config
-from core.utils.utilities import add_shadow
 from core.utils.widget_builder import WidgetBuilder
 from core.validation.widgets.yasb.grouper import VALIDATION_SCHEMA
 from core.widgets.base import BaseWidget
@@ -18,37 +16,12 @@ class GrouperWidget(BaseWidget):
     _listener_threads: dict[type, Any] = {}
     _listener_refcounts: dict[type, int] = {}
 
-    def __init__(
-        self,
-        class_name: str,
-        container_padding: dict[str, int],
-        widgets: list[str] = [],
-        container_shadow: dict = None,
-        hide_empty: bool = False,
-    ):
-        super().__init__(class_name=class_name)
-        self._padding = container_padding
-        self._container_shadow = container_shadow
+    def __init__(self, class_name: str, widgets: list[str] = [], hide_empty: bool = False, **kwargs):
+        super().__init__(class_name=class_name, **kwargs)
         self._hide_empty = hide_empty
         self._widgets_list = widgets
         self._child_widgets = []
         self._local_listeners = set()
-
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "container")
-        add_shadow(self._widget_container, self._container_shadow)
-
-        self.widget_layout.addWidget(self._widget_container)
 
         self._create_child_widgets()
 
@@ -113,12 +86,7 @@ class GrouperWidget(BaseWidget):
 
     def eventFilter(self, obj, event):
         if self._hide_empty and obj in self._child_widgets:
-            if event.type() in (
-                QEvent.Type.Show,
-                QEvent.Type.ShowToParent,
-                QEvent.Type.Hide,
-                QEvent.Type.HideToParent,
-            ):
+            if event.type() in (QEvent.Type.Show, QEvent.Type.ShowToParent, QEvent.Type.Hide, QEvent.Type.HideToParent):
                 try:
                     self._update_grouper_visibility()
                 except RuntimeError:

@@ -7,23 +7,15 @@ from typing import Any
 
 from PIL import Image, ImageFile
 from PyQt6.QtCore import QDateTime, QTimer
-from winrt.windows.media.control import (
-    GlobalSystemMediaTransportControlsSession as Session,
-)
-from winrt.windows.media.control import (
-    GlobalSystemMediaTransportControlsSessionManager as SessionManager,
-)
+from winrt.windows.media.control import GlobalSystemMediaTransportControlsSession as Session
+from winrt.windows.media.control import GlobalSystemMediaTransportControlsSessionManager as SessionManager
 from winrt.windows.media.control import (
     MediaPropertiesChangedEventArgs,
     PlaybackInfoChangedEventArgs,
     SessionsChangedEventArgs,
     TimelinePropertiesChangedEventArgs,
 )
-from winrt.windows.storage.streams import (
-    Buffer,
-    InputStreamOptions,
-    IRandomAccessStreamReference,
-)
+from winrt.windows.storage.streams import Buffer, InputStreamOptions, IRandomAccessStreamReference
 
 from core.utils.utilities import Singleton
 from settings import DEBUG
@@ -39,8 +31,8 @@ pil_logger.setLevel(logging.INFO)
 
 class WindowsMedia(metaclass=Singleton):
     """
-    Use double thread for media info because I expect subscribers to take some time, and I don't know if holding up the callback from windsdk is a problem.
-    To also not create and manage too many threads, I made the others direct callbacks
+    Use double thread for media info because I expect subscribers to take some time, and I don't know if holding up the
+    callback from windsdk is a problem. To also not create and manage too many threads, I made the others direct callbacks
     """
 
     def __init__(self):
@@ -169,6 +161,7 @@ class WindowsMedia(metaclass=Singleton):
                 self._duration = 0
                 if DEBUG:
                     logging.debug("MediaCallback: No active session")
+
             # Get subscribers
             with self._subscription_channels_lock:
                 callbacks = self._subscription_channels["session_status"]
@@ -186,7 +179,7 @@ class WindowsMedia(metaclass=Singleton):
                 with self._current_session_lock:
                     if self._are_same_sessions(session, self._current_session):
                         return await fn(self, session, *args, **kwargs)
-                    return None  # Return None without awaiting
+                    return  # Return None without awaiting
 
         else:
 
@@ -194,7 +187,7 @@ class WindowsMedia(metaclass=Singleton):
                 with self._current_session_lock:
                     if self._are_same_sessions(session, self._current_session):
                         return fn(self, session, *args, **kwargs)
-                    return None
+                    return
 
         return wrapper
         # def wrapper(self: "WindowsMedia", session: Session, *args, **kwargs):
@@ -326,7 +319,7 @@ class WindowsMedia(metaclass=Singleton):
             return pillow_image
         except Exception as e:
             logging.error(f"get_thumbnail(): Error occurred when loading the thumbnail: {e}")
-            return None
+            return
         finally:
             # Close the stream
             readable_stream.close()

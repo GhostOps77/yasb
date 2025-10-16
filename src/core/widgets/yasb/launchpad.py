@@ -68,7 +68,7 @@ from core.utils.win32.utilities import (
 )
 from core.utils.win32.win32_accent import Blur
 from core.validation.widgets.yasb.launchpad import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseFrame, BaseHBoxLayout, BaseVBoxLayout, BaseWidget
 
 _ICON_CACHE = {}
 
@@ -634,14 +634,14 @@ class LaunchpadWidget(BaseWidget):
         self._widget_container.setLayout(self._widget_container_layout)
         self._widget_container.setProperty("class", "widget-container")
         add_shadow(self._widget_container, self._container_shadow)
-        self.widget_layout.addWidget(self._widget_container)
+        self._widget_frame_layout.addWidget(self._widget_container)
         build_widget_label(self, self._label, None, self._label_shadow)
 
         # Register callbacks
         self.register_callback("toggle_launchpad", self._toggle_launchpad)
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
-        self.callback_middle = callbacks["on_middle"]
+        self.callbacks["on_left"] = callbacks["on_left"]
+        self.callbacks["on_right"] = callbacks["on_right"]
+        self.callbacks["on_middle"] = callbacks["on_middle"]
 
         self._previous_hwnd = None
 
@@ -1029,26 +1029,18 @@ class LaunchpadWidget(BaseWidget):
         self.popup.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.popup.customContextMenuRequested.connect(lambda pos: self._show_context_menu(pos))
 
-        window_layout = QVBoxLayout(self.popup)
-        window_layout.setContentsMargins(0, 0, 0, 0)
-        window_layout.setSpacing(0)
+        window_layout = BaseVBoxLayout(self.popup)
 
-        container = QFrame(self)
-        container.setProperty("class", "launchpad-container")
+        container = BaseFrame(self, class_name="launchpad-container")
         window_layout.addWidget(container)
 
-        main_layout = QVBoxLayout(container)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
+        main_layout = BaseVBoxLayout(container)
+        search_outer_layout = BaseHBoxLayout()
 
-        search_outer_layout = QHBoxLayout()
-        search_outer_layout.setContentsMargins(0, 0, 0, 0)
-        search_outer_layout.setSpacing(0)
         search_container = QWidget()
         search_container.setProperty("class", "search-container")
-        search_layout = QHBoxLayout(search_container)
-        search_layout.setContentsMargins(0, 0, 0, 0)
-        search_layout.setSpacing(0)
+
+        search_layout = BaseHBoxLayout(search_container)
 
         search_input = QLineEdit()
         search_input.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
@@ -1258,7 +1250,7 @@ class LaunchpadWidget(BaseWidget):
             self._fade_out_popup()
             event.accept()
 
-        elif event.key() in [Qt.Key.Key_Return, Qt.Key.Key_Enter]:
+        elif event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
             focused_icon = next((icon for icon in self._app_icons if icon.hasFocus()), None)
             if focused_icon:
                 self._launch_app(focused_icon.app_data)
@@ -1272,12 +1264,7 @@ class LaunchpadWidget(BaseWidget):
                 self._launchpad_popup.search_input.setFocus()
             event.accept()
 
-        elif event.key() in [
-            Qt.Key.Key_Left,
-            Qt.Key.Key_Right,
-            Qt.Key.Key_Up,
-            Qt.Key.Key_Down,
-        ]:
+        elif event.key() in (Qt.Key.Key_Left, Qt.Key.Key_Right, Qt.Key.Key_Up, Qt.Key.Key_Down):
             self._handle_arrow_navigation(event.key())
             event.accept()
         else:
@@ -1570,7 +1557,8 @@ class LaunchpadWidget(BaseWidget):
 
     def _edit_app(self, app_data: dict[str, Any]):
         dialog = AppDialog(
-            self._launchpad_popup if self._launchpad_popup else None,
+            # self._launchpad_popup if self._launchpad_popup else None,
+            self._launchpad_popup,
             app_data,
             self._icons_dir,
         )
@@ -1608,14 +1596,10 @@ class LaunchpadWidget(BaseWidget):
         )
         dialog.setProperty("class", "app-dialog")
 
-        layout = QVBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        layout = BaseVBoxLayout()
 
         content_container = QWidget()
-        content_layout = QVBoxLayout(content_container)
-        content_layout.setContentsMargins(20, 20, 20, 0)
-        content_layout.setSpacing(0)
+        content_layout = BaseVBoxLayout(content_container, paddings={"left": 20, "top": 20, "right": 20})
 
         message_label = QLabel(message)
         message_label.setWordWrap(True)
@@ -1624,10 +1608,8 @@ class LaunchpadWidget(BaseWidget):
         content_layout.addWidget(message_label)
         layout.addWidget(content_container)
 
-        button_container = QFrame()
-        button_container.setProperty("class", "buttons-container")
-        button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(0, 0, 0, 0)
+        button_container = BaseFrame(class_name="buttons-container")
+        button_layout = BaseHBoxLayout(button_container)
 
         ok_btn = QPushButton("OK")
         ok_btn.setProperty("class", "button")
@@ -1653,14 +1635,10 @@ class LaunchpadWidget(BaseWidget):
         )
         dialog.setProperty("class", "app-dialog")
 
-        layout = QVBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        layout = BaseVBoxLayout()
 
         content_container = QWidget()
-        content_layout = QVBoxLayout(content_container)
-        content_layout.setContentsMargins(20, 20, 20, 0)
-        content_layout.setSpacing(0)
+        content_layout = BaseVBoxLayout(content_container, paddings={"left": 20, "top": 20, "right": 20})
 
         message_label = QLabel(f"Are you sure you want to delete '{app_data.get('title', 'Unknown')}'?")
         message_label.setWordWrap(True)
@@ -1668,10 +1646,8 @@ class LaunchpadWidget(BaseWidget):
         content_layout.addWidget(message_label)
         layout.addWidget(content_container)
 
-        button_container = QFrame()
-        button_container.setProperty("class", "buttons-container")
-        button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(0, 0, 0, 0)
+        button_container = BaseFrame(class_name="buttons-container")
+        button_layout = BaseHBoxLayout(button_container)
 
         cancel_btn = QPushButton("Cancel")
         cancel_btn.setProperty("class", "button")

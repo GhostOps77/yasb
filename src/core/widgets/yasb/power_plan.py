@@ -4,9 +4,9 @@ from ctypes import wintypes
 
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QCursor
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QPushButton, QVBoxLayout
+from PyQt6.QtWidgets import QPushButton
 
-from core.utils.utilities import PopupWidget, add_shadow, build_widget_label, iterate_label_as_parts
+from core.utils.utilities import PopupWidget, build_widget_label, iterate_label_as_parts
 from core.utils.win32.bindings import (
     PowerEnumerate,
     PowerGetActiveScheme,
@@ -15,7 +15,7 @@ from core.utils.win32.bindings import (
 )
 from core.utils.win32.structs import GUID
 from core.validation.widgets.yasb.power_plan import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseFrame, BaseVBoxLayout, BaseWidget
 
 
 class PowerPlanWidget(BaseWidget):
@@ -31,12 +31,10 @@ class PowerPlanWidget(BaseWidget):
         class_name: str,
         update_interval: int,
         menu: dict,
-        container_padding: dict[str, int],
         callbacks: dict[str, str],
-        label_shadow: dict = None,
-        container_shadow: dict = None,
+        **kwargs,
     ):
-        super().__init__(class_name=f"power-plan-widget {class_name}")
+        super().__init__(class_name=f"power-plan-widget {class_name}", **kwargs)
 
         self._label = label
         self._label_alt = label_alt
@@ -44,39 +42,18 @@ class PowerPlanWidget(BaseWidget):
         self._label_alt_content = label_alt
         self._update_interval = update_interval
         self._menu = menu
-        self._padding = container_padding
         self._callbacks = callbacks
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
         self._show_alt_label = False
 
         # Initialize power plans
         self._plans = []
         self._active_guid = None
 
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-
-        self.widget_layout.addWidget(self._widget_container)
-
         build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
 
         self.register_callback("toggle_menu", self._show_menu)
         self.register_callback("toggle_label", self._toggle_label)
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
-        self.callback_middle = callbacks["on_middle"]
+        self.map_callbacks(callbacks)
 
         if self not in PowerPlanWidget._instances:
             PowerPlanWidget._instances.append(self)
@@ -142,12 +119,13 @@ class PowerPlanWidget(BaseWidget):
     def _update_label(self):
         """Update the label with the current power plan name."""
 
-        active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+        # active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+        active_widgets = self._widgets
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         active_label_content = active_label_content.format(active_plan=self._active_plan_name)
 
         for label in iterate_label_as_parts(
-            active_widgets, active_label_content, "label alt" if self._show_alt_label else "label"
+            self, active_widgets, active_label_content, "alt" if self._show_alt_label else ""
         ):
             label.setProperty("class", label.property("class") + " " + self._plan_class_name)
             label.setStyleSheet("")
@@ -155,10 +133,10 @@ class PowerPlanWidget(BaseWidget):
     def _toggle_label(self):
         """Toggle between main and alt labels."""
         self._show_alt_label = not self._show_alt_label
-        for widget in self._widgets:
-            widget.setVisible(not self._show_alt_label)
-        for widget in self._widgets_alt:
-            widget.setVisible(self._show_alt_label)
+        # for widget in self._widgets:
+        #     widget.setVisible(not self._show_alt_label)
+        # for widget in self._widgets_alt:
+        #     widget.setVisible(self._show_alt_label)
         self._update_label()
 
     def _show_menu(self):
@@ -175,17 +153,11 @@ class PowerPlanWidget(BaseWidget):
         self._popup_menu.setProperty("class", "power-plan-menu")
 
         # Create main layout for popup
-        main_layout = QVBoxLayout()
-        main_layout.setSpacing(0)
-        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout = BaseVBoxLayout()
 
         # Create frame to contain all buttons
-        frame = QFrame()
-        frame.setProperty("class", "menu-content")
-
-        frame_layout = QVBoxLayout()
-        frame_layout.setSpacing(0)
-        frame_layout.setContentsMargins(0, 0, 0, 0)
+        frame = BaseFrame(class_name="menu-content")
+        frame_layout = BaseVBoxLayout()
 
         # Add power plan buttons to frame layout
         for plan in self._plans:
@@ -207,14 +179,12 @@ class PowerPlanWidget(BaseWidget):
 
         self._popup_menu.setLayout(main_layout)
         self._popup_menu.adjustSize()
-
         self._popup_menu.setPosition(
             self._menu["alignment"],
             self._menu["direction"],
             self._menu["offset_left"],
             self._menu["offset_top"],
         )
-
         self._popup_menu.show()
 
     def _change_plan(self, guid, name):

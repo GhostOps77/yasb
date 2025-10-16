@@ -11,8 +11,6 @@ from PyQt6.QtGui import QAction, QCursor, QDrag, QIcon
 from PyQt6.QtWidgets import (
     QDialog,
     QFrame,
-    QHBoxLayout,
-    QLabel,
     QLineEdit,
     QMenu,
     QPushButton,
@@ -25,11 +23,10 @@ from PyQt6.QtWidgets import (
 
 from core.config import HOME_CONFIGURATION_DIR
 from core.utils.tooltip import set_tooltip
-from core.utils.utilities import PopupWidget, add_shadow, build_widget_label, iterate_label_as_parts
-from core.utils.widgets.animation_manager import AnimationManager
+from core.utils.utilities import PopupWidget, build_widget_label, iterate_label_as_parts
 from core.utils.win32.utilities import qmenu_rounded_corners
 from core.validation.widgets.yasb.todo import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseFrame, BaseHBoxLayout, BaseLabel, BaseVBoxLayout, BaseWidget
 
 
 class TodoWidget(BaseWidget):
@@ -40,28 +37,23 @@ class TodoWidget(BaseWidget):
         self,
         label: str,
         label_alt: str,
-        container_padding: dict,
         animation: dict,
         menu: dict,
         icons: dict,
         callbacks: dict,
         categories: dict,
-        label_shadow: dict = None,
-        container_shadow: dict = None,
+        **kwargs,
     ):
-        super().__init__(class_name="todo-widget")
+        super().__init__(class_name="todo-widget", **kwargs)
         TodoWidget._instances.append(self)
 
         self._show_alt_label = False
         self._label_content = label
         self._label_alt_content = label_alt
         self._animation = animation
-        self._padding = container_padding
         self._menu_config = menu
         self._icons = icons
         self._categories = categories
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
 
         self._tasks = []
         self._menu = None
@@ -71,27 +63,11 @@ class TodoWidget(BaseWidget):
         self._show_completed = False
         self._category_filter = None
 
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-        self.widget_layout.addWidget(self._widget_container)
-
         build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("toggle_menu", self._toggle_menu)
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
-        self.callback_middle = callbacks["on_middle"]
+        self.map_callbacks(callbacks)
 
         self._load_tasks()
         self._update_label()
@@ -212,10 +188,9 @@ class TodoWidget(BaseWidget):
         self._desc_input.setProperty("class", "desc-field")
         content_layout.addWidget(self._desc_input)
 
-        category_container = QFrame()
-        category_layout = QHBoxLayout(category_container)
-        category_layout.setContentsMargins(0, 0, 0, 0)
-        category_container.setProperty("class", "category-container")
+        category_container = BaseFrame(class_name="category-container")
+        category_layout = BaseHBoxLayout(category_container)
+
         self._category_buttons = []
         for category_name, category_config in self._categories.items():
             category_btn = QPushButton(category_config["label"])
@@ -232,10 +207,8 @@ class TodoWidget(BaseWidget):
         content_layout.addWidget(category_container)
         dialog_layout.addWidget(content_container)
 
-        button_container = QFrame()
-        button_container.setProperty("class", "buttons-container")
-        button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(0, 0, 0, 0)
+        button_container = BaseFrame(class_name="buttons-container")
+        button_layout = BaseHBoxLayout(button_container)
 
         cancel_button = QPushButton("Cancel")
         cancel_button.setProperty("class", "button cancel")
@@ -255,16 +228,15 @@ class TodoWidget(BaseWidget):
         dialog.exec()
 
     def _toggle_label(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
 
         self._show_alt_label = not self._show_alt_label
 
-        for widget in self._widgets:
-            widget.setVisible(not self._show_alt_label)
+        # for widget in self._widgets:
+        #     widget.setVisible(not self._show_alt_label)
 
-        for widget in self._widgets_alt:
-            widget.setVisible(self._show_alt_label)
+        # for widget in self._widgets_alt:
+        #     widget.setVisible(self._show_alt_label)
 
         self._update_label()
 
@@ -278,7 +250,8 @@ class TodoWidget(BaseWidget):
         return tasks
 
     def _update_label(self):
-        active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+        # active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+        active_widgets = self._widgets
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
 
         active_tasks = self._get_filtered_tasks(completed=False)
@@ -310,8 +283,7 @@ class TodoWidget(BaseWidget):
         set_tooltip(self._widget_container, tooltip_text)
 
     def _toggle_menu(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         self._show_completed = False
         self._expanded_task_id = None
         self._show_menu()
@@ -332,9 +304,7 @@ class TodoWidget(BaseWidget):
 
         header_container = QFrame()
         header_container.setProperty("class", "header")
-        header_layout = QHBoxLayout(header_container)
-        header_layout.setContentsMargins(0, 0, 0, 0)
-        header_layout.setSpacing(0)
+        header_layout = BaseHBoxLayout(header_container)
 
         add_task_button = QPushButton(self._icons["add"])
         add_task_button.setProperty("class", "add-task-button")
@@ -363,9 +333,7 @@ class TodoWidget(BaseWidget):
         self._order_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self._order_btn.clicked.connect(self._show_sort_menu)
 
-        header_layout.addWidget(self._in_progress_btn)
-        header_layout.addWidget(self._completed_btn)
-        header_layout.addWidget(self._order_btn)
+        header_layout.addWidgets(self._in_progress_btn, self._completed_btn, self._order_btn)
 
         main_layout.addWidget(header_container)
 
@@ -389,10 +357,8 @@ class TodoWidget(BaseWidget):
         scroll_widget = QWidget()
         scroll_widget.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         scroll_widget.setProperty("class", "scroll-widget")
-        scroll_layout = QVBoxLayout(scroll_widget)
+        scroll_layout = BaseVBoxLayout(scroll_widget)
         scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        scroll_layout.setContentsMargins(0, 0, 0, 0)
-        scroll_layout.setSpacing(0)
 
         tasks = self._get_filtered_tasks(completed=False, category=self._category_filter)
         if self._expanded_task_id is None and tasks:
@@ -439,6 +405,7 @@ class TodoWidget(BaseWidget):
         show_all_action.setCheckable(True)
         show_all_action.setChecked(self._category_filter is None)
         menu.addAction(show_all_action)
+
         for cat_key, cat_config in self._categories.items():
             action = QAction(f"Show only {cat_config['label']}", self)
             action.setCheckable(True)
@@ -490,10 +457,11 @@ class TodoWidget(BaseWidget):
                 widget.setParent(None)
 
         if tasks is None:
-            if not self._show_completed:
-                tasks = self._get_filtered_tasks(completed=False, category=self._category_filter)
-            else:
-                tasks = self._get_filtered_tasks(completed=True, category=self._category_filter)
+            # if not self._show_completed:
+            #     tasks = self._get_filtered_tasks(completed=False, category=self._category_filter)
+            # else:
+            #     tasks = self._get_filtered_tasks(completed=True, category=self._category_filter)
+            tasks = self._get_filtered_tasks(completed=self._show_completed, category=self._category_filter)
 
         if tasks:
             for task in tasks:
@@ -514,18 +482,14 @@ class TodoWidget(BaseWidget):
             else:
                 msg = f"No completed tasks{category_label} yet."
 
-            no_tasks_icon = QLabel(self._icons["no_tasks"])
-            no_tasks_icon.setProperty("class", "no-tasks-icon")
-            no_tasks_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            no_tasks_icon = BaseLabel(self._icons["no_tasks"], class_name="no-tasks-icon")
 
-            no_tasks_label = QLabel(msg)
-            no_tasks_label.setProperty("class", "no-tasks")
+            no_tasks_label = BaseLabel(msg, class_name="no-tasks")
             no_tasks_label.setWordWrap(True)
             no_tasks_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
             no_tasks_label.setTextFormat(Qt.TextFormat.RichText)
-            no_tasks_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            layout.addWidget(no_tasks_icon)
-            layout.addWidget(no_tasks_label)
+
+            layout.addWidgets(no_tasks_icon, no_tasks_label)
 
     def _refresh_menu_task_list(self):
         """Refresh the task list in the menu if it exists."""
@@ -621,9 +585,7 @@ class TodoWidget(BaseWidget):
         container.setProperty("class", " ".join(filter(None, class_list)))
         container.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         container.setContentsMargins(0, 0, 0, 0)
-        container_layout = QHBoxLayout(container)
-        container_layout.setContentsMargins(0, 0, 0, 0)
-        container_layout.setSpacing(0)
+        container_layout = BaseHBoxLayout(container)
 
         checkbox = QPushButton(self._icons["checked"] if completed else self._icons["unchecked"])
         checkbox.setChecked(completed)
@@ -671,20 +633,16 @@ class TodoWidget(BaseWidget):
 
         text_container = QWidget()
         text_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        text_layout = QVBoxLayout(text_container)
-        text_layout.setContentsMargins(0, 0, 0, 0)
-        text_layout.setSpacing(0)
+        text_layout = BaseVBoxLayout(text_container)
 
-        title_label = QLabel(task["title"])
-        title_label.setProperty("class", "title")
+        title_label = BaseLabel(task["title"], class_name="title")
         title_label.setWordWrap(True)
 
         text_layout.addWidget(title_label)
 
         if self._expanded_task_id == task["id"]:
             if task.get("description"):
-                desc_label = QLabel()
-                desc_label.setProperty("class", "description")
+                desc_label = BaseLabel("", class_name="description")
                 desc_label.setWordWrap(True)
                 desc_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
                 desc_label.setOpenExternalLinks(True)
@@ -722,17 +680,14 @@ class TodoWidget(BaseWidget):
                     friendly_date = f"{delta.days} days ago"
                 else:
                     friendly_date = created_at.strftime("%Y-%m-%d")
-                date_label_icon = QLabel(self._icons["date"])
-                date_label_icon.setProperty("class", "date-icon")
-                date_label = QLabel(friendly_date)
-                date_label.setProperty("class", "date-text")
+
+                date_label_icon = BaseLabel(self._icons["date"], "date-icon")
+                date_label = BaseLabel(friendly_date, "date-text")
 
                 category = task.get("category", "default")
                 category_config = self._categories.get(category, {})
-                cat_label_icon = QLabel(self._icons["category"])
-                cat_label_icon.setProperty("class", f"category-icon {category}")
-                cat_label = QLabel(category_config["label"])
-                cat_label.setProperty("class", f"category-text {category}")
+                cat_label_icon = BaseLabel(self._icons["category"], class_name=f"category-icon {category}")
+                cat_label = BaseLabel(category_config["label"], class_name=f"category-text {category}")
 
                 edit_btn = QPushButton(self._icons["edit"])
                 edit_btn.setProperty("class", "edit-task-button")
@@ -744,19 +699,11 @@ class TodoWidget(BaseWidget):
                 delete_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
                 delete_btn.clicked.connect(lambda _, t=task: self._delete_task(t))
 
-                info_row = QFrame()
-                info_row.setProperty("class", "task-info-row")
-                info_layout = QHBoxLayout(info_row)
-                info_layout.setContentsMargins(0, 0, 0, 0)
-                info_layout.setSpacing(0)
-                info_layout.addWidget(date_label_icon)
-                info_layout.addWidget(date_label)
-                info_layout.addWidget(cat_label_icon)
-                info_layout.addWidget(cat_label)
+                info_row = BaseFrame(class_name="task-info-row")
+                info_layout = BaseHBoxLayout(info_row)
+                info_layout.addWidgets(date_label_icon, date_label, cat_label_icon, cat_label)
                 info_layout.addStretch()
-                info_layout.addWidget(edit_btn)
-                info_layout.addWidget(delete_btn)
-                text_layout.addWidget(info_row)
+                info_layout.addWidgets(edit_btn, delete_btn, info_row)
             except (ValueError, TypeError) as e:
                 logging.error(f"Error formatting task info: {e}")
 

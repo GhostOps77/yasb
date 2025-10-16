@@ -5,11 +5,9 @@ import winreg
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QCursor
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout
 from win32con import WM_INPUTLANGCHANGEREQUEST
 
-from core.utils.utilities import PopupWidget, add_shadow, build_widget_label, iterate_label_as_parts
-from core.utils.widgets.animation_manager import AnimationManager
+from core.utils.utilities import PopupWidget, build_widget_label, iterate_label_as_parts
 from core.utils.win32.bindings import kernel32, user32
 from core.utils.win32.constants import (
     LOCALE_NAME_MAX_LENGTH,
@@ -23,7 +21,7 @@ from core.utils.win32.constants import (
     LOCALE_SNATIVELANGNAME,
 )
 from core.validation.widgets.yasb.language import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseFrame, BaseHBoxLayout, BaseLabel, BaseVBoxLayout, BaseWidget
 
 
 class LanguageWidget(BaseWidget):
@@ -36,50 +34,25 @@ class LanguageWidget(BaseWidget):
         update_interval: int,
         class_name: str,
         animation: dict[str, str],
-        container_padding: dict[str, int],
         callbacks: dict[str, str],
         language_menu: dict[str, str] = None,
-        label_shadow: dict = None,
-        container_shadow: dict = None,
+        **kwargs,
     ):
-        super().__init__(update_interval * 1000, class_name=f"language-widget {class_name}")
+        super().__init__(update_interval * 1000, class_name=f"language-widget {class_name}", **kwargs)
 
         self._show_alt_label = False
         self._label_content = label
         self._label_alt_content = label_alt
         self._animation = animation
-        self._padding = container_padding
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
         self._menu_config = language_menu
-
-        # Construct container
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-        # Initialize container
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-        # Add the container to the main widget layout
-        self.widget_layout.addWidget(self._widget_container)
 
         build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("update_label", self._update_label)
         self.register_callback("toggle_menu", self._toggle_menu)
-
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
-        self.callback_middle = callbacks["on_middle"]
-        self.callback_timer = "update_label"
+        self.register_callback("timer", self._update_label)
+        self.map_callbacks(callbacks)
 
         # Cache for available languages
         self._available_languages = None
@@ -90,22 +63,21 @@ class LanguageWidget(BaseWidget):
         self.start_timer()
 
     def _toggle_label(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         self._show_alt_label = not self._show_alt_label
-        for widget in self._widgets:
-            widget.setVisible(not self._show_alt_label)
-        for widget in self._widgets_alt:
-            widget.setVisible(self._show_alt_label)
+        # for widget in self._widgets:
+        #     widget.setVisible(not self._show_alt_label)
+        # for widget in self._widgets_alt:
+        #     widget.setVisible(self._show_alt_label)
         self._update_label()
 
     def _toggle_menu(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         self._show_language_menu()
 
     def _update_label(self):
-        active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+        # active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+        active_widgets = self._widgets
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
 
         try:
@@ -113,11 +85,7 @@ class LanguageWidget(BaseWidget):
         except:
             pass
 
-        for _ in iterate_label_as_parts(
-            active_widgets,
-            active_label_content,
-            # layout=self._widget_container_layout
-        ):
+        for _ in iterate_label_as_parts(self, active_widgets, active_label_content):
             pass
 
     def _on_settings_click(self, event):
@@ -147,13 +115,10 @@ class LanguageWidget(BaseWidget):
         )
         self._menu.setProperty("class", "language-menu")
 
-        main_layout = QVBoxLayout(self._menu)
-        main_layout.setSpacing(0)
-        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout = BaseVBoxLayout(self._menu)
 
         # Header
-        header_label = QLabel("Keyboard Layouts")
-        header_label.setProperty("class", "header")
+        header_label = BaseLabel("Keyboard Layouts", class_name="header")
         main_layout.addWidget(header_label)
 
         # Get available languages
@@ -164,9 +129,7 @@ class LanguageWidget(BaseWidget):
         for lang_info in available_languages:
             self._create_language_item(main_layout, lang_info, lang_info["id"] == current_lang_id)
 
-        footer_label = QLabel("More keyboard settings")
-        footer_label.setProperty("class", "footer")
-        footer_label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        footer_label = BaseLabel("More keyboard settings", class_name="footer")
 
         footer_label.mousePressEvent = self._on_settings_click
         main_layout.addWidget(footer_label)
@@ -186,38 +149,30 @@ class LanguageWidget(BaseWidget):
 
     def _create_language_item(self, layout, lang_info, is_current=False):
         """Create a language menu item"""
-        container = QFrame()
-        container.setProperty("class", f"language-item{' active' if is_current else ''}")
+        container = BaseFrame(class_name=f"language-item{' active' if is_current else ''}")
         container.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        container.setContentsMargins(0, 0, 0, 0)
 
-        container_layout = QHBoxLayout(container)
-        container_layout.setContentsMargins(0, 0, 0, 0)
-        container_layout.setSpacing(0)
+        container_layout = BaseHBoxLayout(container)
         container_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
         # Left: language code or icon
-        lang_code_label = QLabel(lang_info["code"])
-        lang_code_label.setProperty("class", "icon" if self._menu_config["show_layout_icon"] else "code")
+        lang_code_label = BaseLabel(
+            lang_info["code"], class_name="icon" if self._menu_config["show_layout_icon"] else "code"
+        )
         lang_code_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         container_layout.addWidget(lang_code_label)
 
         # Right: stack name above layout name
-        name_layout = QVBoxLayout()
-        name_layout.setContentsMargins(0, 0, 0, 0)
-        name_layout.setSpacing(2)
+        name_layout = BaseVBoxLayout(spacing=2)
 
         # Top: language name
-        lang_name_label = QLabel(lang_info["name"])
-        lang_name_label.setProperty("class", "name")
-        name_layout.addWidget(lang_name_label)
+        lang_name_label = BaseLabel(lang_info["name"], class_name="name")
 
         # Bottom: layout name
-        layout_name_label = QLabel(lang_info["layouts"])
-        layout_name_label.setProperty("class", "layout")
+        layout_name_label = BaseLabel(lang_info["layouts"], class_name="layout")
         layout_name_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        name_layout.addWidget(layout_name_label)
 
+        name_layout.addWidget(lang_name_label, layout_name_label)
         container_layout.addLayout(name_layout)
 
         def mouse_press_handler(event):

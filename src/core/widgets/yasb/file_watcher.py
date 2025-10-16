@@ -4,14 +4,13 @@ from dataclasses import dataclass
 from typing import Literal, TypedDict
 
 from PyQt6.QtCore import QObject, QTimer, pyqtSignal
-from PyQt6.QtWidgets import QFrame, QHBoxLayout
 from watchdog.events import DirCreatedEvent, FileCreatedEvent, PatternMatchingEventHandler
 from watchdog.observers import Observer
 
 import settings
 from core.utils.utilities import build_widget_label, iterate_label_as_parts
 from core.validation.widgets.yasb.file_watcher import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseWidget, TruncatedLabel
 
 logger = logging.getLogger("filewatcher_widget")
 logger.setLevel(logging.INFO)
@@ -140,6 +139,7 @@ class WatchDogHandler(PatternMatchingEventHandler):
 
 class FileWatcherWidget(BaseWidget):
     validation_schema = VALIDATION_SCHEMA
+    label_cls = TruncatedLabel
 
     def __init__(
         self,
@@ -156,20 +156,6 @@ class FileWatcherWidget(BaseWidget):
 
         self._label_content = ""
         self.label_max_length = label_max_length
-
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setContentsMargins(0, 0, 0, 0)
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self.widget_layout.addWidget(self._widget_container)
 
         build_widget_label(self, self._label_content)
 
@@ -256,11 +242,7 @@ class FileWatcherWidget(BaseWidget):
             lbl.hide()  # or fade out if you want
 
     def _update_label(self, content: str):
-        for _ in iterate_label_as_parts(
-            self._widgets,
-            content,
-            # layout=self._widget_container_layout
-        ):
+        for _ in iterate_label_as_parts(self, self._widgets, content):
             pass
 
         # label_parts = re.split(r"(<span[^>]*?>.*?</span>)", content)
@@ -339,11 +321,6 @@ class FileWatcherWidget(BaseWidget):
         except Exception:
             # fallback: do nothing
             pass
-
-    def _truncate_label(self, label):
-        if self._label_max_length and len(label) > self._label_max_length:
-            return label[: self._label_max_length] + "..."
-        return label
 
     def closeEvent(self, event):
         self._stop_observer()

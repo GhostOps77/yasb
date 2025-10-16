@@ -13,18 +13,10 @@ from PyQt6.QtCore import (
     pyqtSignal,
 )
 from PyQt6.QtGui import QCursor, QDrag, QImage, QMouseEvent, QPixmap
-from PyQt6.QtWidgets import (
-    QApplication,
-    QFrame,
-    QHBoxLayout,
-    QLabel,
-    QSizePolicy,
-    QWidget,
-)
+from PyQt6.QtWidgets import QApplication, QFrame, QHBoxLayout, QLabel, QSizePolicy, QWidget
 
 from core.utils.tooltip import set_tooltip
 from core.utils.utilities import add_shadow
-from core.utils.widgets.animation_manager import AnimationManager
 from core.utils.widgets.taskbar.thumbnail import TaskbarThumbnailManager
 from core.utils.win32.app_icons import get_window_icon
 from core.utils.win32.utilities import get_monitor_hwnd, get_monitor_info
@@ -39,7 +31,7 @@ from core.utils.win32.window_actions import (
     show_window,
 )
 from core.validation.widgets.yasb.taskbar import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseHBoxLayout, BaseLabel, BaseWidget
 from settings import DEBUG
 
 try:
@@ -511,16 +503,14 @@ class TaskbarWidget(BaseWidget):
         self._widget_container_layout = self._widget_container.main_layout
         self._widget_container.setProperty("class", "widget-container")
         add_shadow(self._widget_container, self._container_shadow)
-        self.widget_layout.addWidget(self._widget_container)
+        self._widget_frame_layout.addWidget(self._widget_container)
 
         self._widget_container.drag_started.connect(lambda: self._set_dragging(True))
         self._widget_container.drag_ended.connect(lambda: self._set_dragging(False))
 
         self.register_callback("toggle_window", self._on_toggle_window)
         self.register_callback("close_app", self._on_close_app)
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
-        self.callback_middle = callbacks["on_middle"]
+        self.map_callbacks(callbacks)
 
         if QApplication.instance():
             QApplication.instance().aboutToQuit.connect(self._stop_events)
@@ -957,12 +947,8 @@ class TaskbarWidget(BaseWidget):
         container.setProperty("hwnd", hwnd)
         container.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
-        layout = QHBoxLayout(container)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
-
-        icon_label = QLabel()
-        icon_label.setProperty("class", "app-icon")
+        layout = BaseHBoxLayout(container)
+        icon_label = BaseLabel("", class_name="app-icon")
 
         try:
             icon_label.setFixedSize(self._label_icon_size, self._label_icon_size)
@@ -978,22 +964,16 @@ class TaskbarWidget(BaseWidget):
             # Wrap the label to animate only wrapper width and reduce reflow
             title_wrapper = QFrame()
             title_wrapper.setProperty("hwnd", hwnd)
-            tw_layout = QHBoxLayout(title_wrapper)
-            tw_layout.setContentsMargins(0, 0, 0, 0)
-            tw_layout.setSpacing(0)
+            tw_layout = BaseHBoxLayout(title_wrapper)
             try:
                 title_wrapper.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
             except Exception:
                 pass
 
-            title_label = QLabel(self._format_title(title))
-            title_label.setProperty("class", "app-title")
+            title_label = BaseLabel(self._format_title(title), class_name="app-title")
             title_label.setProperty("hwnd", hwnd)
             try:
-                title_label.setSizePolicy(
-                    QSizePolicy.Policy.Preferred,
-                    title_label.sizePolicy().verticalPolicy(),
-                )
+                title_label.setSizePolicy(QSizePolicy.Policy.Preferred, title_label.sizePolicy().verticalPolicy())
             except Exception:
                 pass
 
@@ -1054,7 +1034,7 @@ class TaskbarWidget(BaseWidget):
                     self._icon_cache[cache_key] = icon_img
 
             if not icon_img:
-                return None
+                return
 
             qimage = QImage(
                 icon_img.tobytes(),
@@ -1069,7 +1049,7 @@ class TaskbarWidget(BaseWidget):
         except Exception:
             if DEBUG:
                 logging.exception(f"Failed to get icons for window with HWND {hwnd} ")
-            return None
+            return
 
     def _retry_get_and_set_icon(self, hwnd: int, title: str) -> None:
         """Retry fetch and, if ready, set the pixmap on the window's icon label."""
@@ -1099,8 +1079,7 @@ class TaskbarWidget(BaseWidget):
             return
 
         if action == "toggle":
-            if self._animation["enabled"] and not self._suspend_updates:
-                AnimationManager.animate(widget, self._animation["type"], self._animation["duration"])
+            self._animate()
             self.bring_to_foreground(hwnd)
         else:
             logging.warning(f"Unknown action '{action}'.")
@@ -1155,10 +1134,7 @@ class TaskbarWidget(BaseWidget):
                 win32gui.SetActiveWindow(hwnd)
             except Exception:
                 try:
-                    win32gui.ShowWindow(
-                        hwnd,
-                        (win32con.SW_RESTORE if win32gui.IsIconic(hwnd) else win32con.SW_SHOW),
-                    )
+                    win32gui.ShowWindow(hwnd, (win32con.SW_RESTORE if win32gui.IsIconic(hwnd) else win32con.SW_SHOW))
                     if DEBUG:
                         logging.warning(f"Could not bring window {hwnd} to foreground: {e}")
                 except Exception as final_e:
@@ -1186,10 +1162,7 @@ class TaskbarWidget(BaseWidget):
                 win32gui.SetActiveWindow(hwnd)
             except Exception:
                 try:
-                    win32gui.ShowWindow(
-                        hwnd,
-                        (win32con.SW_RESTORE if win32gui.IsIconic(hwnd) else win32con.SW_SHOW),
-                    )
+                    win32gui.ShowWindow(hwnd, (win32con.SW_RESTORE if win32gui.IsIconic(hwnd) else win32con.SW_SHOW))
                 except Exception:
                     pass
 
@@ -1248,7 +1221,7 @@ class TaskbarWidget(BaseWidget):
                     return lbl
         except Exception:
             pass
-        return None
+        return
 
     def _animate_container(self, container, start_width=0, end_width=0, duration=300, hwnd=None) -> None:
         """Animate the width of a container widget."""

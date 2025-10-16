@@ -6,14 +6,14 @@ from typing import Any, override
 from PIL import Image
 from PyQt6.QtCore import Qt, QTimer, pyqtSlot
 from PyQt6.QtGui import QCursor, QImage, QMouseEvent, QPixmap, QShowEvent, QWheelEvent
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QWidget
+from PyQt6.QtWidgets import QFrame, QPushButton, QWidget
 
 from core.utils.utilities import add_shadow
 from core.utils.widgets.glazewm.client import GlazewmClient, Monitor, Window
 from core.utils.win32.app_icons import get_window_icon
 from core.utils.win32.utilities import get_monitor_hwnd, get_process_info
 from core.validation.widgets.glazewm.workspaces import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseHBoxLayout, BaseLabel, BaseWidget, BaseYasbWidgetLabel
 from settings import DEBUG
 
 logger = logging.getLogger("glazewm_workspaces")
@@ -139,19 +139,15 @@ class GlazewmWorkspaceButtonWithIcons(QFrame):
         self.parent_widget = parent_widget
         self.status = WorkspaceStatus.EMPTY
         self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+
         self._animation_initialized = False
         self.workspace_window_count = 0
         self.windows = windows
 
-        self.button_layout = QHBoxLayout(self)
-        self.button_layout.setContentsMargins(0, 0, 0, 0)
-        self.button_layout.setSpacing(0)
+        self.text_label = BaseLabel(self.workspace_name, shadows=self.parent_widget.label_shadow)
 
-        self.text_label = QLabel(self.workspace_name)
-        self.text_label.setProperty("class", "label")
-        self.text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.button_layout = BaseHBoxLayout(self)
         self.button_layout.addWidget(self.text_label)
-        add_shadow(self.text_label, self.parent_widget.label_shadow)
 
         self.icons = {}
         self.icon_labels = []
@@ -165,10 +161,7 @@ class GlazewmWorkspaceButtonWithIcons(QFrame):
         self.setStyleSheet("")
 
     def _update_label(self):
-        replacements = {
-            "name": str(self.workspace_name or ""),
-            "display_name": str(self.display_name or ""),
-        }
+        replacements = {"name": self.workspace_name or "", "display_name": self.display_name or ""}
 
         # Label priority: YASB config -> display_name from GlazeWM -> name from GlazeWM
         populated_label = self.populated_label or self.display_name or self.workspace_name
@@ -299,11 +292,9 @@ class GlazewmWorkspaceButtonWithIcons(QFrame):
             if index < len(self.icon_labels):
                 self.icon_labels[index].setPixmap(icon)
             else:
-                icon_label = QLabel()
-                icon_label.setProperty("class", f"icon icon-{index + 1}")
+                icon_label = BaseLabel("", class_name=f"icon icon-{index + 1}", shadows=self.parent_widget.label_shadow)
                 icon_label.setPixmap(icon)
                 self.button_layout.addWidget(icon_label)
-                add_shadow(icon_label, self.parent_widget.label_shadow)
                 self.icon_labels.append(icon_label)
 
         curr_icon_count = len(icons_list)
@@ -394,27 +385,12 @@ class GlazewmWorkspacesWidget(BaseWidget):
         self.monitor_handle: int | None = None
         self._enable_scroll_switching = enable_scroll_switching
         self._reverse_scroll_direction = reverse_scroll_direction
-        self.workspace_container_layout = QHBoxLayout()
-        self.workspace_container_layout.setSpacing(0)
-        self.workspace_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
 
-        self.workspace_container = QFrame()
-        self.workspace_container.setLayout(self.workspace_container_layout)
-        self.workspace_container.setProperty("class", "widget-container")
-        self.workspace_container.setVisible(False)
+        self._widget_container.setVisible(False)
 
-        self.offline_text = QLabel(self.label_offline)
-        self.offline_text.setProperty("class", "offline-status")
+        self.offline_text = BaseYasbWidgetLabel(self.label_offline, class_name="offline-status")
 
-        add_shadow(self.workspace_container, self.container_shadow)
-
-        self.widget_layout.addWidget(self.offline_text)
-        self.widget_layout.addWidget(self.workspace_container)
+        self._widget_frame_layout.addWidget(self.offline_text)
 
         self.glazewm_client = GlazewmClient(
             self.glazewm_server_uri,
@@ -425,7 +401,7 @@ class GlazewmWorkspacesWidget(BaseWidget):
         )
         self.glazewm_client.glazewm_connection_status.connect(self._update_connection_status)  # type: ignore
         self.glazewm_client.workspaces_data_processed.connect(self._update_workspaces)  # type: ignore
-        self.icon_cache = dict()
+        self.icon_cache = {}
         self.workspace_app_icons = app_icons
         self.animation = animation
         self.label_shadow = label_shadow
@@ -441,7 +417,7 @@ class GlazewmWorkspacesWidget(BaseWidget):
 
     @pyqtSlot(bool)
     def _update_connection_status(self, status: bool):
-        self.workspace_container.setVisible(status)
+        self._widget_container.setVisible(status)
         self.offline_text.setVisible(not status if not self.hide_if_offline else False)
 
     @pyqtSlot(list)
@@ -488,8 +464,8 @@ class GlazewmWorkspacesWidget(BaseWidget):
 
         # Insert the new widget if it's not present
         for i, ws_name in enumerate(sorted(self.workspaces.keys(), key=natural_sort_key)):
-            if self.workspace_container_layout.indexOf(self.workspaces[ws_name]) != i:
-                self.workspace_container_layout.insertWidget(i, self.workspaces[ws_name])
+            if self._widget_container_layout.indexOf(self.workspaces[ws_name]) != i:
+                self._widget_container_layout.insertWidget(i, self.workspaces[ws_name])
 
         # Update workspaces
         current_ws_names = {ws.name for ws in current_mon.workspaces}
@@ -502,10 +478,7 @@ class GlazewmWorkspacesWidget(BaseWidget):
 
     def _get_active_workspace(self) -> GlazewmWorkspaceButton | None:
         for btn in self.workspaces.values():
-            if btn.status in (
-                WorkspaceStatus.ACTIVE_EMPTY,
-                WorkspaceStatus.ACTIVE_POPULATED,
-            ):
+            if btn.status in (WorkspaceStatus.ACTIVE_EMPTY, WorkspaceStatus.ACTIVE_POPULATED):
                 return btn
         return None
 

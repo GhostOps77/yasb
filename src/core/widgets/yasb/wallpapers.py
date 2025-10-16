@@ -9,13 +9,13 @@ import pythoncom
 import pywintypes
 import win32gui
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtWidgets import QFrame, QGraphicsOpacityEffect, QHBoxLayout
+from PyQt6.QtWidgets import QGraphicsOpacityEffect
 from win32comext.shell import shell, shellcon
 
 from core.event_service import EventService
 from core.utils.alert_dialog import raise_info_alert
 from core.utils.tooltip import set_tooltip
-from core.utils.utilities import add_shadow, iterate_label_as_parts
+from core.utils.utilities import iterate_label_as_parts
 from core.utils.widgets.animation_manager import AnimationManager
 from core.utils.widgets.wallpapers.wallpapers_gallery import ImageGallery
 from core.utils.win32.utilities import get_foreground_hwnd, set_foreground_hwnd
@@ -36,19 +36,18 @@ class WallpapersWidget(BaseWidget):
     def __init__(
         self,
         label: str,
+        callbacks: dict,
         update_interval: int,
         change_automatically: bool,
         image_path: str,
         tooltip: bool,
         animation: dict[str, str],
         run_after: list[str],
-        container_padding: dict[str, int],
         gallery: dict = None,
-        label_shadow: dict = None,
-        container_shadow: dict = None,
+        **kwargs,
     ):
         """Initialize the WallpapersWidget with configuration parameters."""
-        super().__init__(int(update_interval * 1000), class_name="wallpapers-widget")
+        super().__init__(int(update_interval * 1000), class_name="wallpapers-widget", **kwargs)
         self._image_gallery = None
 
         self._event_service = EventService()
@@ -59,31 +58,10 @@ class WallpapersWidget(BaseWidget):
         self._run_after = run_after
         self._gallery = gallery
         self._animation = animation
-        self._padding = container_padding
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
 
         self._last_image = None
         self._is_running = False
         self._popup_from_cli = False
-
-        # Construct container
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-        # Initialize container
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-
-        # Add the container to the main widget layout
-        self.widget_layout.addWidget(self._widget_container)
 
         self._create_dynamically_label(self._label_content)
 
@@ -91,8 +69,9 @@ class WallpapersWidget(BaseWidget):
         self._event_service.register_event("set_wallpaper_signal", self.set_wallpaper_signal)
 
         self.register_callback("change_background", self.change_background)
+        self.register_callback("timer", self.change_background)
+        self.map_callbacks(callbacks)
 
-        self.callback_timer = "change_background"
         if self._change_automatically:
             self.start_timer()
 
@@ -140,12 +119,7 @@ class WallpapersWidget(BaseWidget):
 
         def process_content(content, is_alt=False):
             widgets = []
-            for label in iterate_label_as_parts(
-                widgets, content, layout=self._widget_container_layout, content_shadow=self._label_shadow
-            ):
-                # label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-                label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                label.show()
+            for label in iterate_label_as_parts(self, widgets, content):
                 label.mousePressEvent = self.handle_mouse_events
                 if self._tooltip:
                     set_tooltip(label, "Change Wallpaper")
@@ -160,7 +134,7 @@ class WallpapersWidget(BaseWidget):
         active_widgets = self._widgets
         active_label_content = self._label_content
 
-        for _ in iterate_label_as_parts(active_widgets, active_label_content):
+        for _ in iterate_label_as_parts(self, active_widgets, active_label_content):
             pass
 
     def _make_filter(self, class_name: str, title: str):

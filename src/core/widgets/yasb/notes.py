@@ -1,13 +1,12 @@
-import datetime
 import json
 import logging
 import os
 import re
+from datetime import datetime
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QCursor
 from PyQt6.QtWidgets import (
-    QFrame,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -20,10 +19,9 @@ from PyQt6.QtWidgets import (
 )
 
 from core.config import HOME_CONFIGURATION_DIR
-from core.utils.utilities import PopupWidget, add_shadow, build_widget_label, iterate_label_as_parts
-from core.utils.widgets.animation_manager import AnimationManager
+from core.utils.utilities import PopupWidget, build_widget_label, iterate_label_as_parts
 from core.validation.widgets.yasb.notes import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseHBoxLayout, BaseLabel, BaseVBoxLayout, BaseWidget
 from settings import DEBUG
 
 
@@ -36,57 +34,32 @@ class NotesWidget(BaseWidget):
         label: str,
         label_alt: str,
         class_name: str,
-        container_padding: dict,
         animation: dict,
         menu: dict,
         icons: dict,
         callbacks: dict,
-        label_shadow: dict = None,
-        container_shadow: dict = None,
+        **kwargs,
     ):
-        super().__init__(class_name=f"notes-widget {class_name}")
+        super().__init__(class_name=f"notes-widget {class_name}", **kwargs)
         NotesWidget._instances.append(self)
 
         self._show_alt_label = False
         self._label_content = label
         self._label_alt_content = label_alt
         self._animation = animation
-        self._padding = container_padding
         self._menu_config = menu
         self._icons = icons
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
 
         self._notes_file = os.path.join(HOME_CONFIGURATION_DIR, "notes.json")
         self._notes = self._load_notes()
-
-        # Initialize container layout
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-
-        # Initialize container widget
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-        self.widget_layout.addWidget(self._widget_container)
 
         build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("toggle_menu", self._toggle_menu)
         self.register_callback("update_label", self._update_label)
-
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
-        self.callback_middle = callbacks["on_middle"]
-        self.callback_timer = "update_label"
+        self.register_callback("timer", self._update_label)
+        self.map_callbacks(callbacks)
 
         self._update_label()
 
@@ -105,28 +78,23 @@ class NotesWidget(BaseWidget):
             instance._update_label()
 
     def _toggle_label(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
-
+        self._animate()
         self._show_alt_label = not self._show_alt_label
-
-        for widget in self._widgets:
-            widget.setVisible(not self._show_alt_label)
-
-        for widget in self._widgets_alt:
-            widget.setVisible(self._show_alt_label)
-
+        # for widget in self._widgets:
+        #     widget.setVisible(not self._show_alt_label)
+        # for widget in self._widgets_alt:
+        #     widget.setVisible(self._show_alt_label)
         self._update_label()
 
     def _toggle_menu(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         self._show_menu()
 
     def _update_label(self):
         notes_count = len(self._notes)
 
-        active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+        # active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+        active_widgets = self._widgets
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         active_label_content = active_label_content.format(count=notes_count)
 
@@ -144,15 +112,11 @@ class NotesWidget(BaseWidget):
         self._menu.setProperty("class", "notes-menu")
 
         # Create main layout
-        main_layout = QVBoxLayout(self._menu)
-        main_layout.setSpacing(0)
-        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout = BaseVBoxLayout(self._menu)
 
         # Add text input area with button row - MOVED TO TOP
         input_container = QWidget()
-        input_layout = QVBoxLayout(input_container)
-        input_layout.setContentsMargins(8, 8, 8, 8)
-        input_layout.setSpacing(5)
+        input_layout = BaseVBoxLayout(input_container, spacing=5, paddings=8)
 
         # Text input field
         self._note_input = NoteTextEdit(self)
@@ -163,9 +127,7 @@ class NotesWidget(BaseWidget):
 
         # Button row
         button_container = QWidget()
-        button_layout = QHBoxLayout(button_container)
-        button_layout.setContentsMargins(0, 0, 0, 0)
-        button_layout.setSpacing(5)
+        button_layout = BaseHBoxLayout(button_container, spacing=5)
 
         # Add Note button
         self.add_button = QPushButton("Add Note")
@@ -247,7 +209,7 @@ class NotesWidget(BaseWidget):
 
         note_data = {
             "title": note_text,
-            "timestamp": datetime.datetime.now().isoformat(),
+            "timestamp": datetime.now().isoformat(),
         }
 
         if self._editing_note:
@@ -285,15 +247,12 @@ class NotesWidget(BaseWidget):
         container_layout.setSpacing(5)
 
         # Note icon
-        icon_label = QLabel(self._icons["note"])
-        icon_label.setProperty("class", "icon")
+        icon_label = BaseLabel(self._icons["note"], class_name="icon")
         container_layout.addWidget(icon_label)
 
         # Vertical layout for title + date
         text_container = QWidget()
-        text_layout = QVBoxLayout(text_container)
-        text_layout.setContentsMargins(0, 0, 0, 0)
-        text_layout.setSpacing(6)
+        text_layout = BaseVBoxLayout(text_container, spacing=6)
 
         # Title
         display_title = re.sub(r"[\n\t\r]+", "", note["title"])
@@ -309,10 +268,8 @@ class NotesWidget(BaseWidget):
         # Date under title
         if "timestamp" in note and self._menu_config["show_date_time"]:
             try:
-                timestamp = datetime.datetime.fromisoformat(note["timestamp"])
-                date_str = timestamp.strftime("%Y-%m-%d %H:%M")
-                date_label = QLabel(date_str)
-                date_label.setProperty("class", "date")
+                date_str = datetime.fromisoformat(note["timestamp"]).strftime("%Y-%m-%d %H:%M")
+                date_label = BaseLabel(date_str, class_name="date")
                 text_layout.addWidget(date_label)
             except (ValueError, TypeError):
                 pass
@@ -324,9 +281,8 @@ class NotesWidget(BaseWidget):
 
         # Create vertical layout for the buttons
         buttons_container = QWidget()
-        buttons_layout = QVBoxLayout(buttons_container)
-        buttons_layout.setContentsMargins(0, 0, 0, 0)
-        buttons_layout.setSpacing(5)  # Space between buttons
+        # Space between buttons
+        buttons_layout = BaseVBoxLayout(buttons_container, spacing=5)
         buttons_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)  # Center the buttons vertically
 
         # Copy button on top

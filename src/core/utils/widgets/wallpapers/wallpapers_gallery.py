@@ -334,7 +334,7 @@ class ImageGallery(QMainWindow, BaseStyledWidget):
     def load_images(self):
         """Load images for the current page in the background."""
         self.is_loading = True
-        for i in reversed(range(self.image_layout.count())):
+        for i in range(self.image_layout.count() - 1, -1, -1):
             self.image_layout.itemAt(i).widget().setParent(None)
 
         # Create placeholder labels first

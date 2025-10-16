@@ -1,11 +1,9 @@
 import logging
-from typing import Any, cast
+from typing import Any
 
 from PyQt6.QtCore import pyqtSlot
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QStyle
 
-from core.utils.utilities import add_shadow, build_widget_label, iterate_label_as_parts
-from core.utils.widgets.animation_manager import AnimationManager
+from core.utils.utilities import build_widget_label, iterate_label_as_parts
 from core.utils.widgets.glazewm.client import BindingMode, GlazewmClient
 from core.validation.widgets.glazewm.binding_mode import VALIDATION_SCHEMA
 from core.widgets.base import BaseWidget
@@ -32,13 +30,11 @@ class GlazewmBindingModeWidget(BaseWidget):
         default_icon: str,
         icons: dict[str, str],
         binding_modes_to_cycle_through: list[str],
-        container_padding: dict[str, int],
         animation: dict[str, str],
         callbacks: dict[str, str],
-        label_shadow: dict = None,
-        container_shadow: dict = None,
+        **kwargs,
     ):
-        super().__init__(class_name="glazewm-binding-mode")
+        super().__init__(class_name="glazewm-binding-mode", **kwargs)
         self._label_content = label
         self._label_alt_content = label_alt
         self._show_alt_label = False
@@ -48,36 +44,11 @@ class GlazewmBindingModeWidget(BaseWidget):
         self._icons = icons
         self._binding_modes_to_cycle_through = binding_modes_to_cycle_through
         self._current_binding_mode_index = 0
-        self._padding = container_padding
         self._animation = animation
-        self._container_shadow = container_shadow
-        self._label_shadow = label_shadow
-
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-
-        self.widget_layout.addWidget(self._widget_container)
 
         build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
 
-        self.glazewm_client = GlazewmClient(
-            glazewm_server_uri,
-            [
-                "sub -e binding_modes_changed",
-                "query binding-modes",
-            ],
-        )
+        self.glazewm_client = GlazewmClient(glazewm_server_uri, ["sub -e binding_modes_changed", "query binding-modes"])
         self.glazewm_client.glazewm_connection_status.connect(self._update_connection_status)
         self.glazewm_client.binding_mode_changed.connect(self._update_binding_mode)
         self.glazewm_client.connect()
@@ -86,37 +57,30 @@ class GlazewmBindingModeWidget(BaseWidget):
         self.register_callback("disable_binding_mode", self._disable_binding_mode)
         self.register_callback("next_binding_mode", lambda: self._cycle_through_binding_modes(1))
         self.register_callback("prev_binding_mode", lambda: self._cycle_through_binding_modes(-1))
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
-        self.callback_middle = callbacks["on_middle"]
+        self.map_callbacks(callbacks)
 
         self.hide()
 
     def _toggle_label(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
+
         self._show_alt_label = not self._show_alt_label
-        for widget in self._widgets:
-            widget.setVisible(not self._show_alt_label)
-        for widget in self._widgets_alt:
-            widget.setVisible(self._show_alt_label)
+        # for widget in self._widgets:
+        #     widget.setVisible(not self._show_alt_label)
+        # for widget in self._widgets_alt:
+        #     widget.setVisible(self._show_alt_label)
         self._update_label()
 
-    def _reload_css(self, label: QLabel):
-        style = cast(QStyle, label.style())
-        style.unpolish(label)
-        style.polish(label)
-        label.update()
-
     def _update_label(self):
-        active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+        # active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+        active_widgets = self._widgets
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
 
         active_label_content = active_label_content.format(
+            icon=self._icons.get(self._active_binding_mode.name or "none", self._default_icon),
             binding_mode=(
                 self._active_binding_mode.display_name or self._active_binding_mode.name or self._label_if_no_active
             ),
-            icon=self._icons.get(self._active_binding_mode.name or "none", self._default_icon),
         )
 
         for label in iterate_label_as_parts(
@@ -132,7 +96,7 @@ class GlazewmBindingModeWidget(BaseWidget):
             else:
                 class_name = class_name.replace("label", "label-offline")
 
-            self._reload_css(label)
+            label._reload_css()
 
     @pyqtSlot()
     def _disable_binding_mode(self):
@@ -141,14 +105,17 @@ class GlazewmBindingModeWidget(BaseWidget):
 
     @pyqtSlot()
     def _cycle_through_binding_modes(self, direction: int):
-        if len(self._binding_modes_to_cycle_through) == 0:
+        total_binding_modes_to_cycle_through = len(self._binding_modes_to_cycle_through)
+        if total_binding_modes_to_cycle_through == 0:
             return
 
         self._current_binding_mode_index += direction
         if self._current_binding_mode_index < 0:
-            self._current_binding_mode_index = len(self._binding_modes_to_cycle_through) - 1
-        if self._current_binding_mode_index >= len(self._binding_modes_to_cycle_through):
+            self._current_binding_mode_index = total_binding_modes_to_cycle_through - 1
+
+        if self._current_binding_mode_index >= total_binding_modes_to_cycle_through:
             self._current_binding_mode_index = 0
+
         if self._binding_modes_to_cycle_through[self._current_binding_mode_index] == "none":
             self._disable_binding_mode()
             return

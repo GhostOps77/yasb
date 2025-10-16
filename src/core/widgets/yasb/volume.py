@@ -25,8 +25,6 @@ from pycaw.pycaw import (
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QWheelEvent
 from PyQt6.QtWidgets import (
-    QFrame,
-    QHBoxLayout,
     QPushButton,
     QSlider,
     QVBoxLayout,
@@ -36,14 +34,13 @@ from PyQt6.QtWidgets import (
 from core.utils.tooltip import set_tooltip
 from core.utils.utilities import (
     PopupWidget,
-    add_shadow,
     build_progress_widget,
     build_widget_label,
     iterate_label_as_parts,
 )
 from core.utils.widgets.animation_manager import AnimationManager
 from core.validation.widgets.yasb.volume import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseVBoxLayout, BaseWidget
 
 # Disable comtypes logging
 logging.getLogger("comtypes").setLevel(logging.CRITICAL)
@@ -240,13 +237,11 @@ class VolumeWidget(BaseWidget):
         volume_icons: list[str],
         audio_menu: dict[str, str],
         animation: dict[str, str],
-        container_padding: dict[str, int],
         callbacks: dict[str, str],
-        label_shadow: dict = None,
-        container_shadow: dict = None,
         progress_bar: dict = None,
+        **kwargs,
     ):
-        super().__init__(class_name=f"volume-widget {class_name}")
+        super().__init__(class_name=f"volume-widget {class_name}", **kwargs)
         self._show_alt_label = False
         self._label_content = label
         self._label_alt_content = label_alt
@@ -256,40 +251,19 @@ class VolumeWidget(BaseWidget):
         self._slider_beep = slider_beep
         self._audio_menu = audio_menu
         self._animation = animation
-        self._padding = container_padding
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
         self.volume = None
         self._volume_icons = volume_icons
         self._progress_bar = progress_bar
 
-        self.progress_widget = None
         self.progress_widget = build_progress_widget(self, self._progress_bar)
 
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-        self.widget_layout.addWidget(self._widget_container)
-
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(self, self._label_content, self._label_alt_content)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("update_label", self._update_label)
         self.register_callback("toggle_mute", self.toggle_mute)
         self.register_callback("toggle_volume_menu", self._toggle_volume_menu)
-
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
-        self.callback_middle = callbacks["on_middle"]
+        self.map_callbacks(callbacks)
 
         self.cb = AudioEndpointChangeCallback(self)
         self.enumerator = AudioUtilities.GetDeviceEnumerator()
@@ -302,8 +276,7 @@ class VolumeWidget(BaseWidget):
         self._update_label()
 
     def _toggle_volume_menu(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         self.show_volume_menu()
 
     def _on_slider_released(self):
@@ -327,9 +300,7 @@ class VolumeWidget(BaseWidget):
         comtypes.CoInitialize()
         try:
             deviceEnumerator = comtypes.CoCreateInstance(
-                CLSID_MMDeviceEnumerator,
-                IMMDeviceEnumerator,
-                comtypes.CLSCTX_INPROC_SERVER,
+                CLSID_MMDeviceEnumerator, IMMDeviceEnumerator, comtypes.CLSCTX_INPROC_SERVER
             )
 
             if deviceEnumerator is None:
@@ -413,9 +384,7 @@ class VolumeWidget(BaseWidget):
         # Create a container widget and layout
         self.container = QWidget()
         self.container.setProperty("class", "audio-container")
-        self.container_layout = QVBoxLayout()
-        self.container_layout.setSpacing(0)
-        self.container_layout.setContentsMargins(0, 0, 0, 10)
+        self.container_layout = BaseVBoxLayout(paddings={"bottom": 10})
 
         self.devices = self._list_audio_devices()
         if len(self.devices) > 1:
@@ -470,17 +439,17 @@ class VolumeWidget(BaseWidget):
         self.dialog.show()
 
     def _toggle_label(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         self._show_alt_label = not self._show_alt_label
-        for widget in self._widgets:
-            widget.setVisible(not self._show_alt_label)
-        for widget in self._widgets_alt:
-            widget.setVisible(self._show_alt_label)
+        # for widget in self._widgets:
+        #     widget.setVisible(not self._show_alt_label)
+        # for widget in self._widgets_alt:
+        #     widget.setVisible(self._show_alt_label)
         self._update_label()
 
     def _update_label(self):
-        active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+        # active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+        active_widgets = self._widgets
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
 
         try:
@@ -502,7 +471,7 @@ class VolumeWidget(BaseWidget):
             add_progress_widget = True
 
         for _ in iterate_label_as_parts(
-            active_widgets, active_label_content, "label alt" if self._show_alt_label else "label"
+            self, active_widgets, active_label_content, "alt" if self._show_alt_label else ""
         ):
             pass
 

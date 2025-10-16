@@ -2,18 +2,10 @@ import logging
 import socket
 from typing import Any
 
-from PyQt6.QtWidgets import (
-    QFrame,
-    QHBoxLayout,
-    QLabel,
-)
-from winrt.windows.networking.connectivity import (
-    NetworkConnectivityLevel,
-    NetworkInformation,
-)
+from PyQt6.QtWidgets import QLabel
+from winrt.windows.networking.connectivity import NetworkConnectivityLevel, NetworkInformation
 
-from core.utils.utilities import add_shadow, iterate_label_as_parts
-from core.utils.widgets.animation_manager import AnimationManager
+from core.utils.utilities import iterate_label_as_parts
 from core.utils.widgets.wifi.wifi_managers import NetworkInfo
 from core.utils.widgets.wifi.wifi_widgets import WifiMenu
 from core.validation.widgets.yasb.wifi import VALIDATION_SCHEMA
@@ -39,13 +31,11 @@ class WifiWidget(BaseWidget):
         get_exact_wifi_strength: bool,
         hide_if_ethernet: bool,
         animation: dict[str, str],
-        container_padding: dict[str, int],
         callbacks: dict[str, str],
         menu_config: dict[str, Any],
-        label_shadow: dict[str, str],
-        container_shadow: dict[str, str],
+        **kwargs,
     ):
-        super().__init__(update_interval, class_name=f"wifi-widget {class_name}")
+        super().__init__(update_interval, class_name=f"wifi-widget {class_name}", **kwargs)
         self._wifi_menu = WifiMenu(self, menu_config)
 
         self._wifi_icons = wifi_icons
@@ -60,66 +50,27 @@ class WifiWidget(BaseWidget):
         self._get_exact_wifi_strength = get_exact_wifi_strength
         self._hide_if_ethernet = hide_if_ethernet
         self._animation = animation
-        self._padding = container_padding
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
-        # Construct container
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-        # Initialize container
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-
-        # Add the container to the main widget layout
-        self.widget_layout.addWidget(self._widget_container)
 
         self._create_dynamically_label(self._label_content, self._label_alt_content)
-        self._create_dynamically_label(
-            self._ethernet_label_content,
-            self._ethernet_label_alt_content,
-            is_ethernet=True,
-        )
+        self._create_dynamically_label(self._ethernet_label_content, self._ethernet_label_alt_content, is_ethernet=True)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("update_label", self._update_label)
         self.register_callback("toggle_menu", self._wifi_menu.show_menu)
-
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
-        self.callback_middle = callbacks["on_middle"]
-        self.callback_timer = "update_label"
+        self.register_callback("timer", self._update_label)
+        self.map_callbacks(callbacks)
 
         self.start_timer()
 
     def _display_correct_label(self):
-        active_widget_group = "ethernet" if self._ethernet_active else "wifi"
-        widget_groups = {
-            "wifi": (self._widgets, self._widgets_alt),
-            "ethernet": (self._widgets_ethernet, self._widgets_ethernet_alt),
-        }
-        for name, (widgets, widgets_alt) in widget_groups.items():
-            if name == active_widget_group:
-                for widget in widgets:
-                    widget.setVisible(not self._show_alt_label)
-                for widget in widgets_alt:
-                    widget.setVisible(self._show_alt_label)
-            else:
-                for widget in widgets:
-                    widget.setVisible(False)
-                for widget in widgets_alt:
-                    widget.setVisible(False)
+        for widget in self._widgets:
+            widget.setVisible(not self._ethernet_active)
+
+        for widget in self._widgets_ethernet:
+            widget.setVisible(self._ethernet_active)
 
     def _toggle_label(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])  # type: ignore
+        self._animate()
         self._show_alt_label = not self._show_alt_label
         self._update_label()
 
@@ -128,10 +79,8 @@ class WifiWidget(BaseWidget):
             # Filters out empty parts before entering the loop
             widgets: list[QLabel] = []
 
-            for label in iterate_label_as_parts(
-                widgets, content, "label alt" if is_alt else "label", self._widget_container_layout, self._label_shadow
-            ):
-                if is_alt or is_ethernet:
+            for label in iterate_label_as_parts(self, widgets, content, "alt" if is_alt else ""):
+                if is_ethernet:
                     label.hide()
                 else:
                     label.show()
@@ -140,10 +89,12 @@ class WifiWidget(BaseWidget):
 
         if is_ethernet:
             self._widgets_ethernet = process_content(content, is_ethernet=True)
-            self._widgets_ethernet_alt = process_content(content_alt, is_alt=True, is_ethernet=True)
+            # self._widgets_ethernet_alt = process_content(content_alt, is_alt=True, is_ethernet=True)
+            self._widgets_ethernet_alt = self._widgets_ethernet
         else:
             self._widgets = process_content(content)
-            self._widgets_alt = process_content(content_alt, is_alt=True)
+            # self._widgets_alt = process_content(content_alt, is_alt=True)
+            self._widgets_alt = self._widgets
 
     def _update_label(self):
         try:
@@ -180,14 +131,15 @@ class WifiWidget(BaseWidget):
             ip_addr = "N/A"
             wifi_icon = wifi_name = wifi_strength = "N/A"
 
-        self._display_correct_label()
         if self._ethernet_active:
-            active_widgets = self._widgets_ethernet_alt if self._show_alt_label else self._widgets_ethernet
+            # active_widgets = self._widgets_ethernet_alt if self._show_alt_label else self._widgets_ethernet
+            active_widgets = self._widgets_ethernet
             active_label_content = (
                 self._ethernet_label_alt_content if self._show_alt_label else self._ethernet_label_content
             )
         else:
-            active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+            # active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+            active_widgets = self._widgets
             active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
 
         active_label_content = active_label_content.format(
@@ -201,6 +153,8 @@ class WifiWidget(BaseWidget):
             active_widgets, active_label_content, "label alt" if self._show_alt_label else "label"
         ):
             pass
+
+        self._display_correct_label()
 
     def _get_wifi_strength_safe(self) -> int:
         """Get the WiFi signal bars safely, not requiring location permissions"""

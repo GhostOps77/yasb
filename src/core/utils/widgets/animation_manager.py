@@ -13,6 +13,7 @@ class AnimationManager:
         if animation_type not in cls.ALLOWED_ANIMATIONS:
             logging.error(f"Animation type '{animation_type}' not supported. Allowed types: {cls.ALLOWED_ANIMATIONS}")
             return
+
         key = f"{animation_type}_{duration}"
         if key not in cls._instances:
             cls._instances[key] = cls(animation_type, duration)

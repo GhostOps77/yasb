@@ -1,13 +1,7 @@
 import ctypes
 import logging
 
-from PyQt6.QtCore import (
-    QAbstractNativeEventFilter,
-    QCoreApplication,
-    QObject,
-    QTimer,
-    pyqtSignal,
-)
+from PyQt6.QtCore import QAbstractNativeEventFilter, QCoreApplication, QObject, QTimer, pyqtSignal
 
 from core.utils.widgets.taskbar.application_window import ApplicationWindow
 from core.utils.win32 import constants as WCONST
@@ -31,12 +25,7 @@ _shared_task_manager = None
 _shellhook_event_filter = None
 
 
-def get_shared_task_manager(
-    excluded_classes=None,
-    ignored_processes=None,
-    ignored_titles=None,
-    strict_filtering=False,
-):
+def get_shared_task_manager(excluded_classes=None, ignored_processes=None, ignored_titles=None, strict_filtering=False):
     """Return the singleton TaskbarWindowManager instance, creating it if needed."""
     global _shared_task_manager
     if _shared_task_manager is None:
@@ -278,15 +267,7 @@ class TaskbarWindowManager(QObject):
                 ctypes.wintypes.DWORD,
             )
 
-            def cloak_event_callback(
-                hWinEventHook,
-                eventType,
-                hWnd,
-                idObject,
-                idChild,
-                dwEventThread,
-                dwmsEventTime,
-            ):
+            def cloak_event_callback(hWinEventHook, eventType, hWnd, idObject, idChild, dwEventThread, dwmsEventTime):
                 try:
                     if hWnd and idObject == 0 and idChild == 0:
                         hwnd_int = int(hWnd)
@@ -314,13 +295,7 @@ class TaskbarWindowManager(QObject):
             flags = WCONST.WINEVENT_OUTOFCONTEXT | WCONST.WINEVENT_SKIPOWNPROCESS
 
             cloak_hook = SetWinEventHook(
-                WCONST.EVENT_OBJECT_CLOAKED,
-                WCONST.EVENT_OBJECT_UNCLOAKED,
-                0,
-                self._cloak_callback,
-                0,
-                0,
-                flags,
+                WCONST.EVENT_OBJECT_CLOAKED, WCONST.EVENT_OBJECT_UNCLOAKED, 0, self._cloak_callback, 0, 0, flags
             )
 
             if cloak_hook:
@@ -331,13 +306,7 @@ class TaskbarWindowManager(QObject):
             # SHOW/HIDE hooks only when not using strict filtering
             if not self._strict_filtering:
                 show_hide_hook = SetWinEventHook(
-                    WCONST.EVENT_OBJECT_SHOW,
-                    WCONST.EVENT_OBJECT_HIDE,
-                    0,
-                    self._cloak_callback,
-                    0,
-                    0,
-                    flags,
+                    WCONST.EVENT_OBJECT_SHOW, WCONST.EVENT_OBJECT_HIDE, 0, self._cloak_callback, 0, 0, flags
                 )
                 if show_hide_hook:
                     self._win_event_hooks.append(show_hide_hook)
@@ -533,11 +502,7 @@ class TaskbarWindowManager(QObject):
                             cls = (app_window.class_name or "").strip()
                             pname = (app_window._get_process_name() or "").strip()
                             is_uwp = (
-                                cls
-                                in (
-                                    "Windows.UI.Core.CoreWindow",
-                                    "ApplicationFrameWindow",
-                                )
+                                cls in ("Windows.UI.Core.CoreWindow", "ApplicationFrameWindow")
                                 or pname == "ApplicationFrameHost.exe"
                             )
                         except Exception:
@@ -591,11 +556,7 @@ class TaskbarWindowManager(QObject):
 
             # Create ApplicationWindow instance with exclusion lists
             app_window = ApplicationWindow(
-                hwnd,
-                self._excluded_classes,
-                self._ignored_processes,
-                self._ignored_titles,
-                self._strict_filtering,
+                hwnd, self._excluded_classes, self._ignored_processes, self._ignored_titles, self._strict_filtering
             )
 
             # Check if window should be shown in taskbar
@@ -603,10 +564,7 @@ class TaskbarWindowManager(QObject):
                 # For UWP apps, sometimes they need a moment to fully initialize
                 # Schedule a delayed check for UWP apps that might not be ready yet
                 try:
-                    if app_window.class_name in [
-                        "ApplicationFrameWindow",
-                        "Windows.UI.Core.CoreWindow",
-                    ]:
+                    if app_window.class_name in ("ApplicationFrameWindow", "Windows.UI.Core.CoreWindow"):
                         QTimer.singleShot(500, lambda: self._delayed_uwp_check(hwnd))
                 except:
                     pass
@@ -638,11 +596,7 @@ class TaskbarWindowManager(QObject):
                 return
 
             app_window = ApplicationWindow(
-                hwnd,
-                self._excluded_classes,
-                self._ignored_processes,
-                self._ignored_titles,
-                self._strict_filtering,
+                hwnd, self._excluded_classes, self._ignored_processes, self._ignored_titles, self._strict_filtering
             )
             if app_window.is_taskbar_window():
                 self._windows[hwnd] = app_window
@@ -663,11 +617,7 @@ class TaskbarWindowManager(QObject):
                     return
 
                 app_window = ApplicationWindow(
-                    hwnd,
-                    self._excluded_classes,
-                    self._ignored_processes,
-                    self._ignored_titles,
-                    self._strict_filtering,
+                    hwnd, self._excluded_classes, self._ignored_processes, self._ignored_titles, self._strict_filtering
                 )
                 if app_window.is_taskbar_window():
                     self._windows[hwnd] = app_window
@@ -707,11 +657,7 @@ class TaskbarWindowManager(QObject):
                             cls = (app_window.class_name or "").strip()
                             pname = (app_window._get_process_name() or "").strip()
                             is_uwp = (
-                                cls
-                                in (
-                                    "Windows.UI.Core.CoreWindow",
-                                    "ApplicationFrameWindow",
-                                )
+                                cls in ("Windows.UI.Core.CoreWindow", "ApplicationFrameWindow")
                                 or pname == "ApplicationFrameHost.exe"
                             )
                             if is_uwp:

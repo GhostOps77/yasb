@@ -3,13 +3,12 @@ import os
 import subprocess
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QWidget
 
-from core.utils.utilities import PopupWidget, add_shadow, build_widget_label
-from core.utils.widgets.animation_manager import AnimationManager
+from core.utils.utilities import PopupWidget, build_widget_label
 from core.utils.widgets.power_menu.power_commands import PowerOperations
 from core.validation.widgets.yasb.home import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseHBoxLayout, BaseLabel, BaseVBoxLayout, BaseWidget
 
 
 class HomeWidget(BaseWidget):
@@ -18,7 +17,6 @@ class HomeWidget(BaseWidget):
     def __init__(
         self,
         label: str,
-        container_padding: dict,
         power_menu: bool,
         system_menu: bool,
         blur: bool,
@@ -34,14 +32,12 @@ class HomeWidget(BaseWidget):
         animation: dict[str, str],
         callbacks: dict[str, str],
         menu_list: list[str, dict[str]] = None,
-        label_shadow: dict = None,
-        container_shadow: dict = None,
+        **kwargs,
     ):
-        super().__init__(class_name="home-widget")
+        super().__init__(class_name="home-widget", **kwargs)
         self.power_operations = PowerOperations()
         self._label = label
         self._menu_list = menu_list
-        self._padding = container_padding
         self._power_menu = power_menu
         self._system_menu = system_menu
         self._blur = blur
@@ -55,28 +51,11 @@ class HomeWidget(BaseWidget):
         self._offset_left = offset_left
         self._menu_labels = menu_labels
         self._animation = animation
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
-        # Construct container
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-        # Initialize container
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-        # Add the container to the main widget layout
-        self.widget_layout.addWidget(self._widget_container)
+
         build_widget_label(self, self._label, None, self._label_shadow)
 
         self.register_callback("toggle_menu", self._toggle_menu)
-        self.callback_left = callbacks["on_left"]
+        self.map_callbacks(callbacks)
 
     def create_menu_action(self, path):
         path = os.path.expanduser(path)
@@ -97,9 +76,7 @@ class HomeWidget(BaseWidget):
         self._menu.setProperty("class", "home-menu")
 
         # Create main vertical layout for the popup
-        main_layout = QVBoxLayout(self._menu)
-        main_layout.setSpacing(0)
-        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout = BaseVBoxLayout(self._menu)
 
         if self._system_menu:
             # System menu items
@@ -187,14 +164,11 @@ class HomeWidget(BaseWidget):
     def _add_menu_item(self, layout, text, triggered_func):
         # Create widget container
         item = QWidget()
-        item_layout = QHBoxLayout(item)
-        item_layout.setContentsMargins(0, 0, 0, 0)
+        item_layout = BaseHBoxLayout(item)
 
         # Create label
-        label = QLabel(text)
-        label.setProperty("class", "menu-item")
+        label = BaseLabel(text, class_name="menu-item")
         label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
-        label.setCursor(Qt.CursorShape.PointingHandCursor)
 
         # Add label to layout
         item_layout.addWidget(label)
@@ -211,6 +185,5 @@ class HomeWidget(BaseWidget):
         return item
 
     def _toggle_menu(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         self._create_menu()

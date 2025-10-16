@@ -10,19 +10,18 @@ from pycaw.pycaw import (
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QWheelEvent
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QSlider, QVBoxLayout
+from PyQt6.QtWidgets import QSlider
 
 from core.utils.tooltip import set_tooltip
 from core.utils.utilities import (
     PopupWidget,
-    add_shadow,
     build_progress_widget,
     build_widget_label,
     iterate_label_as_parts,
 )
 from core.utils.widgets.animation_manager import AnimationManager
 from core.validation.widgets.yasb.microphone import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseVBoxLayout, BaseWidget
 
 # Disable comtypes logging
 logging.getLogger("comtypes").setLevel(logging.CRITICAL)
@@ -63,13 +62,11 @@ class MicrophoneWidget(BaseWidget):
         icons: dict[str, str],
         mic_menu: dict[str, str],
         animation: dict[str, str],
-        container_padding: dict[str, int],
         callbacks: dict[str, str],
-        label_shadow: dict = None,
-        container_shadow: dict = None,
         progress_bar: dict = None,
+        **kwargs,
     ):
-        super().__init__(class_name=f"microphone-widget {class_name}")
+        super().__init__(class_name=f"microphone-widget {class_name}", **kwargs)
 
         self._initializing = True
         self.audio_endpoint = None
@@ -82,38 +79,17 @@ class MicrophoneWidget(BaseWidget):
         self._scroll_step = int(scroll_step) / 100
         self._icons = icons
         self._mic_menu = mic_menu
-        self._padding = container_padding
         self._animation = animation
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
         self._progress_bar = progress_bar
 
-        self.progress_widget = None
         self.progress_widget = build_progress_widget(self, self._progress_bar)
-
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-        self.widget_layout.addWidget(self._widget_container)
 
         build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("toggle_mute", self.toggle_mute)
         self.register_callback("toggle_mic_menu", self.show_menu)
-
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
-        self.callback_middle = callbacks["on_middle"]
+        self.map_callbacks(callbacks)
 
         self.cb = AudioEndpointChangeCallback(self)
         self.enumerator = AudioUtilities.GetDeviceEnumerator()
@@ -154,8 +130,9 @@ class MicrophoneWidget(BaseWidget):
             min_icon = min_level = "N/A"
             self.hide()
 
-        active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+        # active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
         # active_widgets_len = len(active_widgets)
+        active_widgets = self._widgets
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         active_label_content = active_label_content.format(icon=min_icon, level=min_level)
 
@@ -174,11 +151,7 @@ class MicrophoneWidget(BaseWidget):
                 self._widget_container_layout.removeWidget(self.progress_widget)
             add_progress_widget = True
 
-        for label in iterate_label_as_parts(
-            active_widgets,
-            active_label_content,
-            # self._widget_container_layout
-        ):
+        for label in iterate_label_as_parts(self, active_widgets, active_label_content):
             self._set_muted_class(label, mute_status == 1)
 
         if not add_progress_widget:
@@ -222,8 +195,9 @@ class MicrophoneWidget(BaseWidget):
         else:
             classes.discard("muted")
         label.setProperty("class", " ".join(classes))
-        label.style().unpolish(label)
-        label.style().polish(label)
+        style = label.style()
+        style.unpolish(label)
+        style.polish(label)
 
     def _get_mic_icon(self):
         if not self.audio_endpoint:
@@ -245,8 +219,7 @@ class MicrophoneWidget(BaseWidget):
         return mic_icon
 
     def toggle_mute(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         if self.audio_endpoint:
             current_mute_status = self.audio_endpoint.GetMute()
             self.audio_endpoint.SetMute(not current_mute_status, None)
@@ -286,9 +259,7 @@ class MicrophoneWidget(BaseWidget):
         )
         self.dialog.setProperty("class", "microphone-menu")
 
-        layout = QVBoxLayout()
-        layout.setSpacing(0)
-        layout.setContentsMargins(10, 10, 10, 10)
+        layout = BaseVBoxLayout()
 
         self.volume_slider = QSlider(Qt.Orientation.Horizontal)
         self.volume_slider.setProperty("class", "microphone-slider")

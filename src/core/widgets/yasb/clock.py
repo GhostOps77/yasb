@@ -1,26 +1,22 @@
 import locale
-import re
 from datetime import date, datetime
 from itertools import cycle
-from typing import cast
 
 import pytz
 from PyQt6.QtCore import QDate, QLocale, Qt, QTimer
 from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import (
     QCalendarWidget,
-    QFrame,
     QHBoxLayout,
     QLabel,
     QSizePolicy,
-    QStyle,
     QTableView,
     QVBoxLayout,
 )
 from tzlocal import get_localzone_name
 
 from core.utils.tooltip import set_tooltip
-from core.utils.utilities import PopupWidget, add_shadow, build_widget_label, iterate_label_as_parts
+from core.utils.utilities import PopupWidget, build_widget_label, iterate_label_as_parts
 from core.utils.widgets.animation_manager import AnimationManager
 from core.validation.widgets.yasb.clock import VALIDATION_SCHEMA
 from core.widgets.base import BaseWidget
@@ -56,7 +52,7 @@ def _get_cached_country_holidays(country, year, subdivision=None):
     return _holidays_cache["country_holidays"][cache_key]
 
 
-class CustomCalendar(QCalendarWidget):
+class CalendarWidget(QCalendarWidget):
     def __init__(
         self,
         parent=None,
@@ -163,58 +159,39 @@ class ClockWidget(BaseWidget):
         calendar: dict[str, str],
         timezones: list[str],
         animation: dict[str, str],
-        container_padding: dict[str, int],
         callbacks: dict[str, str],
         icons: dict[str, str] = None,
-        label_shadow: dict = None,
-        container_shadow: dict = None,
+        **kwargs,
     ):
-        super().__init__(update_interval, class_name=f"clock-widget {class_name}")
+        super().__init__(update_interval, class_name=f"clock-widget {class_name}", **kwargs)
         self._locale = locale
         self._tooltip = tooltip
         self._active_tz = None
-        self._timezones = cycle(timezones if timezones else [get_localzone_name()])
+        self._timezones = cycle(timezones or [get_localzone_name()])
         self._active_datetime_format_str = ""
         self._active_datetime_format = None
         self._animation = animation
         self._label_content = label
         self._calendar = calendar
-        self._padding = container_padding
         self._label_alt_content = label_alt
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
         self._icons = icons or {}
         self._current_hour = None
         self._country_code = self._calendar["country_code"] or self.get_country_code()
         self._subdivision = self._calendar.get("subdivision")
-        # Construct container
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-        # Initialize container
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-        # Add the container to the main widget layout
-        self.widget_layout.addWidget(self._widget_container)
 
         build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
 
-        self.register_callback("toggle_label", self._toggle_label)
-        self.register_callback("update_label", self._update_label)
-        self.register_callback("next_timezone", self._next_timezone)
-        self.register_callback("toggle_calendar", self._toggle_calendar)
+        self.callbacks.update(
+            {
+                "toggle_calendar": self._toggle_calendar,
+                "toggle_label": self._toggle_label,
+                "update_label": self._update_label,
+                "next_timezone": self._next_timezone,
+                "timer": self._update_label,
+            }
+        )
 
-        self.callback_left = callbacks["on_left"]
-        self.callback_right = callbacks["on_right"]
-        self.callback_middle = callbacks["on_middle"]
-        self.callback_timer = "update_label"
+        self.map_callbacks(callbacks)
 
         self._show_alt_label = False
 
@@ -235,10 +212,10 @@ class ClockWidget(BaseWidget):
             AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
 
         self._show_alt_label = not self._show_alt_label
-        for widget in self._widgets:
-            widget.setVisible(not self._show_alt_label)
-        for widget in self._widgets_alt:
-            widget.setVisible(self._show_alt_label)
+        # for widget in self._widgets:
+        #     widget.setVisible(not self._show_alt_label)
+        # for widget in self._widgets_alt:
+        #     widget.setVisible(self._show_alt_label)
         self._update_label()
 
     def _get_icon_for_hour(self, hour: int) -> str:
@@ -249,14 +226,9 @@ class ClockWidget(BaseWidget):
             icon = self._icons.get(fallback_key, "")
         return icon or ""
 
-    def _reload_css(self, label: QLabel):
-        style = cast(QStyle, label.style())
-        style.unpolish(label)
-        style.polish(label)
-        label.update()
-
     def _update_label(self):
-        active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+        # active_widgets = self._widgets_alt if self._show_alt_label else self._widgets
+        active_widgets = self._widgets
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
 
         now = datetime.now(pytz.timezone(self._active_tz))
@@ -273,20 +245,14 @@ class ClockWidget(BaseWidget):
             except locale.Error:
                 pass
 
-        active_label_content = active_label_content.format(
-            timedata=now, icon=f'<span class="icon">{self._get_icon_for_hour(now.hour)}</span>'
-        )
+        active_label_content = active_label_content.format(timedata=now, icon=self._get_icon_for_hour(now.hour))
 
         for label in iterate_label_as_parts(
-            active_widgets,
-            active_label_content,
-            # self._widget_container_layout
+            self, active_widgets, active_label_content, "alt" if self._show_alt_label else ""
         ):
-            if hour_changed:
-                class_names = label.property("class")
-                class_names = re.sub(r"clock_\d{2}", "", class_names).strip()
-                label.setProperty("class", class_names + f" clock_{current_hour}")
-                self._reload_css(label)
+            # if hour_changed:
+            label.setProperty("class", label.property("class") + " " + f"clock_{current_hour}")
+            label._reload_css()
 
         if self._locale:
             locale.setlocale(locale.LC_TIME, org_locale_time)
@@ -320,6 +286,7 @@ class ClockWidget(BaseWidget):
         self.day_label.setText(qlocale.dayName(date.dayOfWeek()))
         self.month_label.setText(qlocale.monthName(date.month()))
         self.date_label.setText(date.toString("d"))
+
         if self._calendar["show_week_numbers"]:
             self.update_week_label(date)
         if self._calendar["show_holidays"]:
@@ -357,7 +324,7 @@ class ClockWidget(BaseWidget):
     def get_country_code(self):
         """Retrieve the country code based on the user's locale or system settings."""
         if not self._calendar["show_holidays"]:
-            return None
+            return
 
         import ctypes
 
@@ -374,7 +341,7 @@ class ClockWidget(BaseWidget):
         except Exception:
             pass
 
-        return None
+        return
 
     def show_calendar(self):
         self._yasb_calendar = PopupWidget(
@@ -435,7 +402,7 @@ class ClockWidget(BaseWidget):
 
         layout.addLayout(date_layout)
 
-        self.calendar = CustomCalendar(
+        self.calendar = CalendarWidget(
             self,
             self._active_tz,
             self._country_code,
