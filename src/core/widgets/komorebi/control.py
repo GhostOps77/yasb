@@ -46,7 +46,6 @@ class KomorebiControlWidget(BaseWidget):
         show_version: bool,
         komorebi_menu: dict[str, str],
         animation: dict[str, str],
-        callbacks: dict[str, str],
         **kwargs,
     ):
         super().__init__(class_name="komorebi-control-widget", **kwargs)
@@ -71,7 +70,6 @@ class KomorebiControlWidget(BaseWidget):
         build_widget_label(self, self._label_content)
 
         self.register_callback("toggle_menu", self._toggle_menu)
-        self.map_callbacks(callbacks)
 
         # Register events
         self._register_signals_and_events()

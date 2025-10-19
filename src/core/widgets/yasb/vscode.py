@@ -37,7 +37,6 @@ class VSCodeWidget(BaseWidget):
         cli_command: str,
         menu: dict[str, str],
         animation: dict[str, str],
-        callbacks: dict[str, str],
         **kwargs,
     ):
         super().__init__(class_name="vscode-widget", **kwargs)
@@ -66,7 +65,6 @@ class VSCodeWidget(BaseWidget):
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("toggle_menu", self._toggle_menu)
-        self.map_callbacks(callbacks)
 
     def _uri_to_windows_path(self, uri):
         parsed = urllib.parse.urlparse(uri)

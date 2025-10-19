@@ -7,21 +7,18 @@ from datetime import datetime
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QCursor
 from PyQt6.QtWidgets import (
-    QHBoxLayout,
     QLabel,
-    QPushButton,
     QScrollArea,
     QSizePolicy,
     QSpacerItem,
     QTextEdit,
-    QVBoxLayout,
     QWidget,
 )
 
 from core.config import HOME_CONFIGURATION_DIR
 from core.utils.utilities import PopupWidget, build_widget_label, iterate_label_as_parts
 from core.validation.widgets.yasb.notes import VALIDATION_SCHEMA
-from core.widgets.base import BaseHBoxLayout, BaseLabel, BaseVBoxLayout, BaseWidget
+from core.widgets.base import BaseHBoxLayout, BaseLabel, BasePushButton, BaseVBoxLayout, BaseWidget
 from settings import DEBUG
 
 
@@ -37,7 +34,6 @@ class NotesWidget(BaseWidget):
         animation: dict,
         menu: dict,
         icons: dict,
-        callbacks: dict,
         **kwargs,
     ):
         super().__init__(class_name=f"notes-widget {class_name}", **kwargs)
@@ -53,13 +49,12 @@ class NotesWidget(BaseWidget):
         self._notes_file = os.path.join(HOME_CONFIGURATION_DIR, "notes.json")
         self._notes = self._load_notes()
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(self, self._label_content, self._label_alt_content)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("toggle_menu", self._toggle_menu)
         self.register_callback("update_label", self._update_label)
         self.register_callback("timer", self._update_label)
-        self.map_callbacks(callbacks)
 
         self._update_label()
 
@@ -130,19 +125,13 @@ class NotesWidget(BaseWidget):
         button_layout = BaseHBoxLayout(button_container, spacing=5)
 
         # Add Note button
-        self.add_button = QPushButton("Add Note")
-        self.add_button.setProperty("class", "add-button")
-        self.add_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.add_button.clicked.connect(self._add_note_from_input)
-        button_layout.addWidget(self.add_button)
+        self.add_button = BasePushButton("Add Note", class_name="add-button", on_click=self._add_note_from_input)
 
         # Cancel button (hidden by default)
-        self.cancel_button = QPushButton("Cancel")
-        self.cancel_button.setProperty("class", "cancel-button")
-        self.cancel_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.cancel_button.clicked.connect(self._cancel_editing)
+        self.cancel_button = BasePushButton("Cancel", class_name="cancel-button", on_click=self._cancel_editing)
         self.cancel_button.hide()
-        button_layout.addWidget(self.cancel_button)
+
+        button_layout.addWidgets(self.add_button, self.cancel_button)
 
         input_layout.addWidget(button_container)
         main_layout.addWidget(input_container)
@@ -168,9 +157,7 @@ class NotesWidget(BaseWidget):
         # Create scroll widget and layout
         scroll_widget = QWidget()
         scroll_widget.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        scroll_layout = QVBoxLayout(scroll_widget)
-        scroll_layout.setContentsMargins(0, 0, 0, 0)
-        scroll_layout.setSpacing(0)
+        scroll_layout = BaseVBoxLayout(scroll_widget)
 
         scroll_area.setWidget(scroll_widget)
 
@@ -242,9 +229,7 @@ class NotesWidget(BaseWidget):
         container.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         # Main row
-        container_layout = QHBoxLayout(container)
-        container_layout.setContentsMargins(8, 8, 8, 8)
-        container_layout.setSpacing(5)
+        container_layout = BaseHBoxLayout(container, spacing=5, paddings=8)
 
         # Note icon
         icon_label = BaseLabel(self._icons["note"], class_name="icon")
@@ -286,15 +271,15 @@ class NotesWidget(BaseWidget):
         buttons_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)  # Center the buttons vertically
 
         # Copy button on top
-        copy_button = QPushButton(self._icons["copy"])
-        copy_button.setProperty("class", "copy-button")
-        copy_button.clicked.connect(lambda: self._copy_note(note))
+        copy_button = BasePushButton(
+            self._icons["copy"], class_name="copy-button", on_click=lambda: self._copy_note(note)
+        )
         buttons_layout.addWidget(copy_button, 0, Qt.AlignmentFlag.AlignCenter)
 
         # Delete button on bottom
-        delete_button = QPushButton(self._icons["delete"])
-        delete_button.setProperty("class", "delete-button")
-        delete_button.clicked.connect(lambda: self._delete_note(note))
+        delete_button = BasePushButton(
+            self._icons["delete"], class_name="delete-button", on_click=lambda: self._delete_note(note)
+        )
         buttons_layout.addWidget(delete_button, 0, Qt.AlignmentFlag.AlignCenter)
 
         # Add the buttons container to the main layout

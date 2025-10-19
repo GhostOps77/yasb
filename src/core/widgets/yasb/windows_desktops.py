@@ -9,24 +9,19 @@ from PyQt6.QtCore import (
     pyqtSignal,
 )
 from PyQt6.QtGui import QAction, QCursor
-from PyQt6.QtWidgets import (
-    QFileDialog,
-    QInputDialog,
-    QMenu,
-    QPushButton,
-)
+from PyQt6.QtWidgets import QFileDialog, QInputDialog, QMenu
 from pyvda import VirtualDesktop, get_virtual_desktops, set_wallpaper_for_all_desktops
 
 from core.event_service import EventService
 from core.utils.utilities import add_shadow, is_windows_10
 from core.utils.win32.utilities import qmenu_rounded_corners
 from core.validation.widgets.yasb.windows_desktops import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BasePushButton, BaseWidget
 
 logging.getLogger("comtypes").setLevel(logging.INFO)
 
 
-class WorkspaceButton(QPushButton):
+class WorkspaceButton(BasePushButton):
     def __init__(
         self,
         workspace_index: int,
@@ -255,7 +250,6 @@ class WorkspaceWidget(BaseWidget):
         label_workspace_active_btn: str,
         switch_workspace_animation: bool,
         animation: bool,
-        callbacks: dict,
         btn_shadow: dict = None,
         **kwargs,
     ):
@@ -282,7 +276,6 @@ class WorkspaceWidget(BaseWidget):
         self.mousePressEvent = None
 
         self.register_callback("update_desktops", self.on_update_desktops)
-        self.map_callbacks(callbacks)
 
         # Register this instance to the class-wide shared timer (one timer per widget class)
         if self not in WorkspaceWidget._instances:
@@ -392,7 +385,7 @@ class WorkspaceWidget(BaseWidget):
             base = "ws-btn"
             workspace_btn.setText(workspace_btn.default_label)
         if tokens:
-            base = f"{base} {' '.join(tokens)}"
+            base = base + " " + " ".join(tokens)
 
         workspace_btn.setProperty("class", base)
         workspace_btn.style().unpolish(workspace_btn)
@@ -410,6 +403,8 @@ class WorkspaceWidget(BaseWidget):
                 btn for btn in self._workspace_buttons if btn.workspace_index not in indices_to_remove
             ]
 
+        self._workspace_buttons.sort(key=lambda btn: btn.workspace_index)
+
         # Handle additions
         for desktop_index in current_indices:
             # Find existing button with matching workspace_index
@@ -418,18 +413,16 @@ class WorkspaceWidget(BaseWidget):
                 None,
             )
 
-            if existing_button:
-                self._update_button(existing_button)
-            else:
-                new_button = self._try_add_workspace_button(desktop_index)
-                self._update_button(new_button)
+            if not existing_button:
+                existing_button = self._try_add_workspace_button(desktop_index)
 
-            self._workspace_buttons.sort(key=lambda btn: btn.workspace_index)
+            self._update_button(existing_button)
             self._clear_container_layout()
 
             for workspace_btn in self._workspace_buttons:
                 self._widget_container_layout.addWidget(workspace_btn)
                 add_shadow(workspace_btn, self._btn_shadow)
+
             try:
                 QTimer.singleShot(
                     0,

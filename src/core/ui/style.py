@@ -4,7 +4,7 @@ Provides functions to build and apply styles to UI components based on the curre
 """
 
 from PyQt6.QtGui import QPalette
-from PyQt6.QtWidgets import QApplication, QPushButton
+from PyQt6.QtWidgets import QApplication
 
 from core.ui.color_tokens import BUTTON_COLOR_TOKENS, LINK_COLOR_TOKENS
 
@@ -70,19 +70,6 @@ def build_button_styles() -> StyleSheetMap:
     return {variant: _build_style(variant_colors) for variant, variant_colors in tokens.items()}
 
 
-def apply_button_style(
-    button: QPushButton,
-    variant: str = "primary",
-) -> str:
-    styles = build_button_styles()
-    try:
-        style_sheet = styles[variant]
-    except KeyError as exc:
-        raise ValueError(f"Unknown button style variant: {variant}") from exc
-    button.setStyleSheet(style_sheet)
-    return style_sheet
-
-
 def build_link_button_style() -> str:
     is_dark = is_dark_palette()
     theme_key = "dark" if is_dark else "light"
@@ -104,9 +91,3 @@ def build_link_button_style() -> str:
             padding: 6px 8px;            
         }}
         """.strip()
-
-
-def apply_link_button_style(button: QPushButton) -> str:
-    style_sheet = build_link_button_style()
-    button.setStyleSheet(style_sheet)
-    return style_sheet

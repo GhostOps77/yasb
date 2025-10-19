@@ -34,7 +34,6 @@ class LanguageWidget(BaseWidget):
         update_interval: int,
         class_name: str,
         animation: dict[str, str],
-        callbacks: dict[str, str],
         language_menu: dict[str, str] = None,
         **kwargs,
     ):
@@ -46,13 +45,12 @@ class LanguageWidget(BaseWidget):
         self._animation = animation
         self._menu_config = language_menu
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(self, self._label_content, self._label_alt_content)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("update_label", self._update_label)
         self.register_callback("toggle_menu", self._toggle_menu)
         self.register_callback("timer", self._update_label)
-        self.map_callbacks(callbacks)
 
         # Cache for available languages
         self._available_languages = None

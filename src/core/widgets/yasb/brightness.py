@@ -49,7 +49,6 @@ class BrightnessWidget(BaseWidget):
         auto_light_day_level: int,
         container_padding: dict[str, int],
         animation: dict[str, str],
-        callbacks: dict[str, str],
         progress_bar: dict = None,
     ):
         super().__init__(class_name="brightness-widget")
@@ -76,13 +75,12 @@ class BrightnessWidget(BaseWidget):
         self._progress_bar = progress_bar
         self.progress_widget = build_progress_widget(self, self._progress_bar)
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(self, self._label_content, self._label_alt_content)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("toggle_level_next", self._toggle_level_next)
         self.register_callback("toggle_level_prev", self._toggle_level_prev)
         self.register_callback("toggle_brightness_menu", self._toggle_brightness_menu)
-        self.map_callbacks(callbacks)
 
         self.current_brightness = None
         self.monitor_timer = QTimer()

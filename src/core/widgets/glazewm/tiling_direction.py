@@ -3,12 +3,10 @@ from typing import Any
 
 from PyQt6.QtCore import Qt, pyqtSlot
 from PyQt6.QtGui import QCursor
-from PyQt6.QtWidgets import QPushButton
 
-from core.utils.utilities import add_shadow
 from core.utils.widgets.glazewm.client import GlazewmClient, TilingDirection
 from core.validation.widgets.glazewm.tiling_direction import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BasePushButton, BaseWidget
 from settings import DEBUG
 
 logger = logging.getLogger("glazewm_tiling_direction")
@@ -37,13 +35,12 @@ class GlazewmTilingDirectionWidget(BaseWidget):
         self.btn_shadow = btn_shadow
         self.current_tiling_direction = TilingDirection.HORIZONTAL
 
-        self.tiling_direction_button = QPushButton()
-        self.tiling_direction_button.setProperty("class", "btn")
+        self.tiling_direction_button = BasePushButton(
+            class_name="btn", shadows=self.btn_shadow, on_click=self.toggle_tiling_direction
+        )
         self.tiling_direction_button.setVisible(False)
         self.tiling_direction_button.setLayout(self._widget_container_layout)
-        self.tiling_direction_button.clicked.connect(self.toggle_tiling_direction)  # type: ignore
 
-        add_shadow(self.tiling_direction_button, self.btn_shadow)
         self._widget_container_layout.addWidget(self.tiling_direction_button)
 
         self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))

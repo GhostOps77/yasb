@@ -46,7 +46,6 @@ from PyQt6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMenu,
-    QPushButton,
     QScrollArea,
     QVBoxLayout,
     QWidget,
@@ -54,8 +53,7 @@ from PyQt6.QtWidgets import (
 
 from core.config import HOME_CONFIGURATION_DIR
 from core.event_service import EventService
-from core.utils.utilities import add_shadow, build_widget_label
-from core.utils.widgets.animation_manager import AnimationManager
+from core.utils.utilities import build_widget_label
 from core.utils.widgets.launchpad.app_loader import AppListLoader, ShortcutResolver
 from core.utils.widgets.launchpad.icon_extractor import (
     IconExtractorUtil,
@@ -68,7 +66,7 @@ from core.utils.win32.utilities import (
 )
 from core.utils.win32.win32_accent import Blur
 from core.validation.widgets.yasb.launchpad import VALIDATION_SCHEMA
-from core.widgets.base import BaseFrame, BaseHBoxLayout, BaseVBoxLayout, BaseWidget
+from core.widgets.base import BaseFrame, BaseHBoxLayout, BaseLabel, BasePushButton, BaseVBoxLayout, BaseWidget
 
 _ICON_CACHE = {}
 
@@ -211,9 +209,7 @@ class AppDialog(QDialog):
         self.path_edit.editingFinished.connect(self._fetch_url_info)
         h1.addWidget(self.path_edit)
 
-        browse_btn = QPushButton("Browse")
-        browse_btn.setProperty("class", "button")
-        browse_btn.clicked.connect(self.browse_path)
+        browse_btn = BasePushButton("Browse", class_name="button", on_click=self.browse_path)
         h1.addWidget(browse_btn)
         content_layout.addLayout(h1)
 
@@ -229,9 +225,7 @@ class AppDialog(QDialog):
         self.icon_edit.setPalette(self.icon_edit_palette)
         h2.addWidget(self.icon_edit)
 
-        browse_icon_btn = QPushButton("Browse Icon")
-        browse_icon_btn.setProperty("class", "button")
-        browse_icon_btn.clicked.connect(self.browse_icon)
+        browse_icon_btn = BasePushButton("Browse Icon", class_name="button", on_click=self.browse_icon)
         h2.addWidget(browse_icon_btn)
         content_layout.addLayout(h2)
 
@@ -243,14 +237,14 @@ class AppDialog(QDialog):
         button_layout = QHBoxLayout(button_container)
         button_layout.setContentsMargins(0, 0, 0, 0)
 
-        cancel_btn = QPushButton("Cancel")
-        cancel_btn.setProperty("class", "button")
-        cancel_btn.clicked.connect(self.reject)
+        cancel_btn = BasePushButton("Cancel", class_name="button", on_click=self.reject)
         button_layout.addWidget(cancel_btn)
 
-        add_btn = QPushButton("Save" if self.is_edit_mode else "Add")
-        add_btn.setProperty("class", f"button {'save' if self.is_edit_mode else 'add'}")
-        add_btn.clicked.connect(self.accept)
+        add_btn = BasePushButton(
+            "Save" if self.is_edit_mode else "Add",
+            class_name=f"button {'save' if self.is_edit_mode else 'add'}",
+            n_click=self.accept,
+        )
         button_layout.addWidget(add_btn)
         layout.addWidget(button_container)
         self.setLayout(layout)
@@ -419,10 +413,7 @@ class AppDialog(QDialog):
 
     def browse_path(self):
         file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Select Application",
-            "",
-            "Executable or Shortcut (*.exe *.lnk);;All Files (*)",
+            self, "Select Application", "", "Executable or Shortcut (*.exe *.lnk);;All Files (*)"
         )
         if file_path:
             self.path_edit.setText(file_path)
@@ -463,6 +454,7 @@ class AppDialog(QDialog):
             entry_type = "url"
         else:
             entry_type = "app"
+
         return {
             "title": self.title_edit.text().strip(),
             "path": self.path_edit.text().strip(),
@@ -503,12 +495,7 @@ class SmoothScrollArea(QScrollArea):
         self.animation_duration = 400
 
     def keyPressEvent(self, event):
-        if event.key() in [
-            Qt.Key.Key_Left,
-            Qt.Key.Key_Right,
-            Qt.Key.Key_Up,
-            Qt.Key.Key_Down,
-        ]:
+        if event.key() in (Qt.Key.Key_Left, Qt.Key.Key_Right, Qt.Key.Key_Up, Qt.Key.Key_Down):
             event.ignore()
         else:
             super().keyPressEvent(event)
@@ -578,14 +565,11 @@ class LaunchpadWidget(BaseWidget):
         window_animation: dict[str, int],
         animation: dict[str, Any],
         shortcuts: dict[str, str],
-        container_padding: dict[str, int],
-        callbacks: dict[str, str],
-        label_shadow: dict = None,
-        container_shadow: dict = None,
         app_title_shadow: dict = None,
         app_icon_shadow: dict = None,
+        **kwargs,
     ):
-        super().__init__(class_name="launchpad-widget")
+        super().__init__(class_name="launchpad-widget", **kwargs)
 
         self._label = label
         self._search_placeholder = search_placeholder
@@ -595,9 +579,6 @@ class LaunchpadWidget(BaseWidget):
         self._window_animation = window_animation
         self._animation = animation
         self._shortcuts = shortcuts
-        self._padding = container_padding
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
         self._app_title_shadow = app_title_shadow
         self._app_icon_shadow = app_icon_shadow
         self._dpr = 1.0
@@ -621,27 +602,10 @@ class LaunchpadWidget(BaseWidget):
         self._grid_columns = 0
         self._num_drag_items = 0
 
-        # Create a container widget for layout
-        self._widget_container_layout = QHBoxLayout()
-        self._widget_container_layout.setSpacing(0)
-        self._widget_container_layout.setContentsMargins(
-            self._padding["left"],
-            self._padding["top"],
-            self._padding["right"],
-            self._padding["bottom"],
-        )
-        self._widget_container = QFrame()
-        self._widget_container.setLayout(self._widget_container_layout)
-        self._widget_container.setProperty("class", "widget-container")
-        add_shadow(self._widget_container, self._container_shadow)
-        self._widget_frame_layout.addWidget(self._widget_container)
-        build_widget_label(self, self._label, None, self._label_shadow)
+        build_widget_label(self, self._label)
 
         # Register callbacks
         self.register_callback("toggle_launchpad", self._toggle_launchpad)
-        self.callbacks["on_left"] = callbacks["on_left"]
-        self.callbacks["on_right"] = callbacks["on_right"]
-        self.callbacks["on_middle"] = callbacks["on_middle"]
 
         self._previous_hwnd = None
 
@@ -661,8 +625,7 @@ class LaunchpadWidget(BaseWidget):
             self._toggle_launchpad()
 
     def _toggle_launchpad(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         if self._launchpad_popup and self._launchpad_popup.isVisible():
             self._hide_launchpad()
         else:
@@ -708,26 +671,18 @@ class LaunchpadWidget(BaseWidget):
         app_icon._drag_start_position = None
         app_icon._drop_highlight = False
 
-        container_layout = QVBoxLayout(app_icon)
-        container_layout.setContentsMargins(0, 0, 0, 0)
-        container_layout.setSpacing(0)
+        container_layout = BaseVBoxLayout(app_icon)
         container_layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
 
-        icon_label = QLabel()
+        icon_label = BaseLabel("", class_name="icon", shadows=self._app_icon_shadow)
         icon_label.setFixedSize(self._app_icon_size, self._app_icon_size)
-        icon_label.setProperty("class", "icon")
-        add_shadow(icon_label, self._app_icon_shadow)
 
-        title_label = QLabel(app_data.get("title", "Unknown"))
-        title_label.setProperty("class", "title")
+        title_label = BaseLabel(app_data.get("title", "Unknown"), class_name="title", shadows=self._app_title_shadow)
         title_label.setWordWrap(True)
         title_label.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
-        add_shadow(title_label, self._app_title_shadow)
 
         container_layout.addWidget(
-            icon_label,
-            stretch=1,
-            alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter,
+            icon_label, stretch=1, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter
         )
         container_layout.addWidget(title_label, stretch=2, alignment=Qt.AlignmentFlag.AlignHCenter)
 
@@ -759,12 +714,7 @@ class LaunchpadWidget(BaseWidget):
             if event.button() == Qt.MouseButton.LeftButton:
                 app_icon._drag_start_position = event.pos()
             elif event.button() == Qt.MouseButton.RightButton:
-                self._show_context_menu(
-                    event.pos(),
-                    app_data=app_icon.app_data,
-                    parent_widget=app_icon,
-                    event=event,
-                )
+                self._show_context_menu(event.pos(), app_data=app_icon.app_data, parent_widget=app_icon, event=event)
 
         app_icon.mousePressEvent = mousePressEvent
 
@@ -1611,9 +1561,7 @@ class LaunchpadWidget(BaseWidget):
         button_container = BaseFrame(class_name="buttons-container")
         button_layout = BaseHBoxLayout(button_container)
 
-        ok_btn = QPushButton("OK")
-        ok_btn.setProperty("class", "button")
-        ok_btn.clicked.connect(dialog.accept)
+        ok_btn = BasePushButton("OK", class_name="button", on_click=dialog.accept)
         button_layout.addWidget(ok_btn)
 
         layout.addWidget(button_container)
@@ -1649,15 +1597,10 @@ class LaunchpadWidget(BaseWidget):
         button_container = BaseFrame(class_name="buttons-container")
         button_layout = BaseHBoxLayout(button_container)
 
-        cancel_btn = QPushButton("Cancel")
-        cancel_btn.setProperty("class", "button")
-        cancel_btn.clicked.connect(dialog.reject)
-        button_layout.addWidget(cancel_btn)
+        cancel_btn = BasePushButton("Cancel", class_name="button", on_click=dialog.reject)
+        delete_btn = BasePushButton("Delete", class_name="button delete", on_click=dialog.accept)
 
-        delete_btn = QPushButton("Delete")
-        delete_btn.setProperty("class", "button delete")
-        delete_btn.clicked.connect(dialog.accept)
-        button_layout.addWidget(delete_btn)
+        button_layout.addWidgets(cancel_btn, delete_btn)
 
         layout.addWidget(button_container)
         dialog.setLayout(layout)

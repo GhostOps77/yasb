@@ -31,7 +31,6 @@ class PowerPlanWidget(BaseWidget):
         class_name: str,
         update_interval: int,
         menu: dict,
-        callbacks: dict[str, str],
         **kwargs,
     ):
         super().__init__(class_name=f"power-plan-widget {class_name}", **kwargs)
@@ -42,18 +41,16 @@ class PowerPlanWidget(BaseWidget):
         self._label_alt_content = label_alt
         self._update_interval = update_interval
         self._menu = menu
-        self._callbacks = callbacks
         self._show_alt_label = False
 
         # Initialize power plans
         self._plans = []
         self._active_guid = None
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(self, self._label_content, self._label_alt_content)
 
         self.register_callback("toggle_menu", self._show_menu)
         self.register_callback("toggle_label", self._toggle_label)
-        self.map_callbacks(callbacks)
 
         if self not in PowerPlanWidget._instances:
             PowerPlanWidget._instances.append(self)

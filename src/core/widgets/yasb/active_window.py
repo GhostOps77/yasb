@@ -69,7 +69,6 @@ class ActiveWindowWidget(BaseWidget):
         animation: dict[str, str],
         max_length: int,
         max_length_ellipsis: str,
-        callbacks: dict[str, str],
         rewrite: list[dict] = None,
         **kwargs,
     ):
@@ -113,7 +112,6 @@ class ActiveWindowWidget(BaseWidget):
         self._widget_container_layout.addWidget(self._window_title_text)
 
         self.register_callback("toggle_label", self._toggle_title_text)
-        self.map_callbacks(callbacks)
 
         self.register_events_to_signal(
             self.foreground_change,

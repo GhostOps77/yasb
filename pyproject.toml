@@ -27,6 +27,7 @@ dependencies = [
     "watchdog",
     "pycaw",
     "pillow==11.1",
+    "beautifulsoup4",
     "icoextract",
     "qasync",
     "obs-websocket-py",

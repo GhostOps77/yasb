@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Generator, TypeGuard, cast, override
 
 import psutil
+from bs4 import BeautifulSoup
 from PyQt6 import sip
 from PyQt6.QtCore import (
     QEvent,
@@ -121,25 +122,26 @@ def iterate_label_as_parts(
 ) -> Generator[BaseLabel, None, None]:
     widget_container_layout: BaseBoxLayout = widget._widget_container_layout
 
-    label_parts = CAPTURE_SPAN_TAG_REGEX.split(content)
+    # label_parts = CAPTURE_SPAN_TAG_REGEX.split(content)
+    label_parts = BeautifulSoup(content, "html.parser").children
     widgets_len = len(labels)
     widgets_idx = 0
 
+    if class_name:
+        class_names_set = set(class_name.split())
+    else:
+        class_names_set = set()
+
     for part in label_parts:
-        part = part.strip()
-        if not part:
-            continue
+        is_icon = part.name == "span"
+        class_result = class_names_set | {"label"}
+        part_str_content = part.getText(strip=True)
 
-        is_icon = False
-        class_result = "label"
-        if class_name:
-            class_result += " " + class_name
-
-        if part.startswith("<span") and part.endswith("</span>"):
-            is_icon = True
-            icon_class_name = HTML_TAG_CLASS_ATTR_REGEX.search(part)
-            class_result += " " + (icon_class_name.group(2) if icon_class_name else "icon")
-            part = REPLACE_SPAN_TAG_REGEX.sub("", part).strip()
+        if is_icon:
+            if "class" in part and part["class"]:
+                class_result |= set(part["class"])
+            else:
+                class_result.add("icon")
 
         # while widgets_idx < widgets_len and not isinstance(labels[widgets_idx], QLabel):
         #     widgets_idx += 1
@@ -148,11 +150,11 @@ def iterate_label_as_parts(
             label = labels[widgets_idx]
             # if not isinstance(label, QLabel):
             #     continue
-            label.setText(part)
-            label.setProperty("class", class_result)
+            label.setProperty("class", " ".join(class_result))
+            label.setText(part_str_content)
             widgets_idx += 1
         else:
-            label = widget.init_label(part, class_name=class_result)
+            label = widget.init_label(part_str_content, class_name=" ".join(class_result))
             labels.append(label)
             widget_container_layout.addWidget(label)
 
@@ -184,10 +186,7 @@ def build_progress_widget(self, options: dict[str, Any]) -> None:
     if not options["enabled"]:
         return
 
-    from core.utils.widgets.circular_progress_bar import (
-        CircularProgressBar,
-        CircularProgressWidget,
-    )
+    from core.utils.widgets.circular_progress_bar import CircularProgressBar, CircularProgressWidget
 
     self.progress_data = CircularProgressBar(
         parent=self,

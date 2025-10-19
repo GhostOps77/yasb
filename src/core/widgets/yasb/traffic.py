@@ -1,7 +1,7 @@
 import logging
 
 from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtWidgets import QFrame, QPushButton, QWidget
+from PyQt6.QtWidgets import QFrame, QWidget
 
 from core.utils.tooltip import set_tooltip
 from core.utils.utilities import PopupWidget, build_widget_label, iterate_label_as_parts
@@ -9,7 +9,7 @@ from core.utils.widgets.animation_manager import AnimationManager
 from core.utils.widgets.traffic.connection_monitor import InternetChecker
 from core.utils.widgets.traffic.traffic_manager import TrafficDataManager
 from core.validation.widgets.yasb.traffic import VALIDATION_SCHEMA
-from core.widgets.base import BaseFrame, BaseHBoxLayout, BaseLabel, BaseVBoxLayout, BaseWidget
+from core.widgets.base import BaseFrame, BaseHBoxLayout, BaseLabel, BasePushButton, BaseVBoxLayout, BaseWidget
 from settings import DEBUG
 
 
@@ -34,11 +34,11 @@ class TrafficWidget(BaseWidget):
         speed_threshold: dict,
         speed_unit: str,
         animation: dict[str, str],
-        callbacks: dict[str, str],
         menu: dict,
+        callbacks: dict[str, str],
         **kwargs,
     ):
-        super().__init__(class_name=f"traffic-widget {class_name}", **kwargs)
+        super().__init__(class_name=f"traffic-widget {class_name}", callbacks=callbacks, **kwargs)
 
         self.interval = update_interval / 1000
         self._show_alt_label = False
@@ -87,7 +87,6 @@ class TrafficWidget(BaseWidget):
         self.register_callback("update_label", self._update_label)
         self.register_callback("toggle_menu", self._toggle_menu)
         self.register_callback("reset_data", self._reset_traffic_data)
-        self.map_callbacks(callbacks)
 
         if self._interface not in TrafficWidget._instances_by_interface:
             TrafficWidget._instances_by_interface[self._interface] = []
@@ -347,11 +346,8 @@ class TrafficWidget(BaseWidget):
 
         header_layout.addStretch()
 
-        reset_button = QPushButton("Reset All")
-        reset_button.setProperty("class", "reset-button")
+        reset_button = BasePushButton("Reset All", class_name="reset-button", on_click=self._reset_traffic_data)
         set_tooltip(reset_button, "Reset all traffic data")
-        reset_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        reset_button.clicked.connect(self._reset_traffic_data)
         header_layout.addWidget(reset_button)
 
         layout.addWidget(header_container)

@@ -36,7 +36,6 @@ class WallpapersWidget(BaseWidget):
     def __init__(
         self,
         label: str,
-        callbacks: dict,
         update_interval: int,
         change_automatically: bool,
         image_path: str,
@@ -70,7 +69,6 @@ class WallpapersWidget(BaseWidget):
 
         self.register_callback("change_background", self.change_background)
         self.register_callback("timer", self.change_background)
-        self.map_callbacks(callbacks)
 
         if self._change_automatically:
             self.start_timer()

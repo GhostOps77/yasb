@@ -452,13 +452,10 @@ class TaskbarWidget(BaseWidget):
         tooltip: bool,
         ignore_apps: dict[str, list[str]],
         hide_empty: bool,
-        container_padding: dict,
-        callbacks: dict[str, str],
-        label_shadow: dict = None,
-        container_shadow: dict = None,
         preview: dict | None = None,
+        **kwargs,
     ):
-        super().__init__(class_name="taskbar-widget")
+        super().__init__(class_name="taskbar-widget", **kwargs)
         self._dpi = None
         self._label_icon_size = icon_size
         self._animation = (
@@ -470,9 +467,6 @@ class TaskbarWidget(BaseWidget):
         self._show_only_visible = show_only_visible
         self._ignore_apps = ignore_apps
         self._hide_empty = hide_empty
-        self._padding = container_padding
-        self._label_shadow = label_shadow
-        self._container_shadow = container_shadow
         self._widget_monitor_handle = None
 
         self._preview_enabled = preview["enabled"]
@@ -483,9 +477,9 @@ class TaskbarWidget(BaseWidget):
 
         self._tooltip = tooltip if not self._preview_enabled else False
 
-        self._ignore_apps["classes"] = list({self._ignore_apps.get("classes", [])})
-        self._ignore_apps["processes"] = list({self._ignore_apps.get("processes", [])})
-        self._ignore_apps["titles"] = list({self._ignore_apps.get("titles", [])})
+        self._ignore_apps["classes"] = list(set(self._ignore_apps.get("classes", [])))
+        self._ignore_apps["processes"] = list(set(self._ignore_apps.get("processes", [])))
+        self._ignore_apps["titles"] = list(set(self._ignore_apps.get("titles", [])))
 
         self._icon_cache = {}
         self._hwnd_to_widget = {}
@@ -510,7 +504,6 @@ class TaskbarWidget(BaseWidget):
 
         self.register_callback("toggle_window", self._on_toggle_window)
         self.register_callback("close_app", self._on_close_app)
-        self.map_callbacks(callbacks)
 
         if QApplication.instance():
             QApplication.instance().aboutToQuit.connect(self._stop_events)

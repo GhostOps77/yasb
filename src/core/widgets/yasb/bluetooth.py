@@ -226,7 +226,6 @@ class BluetoothWidget(BaseWidget):
         icons: dict[str, str],
         device_aliases: list[dict[str, str]],
         animation: dict[str, str],
-        callbacks: dict[str, str],
         **kwargs,
     ):
         super().__init__(class_name=f"bluetooth-widget {class_name}", **kwargs)
@@ -253,10 +252,9 @@ class BluetoothWidget(BaseWidget):
         self.bluetooth_icon = None
         self.connected_devices = None
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(self, self._label_content, self._label_alt_content)
 
         self.register_callback("toggle_label", self._toggle_label)
-        self.map_callbacks(callbacks)
 
         self.current_status = None  # Store the current Bluetooth status
         self.bluetooth_thread = BluetoothThread(self.bt_api)

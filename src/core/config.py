@@ -53,8 +53,8 @@ def get_config_dir() -> str:
 
 
 def get_config_path() -> str:
-    if settings.DEBUG:
-        return DEFAULT_CONFIG_PATH
+    # if settings.DEBUG:
+    #     return DEFAULT_CONFIG_PATH
 
     if path.isdir(HOME_CONFIGURATION_DIR) and path.isfile(HOME_CONFIG_PATH):
         return HOME_CONFIG_PATH

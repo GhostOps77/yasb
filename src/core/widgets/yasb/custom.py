@@ -58,7 +58,6 @@ class CustomWidget(BaseWidget):
         exec_options: dict,
         animation: dict[str, str],
         class_name: str,
-        callbacks: dict[str, str],
         **kwargs,
     ):
         super().__init__(exec_options["run_interval"], class_name=f"custom-widget {class_name}", **kwargs)
@@ -78,7 +77,6 @@ class CustomWidget(BaseWidget):
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("exec_custom", self._exec_callback)
         self.register_callback("timer", self._exec_callback)
-        self.map_callbacks(callbacks)
 
         build_widget_label(self, self._label_content, self._label_alt_content)
 
@@ -128,7 +126,7 @@ class CustomWidget(BaseWidget):
         active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
         active_label_content = active_label_content.format(data=self._exec_data)
 
-        for _ in iterate_label_as_parts(active_widgets, active_label_content, layout=self._widget_container_layout):
+        for _ in iterate_label_as_parts(self, active_widgets, active_label_content):
             ...
 
         self.setVisible(bool(self._exec_data) or not self._hide_empty)

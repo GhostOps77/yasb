@@ -28,10 +28,8 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QMainWindow,
-    QPushButton,
     QScrollArea,
     QSizePolicy,
-    QVBoxLayout,
     QWidget,
 )
 
@@ -39,6 +37,7 @@ from core.config import get_stylesheet
 from core.event_service import EventService
 from core.utils.utilities import is_windows_10
 from core.utils.win32.win32_accent import Blur
+from core.widgets.base import BaseHBoxLayout, BasePushButton, BaseVBoxLayout
 
 
 class BaseStyledWidget(QWidget):
@@ -280,7 +279,7 @@ class ImageGallery(QMainWindow, BaseStyledWidget):
         self.setCentralWidget(central_widget)
         central_widget.setProperty("class", "wallpapers-gallery-window")
         self.setContentsMargins(0, 0, 0, 0)
-        layout = QVBoxLayout()
+        layout = BaseVBoxLayout()
         central_widget.setLayout(layout)
 
         # Set up the scroll area
@@ -296,9 +295,8 @@ class ImageGallery(QMainWindow, BaseStyledWidget):
         # Set up the image container
         self.image_container = QWidget()
         self.scroll_area.setWidget(self.image_container)
-        self.image_layout = QHBoxLayout()
+        self.image_layout = BaseHBoxLayout()
         self.image_container.setLayout(self.image_layout)
-        self.image_container.setContentsMargins(0, 0, 0, 0)
         self.image_container.setFixedWidth(
             int(self.image_width * self.images_per_page + self.image_spacing * (self.images_per_page - 1))
         )
@@ -308,21 +306,17 @@ class ImageGallery(QMainWindow, BaseStyledWidget):
             button_layout = QHBoxLayout()
             button_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-            self.prev_button = QPushButton("Prev")
-            self.prev_button.setProperty("class", "wallpapers-gallery-buttons")
-            self.prev_button.setCursor(Qt.CursorShape.PointingHandCursor)
-            self.prev_button.clicked.connect(self.load_prev_images)
+            self.prev_button = BasePushButton(
+                "Prev", class_name="wallpapers-gallery-buttons", on_click=self.load_prev_images
+            )
             button_layout.addWidget(self.prev_button)
 
-            self.next_button = QPushButton("Next")
-            self.next_button.setProperty("class", "wallpapers-gallery-buttons")
-            self.next_button.setCursor(Qt.CursorShape.PointingHandCursor)
-            self.next_button.clicked.connect(self.load_next_images)
+            self.next_button = BasePushButton(
+                "Next", class_name="wallpapers-gallery-buttons", on_click=self.load_next_images
+            )
             button_layout.addWidget(self.next_button)
 
             layout.addLayout(button_layout)
-            layout.setSpacing(0)
-            layout.setContentsMargins(0, 0, 0, 0)
 
         # Set up keyboard shortcuts
         central_widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -361,7 +355,6 @@ class ImageGallery(QMainWindow, BaseStyledWidget):
 
         self.image_layout.setSpacing(self.image_spacing)
         self.image_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.image_layout.setContentsMargins(0, 0, 0, 0)
 
         if self.focused_index is None and self.image_files:
             self.focused_index = self.current_index
@@ -516,9 +509,9 @@ class ImageGallery(QMainWindow, BaseStyledWidget):
     def fade_in_gallery(self, parent=None):
         """Show the gallery with a fade-in animation."""
         # Close any existing galleries
-        existing_galleries = [
+        existing_galleries = (
             widget for widget in QApplication.topLevelWidgets() if isinstance(widget, type(self)) and widget.isVisible()
-        ]
+        )
         for gallery in existing_galleries:
             gallery.fade_out_and_close_gallery()
 

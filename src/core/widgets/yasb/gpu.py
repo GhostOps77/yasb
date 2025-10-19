@@ -30,7 +30,6 @@ class GpuWidget(BaseWidget):
         histogram_num_columns: int,
         update_interval: int,
         animation: dict[str, str],
-        callbacks: dict[str, str],
         gpu_thresholds: dict[str, int],
         progress_bar: dict = None,
         hide_decimal: bool = False,
@@ -51,10 +50,9 @@ class GpuWidget(BaseWidget):
 
         self.progress_widget = build_progress_widget(self, self._progress_bar)
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(self, self._label_content, self._label_alt_content)
 
         self.register_callback("toggle_label", self._toggle_label)
-        self.map_callbacks(callbacks)
 
         # Add this instance to the shared instances list
         if self not in GpuWidget._instances:

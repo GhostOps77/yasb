@@ -63,7 +63,6 @@ class ActiveLayoutWidget(BaseWidget):
         layout_icons: dict[str, str],
         layout_menu: dict[str, str],
         hide_if_offline: bool,
-        callbacks: dict[str, str],
         animation: dict[str, str],
         **kwargs,
     ):
@@ -105,8 +104,6 @@ class ActiveLayoutWidget(BaseWidget):
         self.register_callback("toggle_maximize", lambda: self._komorebic.toggle("maximize"))
         self.register_callback("toggle_pause", lambda: self._komorebic.toggle("pause"))
         self.register_callback("toggle_layout_menu", self._toggle_layout_menu)
-
-        self.map_callbacks(callbacks)
 
         self._register_signals_and_events()
         self.hide()

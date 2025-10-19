@@ -56,7 +56,6 @@ class MediaWidget(BaseWidget):
         label_alt: str,
         class_name: str,
         hide_empty: bool,
-        callbacks: dict[str, str],
         max_field_size: dict[str, int],
         show_thumbnail: bool,
         controls_only: bool,
@@ -185,8 +184,6 @@ class MediaWidget(BaseWidget):
             self.register_callback("toggle_play_pause", self._toggle_play_pause)
             self.register_callback("toggle_label", self._toggle_label)
             self._label.show()
-
-        self.map_callbacks(callbacks)
 
         self._label_alt.hide()
         self._show_alt_label = False
@@ -1037,7 +1034,7 @@ class MediaWidget(BaseWidget):
 
     def _create_media_button(self, icon, action):
         if not self._controls_hide:
-            label = ClickableLabel(self, icon, class_name="btn disabled")
+            label = ClickableLabel(self, text=icon, class_name="btn disabled")
             label.data = action
             self._widget_container_layout.addWidget(label)
             return label

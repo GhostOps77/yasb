@@ -31,7 +31,6 @@ class WifiWidget(BaseWidget):
         get_exact_wifi_strength: bool,
         hide_if_ethernet: bool,
         animation: dict[str, str],
-        callbacks: dict[str, str],
         menu_config: dict[str, Any],
         **kwargs,
     ):
@@ -58,7 +57,6 @@ class WifiWidget(BaseWidget):
         self.register_callback("update_label", self._update_label)
         self.register_callback("toggle_menu", self._wifi_menu.show_menu)
         self.register_callback("timer", self._update_label)
-        self.map_callbacks(callbacks)
 
         self.start_timer()
 
@@ -143,14 +141,11 @@ class WifiWidget(BaseWidget):
             active_label_content = self._label_alt_content if self._show_alt_label else self._label_content
 
         active_label_content = active_label_content.format(
-            wifi_icon=wifi_icon,
-            wifi_name=wifi_name,
-            wifi_strength=wifi_strength,
-            ip_addr=ip_addr,
+            wifi_icon=wifi_icon, wifi_name=wifi_name, wifi_strength=wifi_strength, ip_addr=ip_addr
         )
 
         for _ in iterate_label_as_parts(
-            active_widgets, active_label_content, "label alt" if self._show_alt_label else "label"
+            self, active_widgets, active_label_content, "alt" if self._show_alt_label else ""
         ):
             pass
 

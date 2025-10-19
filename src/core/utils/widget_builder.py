@@ -96,7 +96,7 @@ class WidgetBuilder(QObject):
             )
         if self._invalid_widget_options:
             additional_details = "\n".join(
-                (f" - {widget_name}{validation_errors}")
+                f" - {widget_name}{validation_errors}"
                 for widget_name, validation_errors in self._invalid_widget_options.items()
             )
             logging.error(f"Failed to validate widget(s) due to invalid options {additional_details}")

@@ -18,7 +18,6 @@ from PyQt6.QtWidgets import (
     QLabel,
     QMainWindow,
     QMessageBox,
-    QPushButton,
     QScrollArea,
     QSizePolicy,
     QVBoxLayout,
@@ -26,7 +25,7 @@ from PyQt6.QtWidgets import (
 )
 from winmica import BackdropType, EnableMica, is_mica_supported
 
-from core.ui.style import apply_button_style
+from core.widgets.base import BaseLabel, BasePushButton, BaseVBoxLayout
 from settings import SCRIPT_PATH
 
 
@@ -87,8 +86,7 @@ class ThemeCard(QFrame):
         self.init_ui()
 
     def init_ui(self):
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 10, 10, 10)
+        layout = BaseVBoxLayout(self, paddings=10)
 
         # Create horizontal layout for name and buttons
         top_layout = QHBoxLayout()
@@ -100,26 +98,22 @@ class ThemeCard(QFrame):
         top_layout.addWidget(name)
 
         # Download button (right-aligned)
-        download_btn = QPushButton("Download")
-        apply_button_style(download_btn, "secondary")
-        download_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        download_btn = BasePushButton(
+            "Download",
+            style_variant="secondary",
+            on_click=lambda: QDesktopServices.openUrl(
+                QUrl(f"https://github.com/amnweb/yasb-themes/tree/main/themes/{self.theme_data['id']}")
+            ),
+        )
         download_btn.setFixedWidth(100)
 
         top_layout.addWidget(download_btn)
-        download_btn.clicked.connect(
-            lambda: QDesktopServices.openUrl(
-                QUrl(f"https://github.com/amnweb/yasb-themes/tree/main/themes/{self.theme_data['id']}")
-            )
-        )
 
         # Install button
-        install_btn = QPushButton("Install")
-        apply_button_style(install_btn, "primary")
-        install_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        install_btn = BasePushButton("Install", style_variant="primary", on_click=lambda: self.install_theme())
         install_btn.setFixedWidth(100)
 
         top_layout.addWidget(install_btn)
-        install_btn.clicked.connect(lambda: self.install_theme())
 
         # Add the horizontal layout to the main layout
         layout.addLayout(top_layout)
@@ -240,16 +234,10 @@ class ThemeCard(QFrame):
         QTimer.singleShot(1000, lambda: self._check_font_families(self.theme_data["id"]))
         # Add Yes and No buttons
         button_layout = QHBoxLayout()
-        self.yes_button = QPushButton("Install")
-        apply_button_style(self.yes_button, "primary")
-        self.yes_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.yes_button.clicked.connect(self.dialog.accept)
+        self.yes_button = BasePushButton("Install", style_variant="primary", on_click=self.dialog.accept)
 
-        no_button = QPushButton("Cancel")
-        apply_button_style(no_button, "secondary")
-        no_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        no_button = BasePushButton("Cancel", style_variant="secondary", on_click=self.dialog.reject)
         no_button.setObjectName("cancelButton")
-        no_button.clicked.connect(self.dialog.reject)
 
         button_layout.addStretch()
         button_layout.addWidget(self.yes_button)
@@ -305,12 +293,15 @@ class ThemeCard(QFrame):
         try:
             styles_url = f"https://raw.githubusercontent.com/amnweb/yasb-themes/main/themes/{theme_id}/styles.css"
             context = ssl.create_default_context(cafile=certifi.where())
+
             with urllib.request.urlopen(styles_url, context=context, timeout=5) as resp:
                 css = resp.read().decode("utf-8")
             css = self._extract_and_replace_variables(css)
+
             available_fonts = set(QFontDatabase.families())
             font_families = set()
             missing_fonts = set()
+
             matches = re.findall(r"font-family\s*:\s*([^;}\n]+)\s*[;}]+", css, flags=re.IGNORECASE)
             for match in matches:
                 fonts = [f.strip(" '\"\t\r\n") for f in match.split(",")]
@@ -413,13 +404,11 @@ class ThemeViewer(QMainWindow):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
 
-        layout = QVBoxLayout(central_widget)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout = BaseVBoxLayout(central_widget)
 
         # Add the placeholder label
-        self.placeholder_label = QLabel("<span style='font-weight:700'>YASB</span> Reborn")
+        self.placeholder_label = BaseLabel("<span style='font-weight:700'>YASB</span> Reborn")
         self.placeholder_label.setFont(QFont("Segoe UI", 64, QFont.Weight.Normal))
-        self.placeholder_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.placeholder_label)
 
         # Wrap backup_info and buttons in a row widget
@@ -443,15 +432,8 @@ class ThemeViewer(QMainWindow):
 
         # Horizontal layout for buttons
         self.backup_restore_layout = QHBoxLayout()
-        self.backup_button = QPushButton("Backup")
-        apply_button_style(self.backup_button, "secondary")
-        self.backup_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.backup_button.clicked.connect(self.backup_config)
-
-        self.restore_button = QPushButton("Restore")
-        apply_button_style(self.restore_button, "secondary")
-        self.restore_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.restore_button.clicked.connect(self.restore_config)
+        self.backup_button = BasePushButton("Backup", style_variant="secondary", on_click=self.backup_config)
+        self.restore_button = BasePushButton("Restore", style_variant="secondary", on_click=self.restore_config)
 
         self.backup_restore_layout.addWidget(self.backup_button)
         self.backup_restore_layout.addWidget(self.restore_button)
@@ -498,21 +480,19 @@ class ThemeViewer(QMainWindow):
         container = QWidget()
         if is_mica_supported():
             container.setStyleSheet("background-color: transparent;")
+
         self.container_layout = QVBoxLayout(container)
         self.container_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.scroll.setWidget(container)
 
         self.cards_container = QWidget()
-        self.cards_layout = QVBoxLayout(self.cards_container)
+        self.cards_layout = BaseVBoxLayout(self.cards_container, spacing=12)
         self.cards_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.cards_layout.setContentsMargins(0, 0, 0, 0)
-        self.cards_layout.setSpacing(12)
         self.container_layout.addWidget(self.cards_container)
 
-        self.load_more_button = QPushButton("Load more themes")
-        apply_button_style(self.load_more_button, "secondary")
-        self.load_more_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.load_more_button.clicked.connect(self.display_next_batch)
+        self.load_more_button = BasePushButton(
+            "Load more themes", style_variant="secondary", on_click=self.display_next_batch
+        )
         self.container_layout.addWidget(self.load_more_button, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.load_more_button.hide()
 
@@ -662,7 +642,7 @@ class ThemeViewer(QMainWindow):
 
             if backup_ok:
                 self.backup_button.setText("Backup complete!")
-                apply_button_style(self.backup_button, "primary")
+                self.backup_button.apply_style("primary")
             else:
                 QMessageBox.critical(self, "Error", "Backup failed: Backup file(s) missing.")
                 return

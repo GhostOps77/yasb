@@ -8,7 +8,6 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
     QDialog,
     QGraphicsOpacityEffect,
-    QHBoxLayout,
     QLabel,
     QPushButton,
     QSizePolicy,
@@ -17,9 +16,9 @@ from PyQt6.QtWidgets import (
 )
 from winmica import BackdropType, EnableMica, is_mica_supported
 
-from core.ui.style import apply_button_style, apply_link_button_style
 from core.ui.windows.update_dialog import ReleaseFetcher, ReleaseInfo, UpdateDialog
 from core.utils.utilities import is_valid_qobject
+from core.widgets.base import BaseHBoxLayout, BaseLabel, BasePushButton, BaseVBoxLayout
 from settings import (
     APP_NAME,
     BUILD_VERSION,
@@ -58,8 +57,8 @@ class AboutDialog(QDialog):
         self._release_fetcher: ReleaseFetcher | None = None
         self._update_dialog: UpdateDialog | None = None
 
-        self._link_buttons: list[QPushButton] = []
-        self._secondary_buttons: list[QPushButton] = []
+        self._link_buttons: list[BasePushButton] = []
+        self._secondary_buttons: list[BasePushButton] = []
 
         self._build_window()
         self._build_ui()
@@ -97,18 +96,15 @@ class AboutDialog(QDialog):
             icon_label.setPixmap(self._window_icon.pixmap(90, 90))
         layout.addWidget(icon_label)
 
-        title_label = QLabel("YASB Reborn")
-        title_label.setContentsMargins(0, 8, 0, 0)
+        title_label = BaseLabel("YASB Reborn")
         title_font = title_label.font()
         title_font.setPointSize(title_font.pointSize() + 10)
         title_font.setBold(True)
         title_label.setFont(title_font)
-        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title_label)
 
-        version_label = QLabel(f"Version {BUILD_VERSION} ({RELEASE_CHANNEL})")
+        version_label = BaseLabel(f"Version {BUILD_VERSION} ({RELEASE_CHANNEL})")
         version_label.setContentsMargins(0, 4, 0, 0)
-        version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         version_font = version_label.font()
         version_font.setPointSize(version_font.pointSize() + 1)
         version_label.setFont(version_font)
@@ -125,34 +121,27 @@ class AboutDialog(QDialog):
 
         links_container = QWidget()
         links_container.setContentsMargins(0, 32, 0, 0)
-        links_layout = QHBoxLayout(links_container)
-        links_layout.setContentsMargins(0, 0, 0, 0)
-        links_layout.setSpacing(0)
+        links_layout = BaseHBoxLayout(links_container)
         links_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         github_btn = self._create_link_button("GitHub", lambda: self._tray._open_in_browser(GITHUB_URL))
         themes_btn = self._create_link_button("Themes", lambda: self._tray._open_in_browser(GITHUB_THEME_URL))
         discord_btn = self._create_link_button(
-            "Discord",
-            lambda: self._tray._open_in_browser("https://discord.gg/qkeunvBFgX"),
+            "Discord", lambda: self._tray._open_in_browser("https://discord.gg/qkeunvBFgX")
         )
         links_layout.addWidget(github_btn)
         links_layout.addWidget(themes_btn)
         links_layout.addWidget(discord_btn)
         layout.addWidget(links_container)
 
-        button_layout = QVBoxLayout()
-        button_layout.setContentsMargins(0, 24, 0, 0)
-        button_layout.setSpacing(12)
+        button_layout = BaseVBoxLayout(spacing=12, paddings={"top": 24})
         button_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         self._support_project_button = self._create_action_button(
-            "Support the Project",
-            lambda: self._tray._open_in_browser("https://ko-fi.com/amnweb"),
+            "Support the Project", lambda: self._tray._open_in_browser("https://ko-fi.com/amnweb")
         )
         self._contributors_button = self._create_action_button(
-            "Contributors",
-            lambda: self._tray._open_in_browser(f"{GITHUB_URL}/graphs/contributors"),
+            "Contributors", lambda: self._tray._open_in_browser(f"{GITHUB_URL}/graphs/contributors")
         )
         self._open_config_button = self._create_action_button("Open Config", self._tray._open_config)
         self._update_button = self._create_action_button("Check for Updates", self._handle_update_clicked)
@@ -169,35 +158,28 @@ class AboutDialog(QDialog):
         layout.addLayout(button_layout)
 
     def _create_link_button(self, text: str, callback) -> QPushButton:
-        button = QPushButton(text)
+        button = BasePushButton(text, on_click=callback)
         button.setObjectName("yasbLinkButton")
-        button.setCursor(Qt.CursorShape.PointingHandCursor)
         button.setFlat(True)
         size_policy = button.sizePolicy()
         size_policy.setHorizontalPolicy(QSizePolicy.Policy.Fixed)
         size_policy.setVerticalPolicy(QSizePolicy.Policy.Fixed)
         button.setSizePolicy(size_policy)
-        button.clicked.connect(callback)
         self._link_buttons.append(button)
         return button
 
-    def _create_action_button(self, text: str, callback) -> QPushButton:
-        button = QPushButton(text)
-        button.setCursor(Qt.CursorShape.PointingHandCursor)
-        button.clicked.connect(callback)
+    def _create_action_button(self, text: str, callback) -> BasePushButton:
+        button = BasePushButton(text, on_click=callback)
         self._secondary_buttons.append(button)
         return button
 
     def _apply_palette(self) -> None:
         for button in self._link_buttons:
-            apply_link_button_style(button)
+            button.apply_link_button_style()
 
-        for button in (
-            self._support_project_button,
-            self._contributors_button,
-            self._open_config_button,
-        ):
-            apply_button_style(button, "secondary")
+        self._support_project_button.apply_style("secondary")
+        self._contributors_button.apply_style("secondary")
+        self._open_config_button.apply_style("secondary")
 
         self._refresh_update_button_style()
 
@@ -206,7 +188,7 @@ class AboutDialog(QDialog):
             return
         state = self._update_button.property("updateState") or "idle"
         variant = "primary" if state == "available" else "secondary"
-        apply_button_style(self._update_button, variant)
+        self._update_button.apply_style(variant)
         self._update_button.style().unpolish(self._update_button)
         self._update_button.style().polish(self._update_button)
 

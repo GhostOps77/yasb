@@ -2,12 +2,9 @@ import logging
 import os
 
 from PyQt6.QtCore import QPropertyAnimation, QRectF, Qt, QTimer, pyqtProperty
-from PyQt6.QtGui import QColor, QCursor, QPainter, QPen
+from PyQt6.QtGui import QColor, QPainter, QPen
 from PyQt6.QtWidgets import (
-    QHBoxLayout,
     QLabel,
-    QPushButton,
-    QVBoxLayout,
     QWidget,
 )
 
@@ -19,7 +16,7 @@ from core.utils.utilities import (
     iterate_label_as_parts,
 )
 from core.validation.widgets.yasb.pomodoro import VALIDATION_SCHEMA
-from core.widgets.base import BaseHBoxLayout, BaseLabel, BaseVBoxLayout, BaseWidget
+from core.widgets.base import BaseHBoxLayout, BaseLabel, BasePushButton, BaseVBoxLayout, BaseWidget
 from settings import SCRIPT_PATH
 
 
@@ -56,7 +53,6 @@ class PomodoroWidget(BaseWidget):
         hide_on_break: bool,
         icons: dict,
         animation: dict,
-        callbacks: dict,
         menu: dict,
         progress_bar: dict = None,
         **kwargs,
@@ -90,13 +86,12 @@ class PomodoroWidget(BaseWidget):
         if PomodoroWidget._shared_state["remaining_time"] is None:
             PomodoroWidget._shared_state["remaining_time"] = self._work_duration
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(self, self._label_content, self._label_alt_content)
 
         self.register_callback("toggle_timer", self._toggle_timer)
         self.register_callback("reset_timer", self._reset_timer)
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("toggle_menu", self._toggle_menu)
-        self.map_callbacks(callbacks)
 
         # Start shared timer if not already running
         if PomodoroWidget._shared_timer is None:
@@ -459,29 +454,23 @@ class PomodoroWidget(BaseWidget):
 
         # Control buttons
         button_widget = QWidget()
-        button_layout = QHBoxLayout()
+        button_layout = BaseHBoxLayout()
         button_widget.setLayout(button_layout)
 
         # Start/Pause button
-        self._toggle_button = QPushButton("Pause" if self._is_running else "Start")
-        self._toggle_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self._toggle_button.setProperty("class", "button " + ("pause" if self._is_running else "start"))
-        self._toggle_button.clicked.connect(self._toggle_timer)
-        button_layout.addWidget(self._toggle_button)
+        self._toggle_button = BasePushButton(
+            "Pause" if self._is_running else "Start",
+            class_name="button " + ("pause" if self._is_running else "start"),
+            on_click=self._toggle_timer,
+        )
 
         # Reset button
-        reset_button = QPushButton("Reset")
-        reset_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        reset_button.setProperty("class", "button reset")
-        reset_button.clicked.connect(self._reset_timer)
-        button_layout.addWidget(reset_button)
+        reset_button = BasePushButton("Reset", class_name="button reset", on_click=self._reset_timer)
 
         # Skip button (to next phase)
-        skip_button = QPushButton("Skip")
-        skip_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        skip_button.setProperty("class", "button skip")
-        skip_button.clicked.connect(self._skip_to_next_phase)
-        button_layout.addWidget(skip_button)
+        skip_button = BasePushButton("Skip", class_name="button skip", on_click=self._skip_to_next_phase)
+
+        button_layout.addWidgets(self._toggle_button, reset_button, skip_button)
 
         layout.addWidget(button_widget)
 
@@ -550,13 +539,10 @@ class CircularProgressWidget(QWidget):
 
         self._is_break = False  # Default to work mode
 
-        self._layout = QVBoxLayout(self)
-        self._layout.setContentsMargins(0, 0, 0, 0)
+        self._layout = BaseVBoxLayout(self)
         self._layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self._status_label = QLabel()
-        self._status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._status_label.setProperty("class", "status")
+        self._status_label = BaseLabel("", class_name="status")
         self._layout.addWidget(self._status_label)
 
         self._animation = QPropertyAnimation(self, b"animationValue")

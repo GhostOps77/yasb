@@ -395,9 +395,9 @@ class CavaWidget(BaseWidget):
         hide_empty: bool,
         bar_type: str,
         edge_fade: int | list[int],
-        callbacks: dict[str, str],
+        **kwargs,
     ):
-        super().__init__(class_name=f"cava-widget {class_name}")
+        super().__init__(class_name=f"cava-widget {class_name}", **kwargs)
 
         # Widget configuration
         self._height = bar_height
@@ -453,7 +453,6 @@ class CavaWidget(BaseWidget):
         self._widget_container_layout.addWidget(self._bar_frame)
 
         self.register_callback("reload_cava", self._reload_cava)
-        self.map_callbacks(callbacks)
 
         # Connect signal and start audio processing
         self.samplesUpdated.connect(self.on_samples_updated)

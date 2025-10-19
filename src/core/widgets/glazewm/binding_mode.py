@@ -31,7 +31,6 @@ class GlazewmBindingModeWidget(BaseWidget):
         icons: dict[str, str],
         binding_modes_to_cycle_through: list[str],
         animation: dict[str, str],
-        callbacks: dict[str, str],
         **kwargs,
     ):
         super().__init__(class_name="glazewm-binding-mode", **kwargs)
@@ -46,7 +45,7 @@ class GlazewmBindingModeWidget(BaseWidget):
         self._current_binding_mode_index = 0
         self._animation = animation
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(self, self._label_content, self._label_alt_content)
 
         self.glazewm_client = GlazewmClient(glazewm_server_uri, ["sub -e binding_modes_changed", "query binding-modes"])
         self.glazewm_client.glazewm_connection_status.connect(self._update_connection_status)
@@ -57,7 +56,6 @@ class GlazewmBindingModeWidget(BaseWidget):
         self.register_callback("disable_binding_mode", self._disable_binding_mode)
         self.register_callback("next_binding_mode", lambda: self._cycle_through_binding_modes(1))
         self.register_callback("prev_binding_mode", lambda: self._cycle_through_binding_modes(-1))
-        self.map_callbacks(callbacks)
 
         self.hide()
 

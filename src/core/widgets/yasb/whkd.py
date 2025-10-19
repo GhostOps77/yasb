@@ -18,7 +18,7 @@ from PyQt6.QtWidgets import (
 from core.utils.alert_dialog import raise_info_alert
 from core.utils.utilities import build_widget_label
 from core.validation.widgets.yasb.whkd import VALIDATION_SCHEMA
-from core.widgets.base import BaseHBoxLayout, BaseWidget
+from core.widgets.base import BaseHBoxLayout, BasePushButton, BaseWidget
 from settings import SCRIPT_PATH
 
 
@@ -107,9 +107,9 @@ class KeybindsDialog(QDialog):
         self.scroll_area.setWidget(self.container)
 
         # Edit config file button
-        self.btn_open = QPushButton("Edit Config File")
-        self.btn_open.setProperty("class", "edit-config-button")
-        self.btn_open.clicked.connect(lambda: os.startfile(self.file_path))
+        self.btn_open = BasePushButton(
+            "Edit Config File", class_name="edit-config-button", on_click=lambda: os.startfile(self.file_path)
+        )
         self.main_layout.addWidget(self.btn_open)
 
         self.update_display()
@@ -173,7 +173,6 @@ class KeybindsDialog(QDialog):
                 # Render header
                 self.header = QLabel(command)
                 self.header.setProperty("class", "keybind-header")
-
                 self.container_layout.addWidget(self.header)
                 continue
 
@@ -259,11 +258,10 @@ class WhkdWidget(BaseWidget):
         special_keys = special_keys or []
         self._special_keys = {item["key"]: item["key_replace"] for item in special_keys}
 
-        build_widget_label(self, self._label_content, None, self._label_shadow)
+        build_widget_label(self, self._label_content)
 
         self.register_callback("open_popup", self._open_popup)
-        callbacks = callbacks or {"on_left": "open_popup"}
-        self.map_callbacks(callbacks)
+        self._callbacks = {"on_left": "open_popup"} | callbacks
 
     def _open_popup(self):
         self._animate()

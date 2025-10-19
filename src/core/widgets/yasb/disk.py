@@ -47,7 +47,6 @@ class DiskWidget(BaseWidget):
         update_interval: int,
         group_label: dict[str, str],
         animation: dict[str, str],
-        callbacks: dict[str, str],
         disk_thresholds: dict[str, int],
         label_shadow: dict = None,
         progress_bar: dict = None,
@@ -68,13 +67,12 @@ class DiskWidget(BaseWidget):
 
         self.progress_widget = build_progress_widget(self, self._progress_bar)
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(self, self._label_content, self._label_alt_content)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("toggle_group", self._toggle_group)
         self.register_callback("update_label", self._update_label)
         self.register_callback("timer", self._update_label)
-        self.map_callbacks(callbacks)
 
         self.start_timer()
 

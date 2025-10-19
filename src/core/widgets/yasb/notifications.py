@@ -29,7 +29,6 @@ class NotificationsWidget(BaseWidget):
         tooltip: bool,
         icons: dict,
         animation: dict[str, str],
-        callbacks: dict[str, str],
         **kwargs,
     ):
         super().__init__(class_name=f"notification-widget {class_name}", **kwargs)
@@ -42,14 +41,12 @@ class NotificationsWidget(BaseWidget):
         self._tooltip = tooltip
         self._icons = icons
         self._animation = animation
-        self._callbacks = callbacks
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(self, self._label_content, self._label_alt_content)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("toggle_notification", self._toggle_notification)
         self.register_callback("clear_notifications", self._clear_notifications)
-        self.map_callbacks(callbacks)
 
         # Register the WindowsNotificationUpdate event
         self.event_service = EventService()

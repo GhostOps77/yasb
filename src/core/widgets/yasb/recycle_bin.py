@@ -17,7 +17,6 @@ class RecycleBinWidget(BaseWidget):
         icons: dict[str, str],
         tooltip: bool,
         animation: dict[str, str],
-        callbacks: dict[str, str],
         **kwargs,
     ):
         super().__init__(class_name=f"recycle-bin-widget {class_name}", **kwargs)
@@ -37,12 +36,11 @@ class RecycleBinWidget(BaseWidget):
         # Connect to the monitor's signal
         self.monitor.bin_updated.connect(self._on_bin_update)
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(self, self._label_content, self._label_alt_content)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("empty_bin", self._empty_bin)
         self.register_callback("open_bin", self._open_bin)
-        self.map_callbacks(callbacks)
 
         # Get initial bin info
         self._bin_info = self.monitor.get_recycle_bin_info()

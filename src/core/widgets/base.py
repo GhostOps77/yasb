@@ -1,12 +1,13 @@
 import logging
 import shlex
 import subprocess
-from typing import Callable, Iterable, TypedDict, cast
+from typing import Callable, Sequence, TypedDict, cast
 
 from PyQt6.QtCore import Qt, QThread, QTimer
 from PyQt6.QtGui import QMouseEvent
-from PyQt6.QtWidgets import QBoxLayout, QFrame, QHBoxLayout, QLabel, QStyle, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QBoxLayout, QFrame, QHBoxLayout, QLabel, QPushButton, QStyle, QVBoxLayout, QWidget
 
+from core.ui.style import build_button_styles, build_link_button_style
 from core.utils.widgets.animation_manager import AnimationManager
 from core.utils.win32.system_function import function_map
 
@@ -18,15 +19,14 @@ class PaddingsDict(TypedDict):
     bottom: int
 
 
-type Padding = PaddingsDict | Iterable[int] | int | float
+type Padding = PaddingsDict | Sequence[int] | int | float
 
 
-class BaseFrame(QFrame):
+class BaseFrameMixin:
     def __init__(self, *args, class_name: str = "", shadows: dict = None, **kwargs):
         super().__init__(*args, **kwargs)
-
         if shadows is not None:
-            self.add_shadows(self, shadows)
+            self.add_shadows(shadows)
         self.setProperty("class", class_name)
         self.setContentsMargins(0, 0, 0, 0)
 
@@ -36,16 +36,52 @@ class BaseFrame(QFrame):
         add_shadow(self, shadows)
 
 
-class BaseLabel(BaseFrame, QLabel):
+class BaseFrame(BaseFrameMixin, QFrame):
     def __init__(self, *args, class_name: str = "", shadows: dict = None, **kwargs):
-        super().__init__(class_name=class_name, shadows=shadows, **kwargs)
-        QLabel.__init__(self, *args)
+        super().__init__(*args, class_name=class_name, shadows=shadows, **kwargs)
+
+
+class BasePushButton(BaseFrameMixin, QPushButton):
+    def __init__(
+        self,
+        *args,
+        on_click: Callable[[], None] | None = None,
+        style_variant: str | None = None,
+        class_name: str = "",
+        shadows: dict = None,
+        **kwargs,
+    ):
+        super().__init__(*args, class_name=class_name, shadows=shadows, **kwargs)
+
+        if on_click is not None:
+            self.clicked.connect(on_click)
+        if style_variant is not None:
+            self.apply_style(style_variant)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+
+    def apply_style(self, variant: str = "primary") -> str:
+        styles = build_button_styles()
+        try:
+            style_sheet = styles[variant]
+        except KeyError as exc:
+            raise ValueError(f"Unknown button style variant: {variant}") from exc
+        self.setStyleSheet(style_sheet)
+        return style_sheet
+
+    def apply_link_button_style(self) -> str:
+        style_sheet = build_link_button_style()
+        self.setStyleSheet(style_sheet)
+        return style_sheet
+
+
+class BaseLabel(BaseFrameMixin, QLabel):
+    def __init__(self, *args, class_name: str = "", shadows: dict = None, **kwargs):
+        super().__init__(*args, class_name=class_name, shadows=shadows, **kwargs)
 
         self.is_icon: bool = False
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setTextFormat(Qt.TextFormat.PlainText)
-        self.setContentsMargins(0, 0, 0, 0)
 
     def add_class(self, class_name: str):
         old_class_name = self.property("class").strip()
@@ -59,7 +95,7 @@ class BaseLabel(BaseFrame, QLabel):
 
 
 class BaseYasbWidgetLabel(BaseLabel):
-    def __init__(self, text, *args, class_name="", shadows=None, **kwargs):
+    def __init__(self, text, *args, class_name: str = "", shadows: dict | None = None, **kwargs):
         super().__init__(text, *args, class_name=class_name, shadows=shadows, **kwargs)
         self.setProperty("class", "label " + self.property("class"))
 
@@ -89,14 +125,14 @@ class BaseBoxLayout(QBoxLayout):
         if paddings is None:
             paddings = {}
 
-        elif isinstance(paddings, Iterable):
-            assert len(paddings) == 4
+        elif isinstance(paddings, Sequence):
+            assert len(paddings) == 4, "Length of padding list is not equal to 4."
             paddings = dict(zip(("top", "right", "bottom", "left"), paddings))
 
         elif isinstance(paddings, (int, float)):
             paddings = dict.fromkeys(("top", "right", "bottom", "left"), paddings)
 
-        paddings = cast(Padding, paddings)
+        paddings = cast(PaddingsDict, paddings)
 
         self.setContentsMargins(
             paddings.get("left", 0), paddings.get("top", 0), paddings.get("right", 0), paddings.get("bottom", 0)
@@ -108,10 +144,14 @@ class BaseBoxLayout(QBoxLayout):
             self.addWidget(widget)
 
 
-class BaseHBoxLayout(BaseBoxLayout, QHBoxLayout): ...
+class BaseHBoxLayout(BaseBoxLayout, QHBoxLayout):
+    def __init__(self, *args, **kwargs):
+        super().__init__(QBoxLayout.Direction.LeftToRight, *args, **kwargs)
 
 
-class BaseVBoxLayout(BaseBoxLayout, QVBoxLayout): ...
+class BaseVBoxLayout(BaseBoxLayout, QVBoxLayout):
+    def __init__(self, *args, **kwargs):
+        super().__init__(QBoxLayout.Direction.TopToBottom, *args, **kwargs)
 
 
 class BaseWidget(QWidget):
@@ -134,6 +174,17 @@ class BaseWidget(QWidget):
         self.bar_id = None
         self.monitor_hwnd = None
         self._label_shadow = label_shadow
+
+        if callbacks is not None:
+            self._callbacks = {
+                "on_left": "on_left",
+                "on_middle": "on_middle",
+                "on_right": "on_right",
+                "timer": "timer",
+                "default": "default",
+                "do_nothing": "do_nothing",
+                "exec": "exec",
+            } | callbacks
 
         self.timer = QTimer(self)
         self.mousePressEvent = self._handle_mouse_events
@@ -183,7 +234,7 @@ class BaseWidget(QWidget):
         # Add the widget frame to the current widget.
         self.widget_layout.addWidget(self._widget_frame)
 
-        self.callbacks = {
+        self._registered_callbacks = {
             "on_left": self._cb_do_nothing,
             "on_middle": self._cb_do_nothing,
             "on_right": self._cb_do_nothing,
@@ -193,19 +244,12 @@ class BaseWidget(QWidget):
             "exec": self._cb_execute_subprocess,
         }
 
-        if callbacks is not None:
-            self.map_callbacks(callbacks)
-
     def init_label(self, text: str, *args, class_name: str = "", **kwargs):
         shadows = getattr(self, "_label_shadow", None)
         return self.label_cls(text, *args, class_name=class_name, shadows=shadows, **kwargs)
 
     def register_callback(self, callback_name: str, fn: Callable[[], None]):
-        self.callbacks[callback_name] = fn
-
-    def map_callbacks(self, callbacks: dict[str, Callable[[], None]]):
-        for cb_label, cb_func in callbacks.items():
-            self.register_callback(cb_label, self.callbacks[cb_func])
+        self._registered_callbacks[callback_name] = fn
 
     def start_timer(self):
         if self.timer_interval and self.timer_interval > 0:
@@ -216,35 +260,30 @@ class BaseWidget(QWidget):
     def _handle_mouse_events(self, event: QMouseEvent):
         event_btn = event.button()
         if event_btn == Qt.MouseButton.LeftButton:
-            self._run_callback(self.callbacks["on_left"])
+            self._run_callback(self._callbacks["on_left"])
 
         elif event_btn == Qt.MouseButton.MiddleButton:
-            self._run_callback(self.callbacks["on_middle"])
+            self._run_callback(self._callbacks["on_middle"])
 
         elif event_btn == Qt.MouseButton.RightButton:
-            self._run_callback(self.callbacks["on_right"])
+            self._run_callback(self._callbacks["on_right"])
 
     def _animate(self):
         if hasattr(self, "_animation") and self._animation["enabled"]:
             AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
 
-    def _run_callback(self, callback_str: str | list):
-        if " " in callback_str:
-            callback_type, *callback_args = shlex.split(callback_str)
-        else:
-            callback_type = callback_str
-            callback_args = []
-
-        is_valid_callback = callback_type in self.callbacks.keys()
-        self.callback = self.callbacks[callback_type if is_valid_callback else "default"]
+    def _run_callback(self, callback_str: str):
+        callback_type, *callback_args = shlex.split(callback_str)
+        is_valid_callback = callback_type in self._registered_callbacks
+        callback = self._registered_callbacks[callback_type if is_valid_callback else "default"]
 
         try:
-            self.callbacks[callback_type](*callback_args)
+            callback(*callback_args)
         except Exception:
             logging.exception(f"Failed to execute callback of type '{callback_type}' with args: {callback_args}")
 
     def _timer_callback(self):
-        self._run_callback(self.callbacks["timer"])
+        self._run_callback(self._callbacks["timer"])
 
     def _cb_execute_subprocess(self, cmd: str, *cmd_args: list[str]):
         if cmd in function_map:

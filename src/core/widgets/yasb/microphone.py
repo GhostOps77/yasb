@@ -62,7 +62,6 @@ class MicrophoneWidget(BaseWidget):
         icons: dict[str, str],
         mic_menu: dict[str, str],
         animation: dict[str, str],
-        callbacks: dict[str, str],
         progress_bar: dict = None,
         **kwargs,
     ):
@@ -84,12 +83,11 @@ class MicrophoneWidget(BaseWidget):
 
         self.progress_widget = build_progress_widget(self, self._progress_bar)
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(self, self._label_content, self._label_alt_content)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("toggle_mute", self.toggle_mute)
         self.register_callback("toggle_mic_menu", self.show_menu)
-        self.map_callbacks(callbacks)
 
         self.cb = AudioEndpointChangeCallback(self)
         self.enumerator = AudioUtilities.GetDeviceEnumerator()

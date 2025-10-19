@@ -159,7 +159,6 @@ class ClockWidget(BaseWidget):
         calendar: dict[str, str],
         timezones: list[str],
         animation: dict[str, str],
-        callbacks: dict[str, str],
         icons: dict[str, str] = None,
         **kwargs,
     ):
@@ -179,9 +178,9 @@ class ClockWidget(BaseWidget):
         self._country_code = self._calendar["country_code"] or self.get_country_code()
         self._subdivision = self._calendar.get("subdivision")
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(self, self._label_content, self._label_alt_content)
 
-        self.callbacks.update(
+        self._registered_callbacks.update(
             {
                 "toggle_calendar": self._toggle_calendar,
                 "toggle_label": self._toggle_label,
@@ -190,8 +189,6 @@ class ClockWidget(BaseWidget):
                 "timer": self._update_label,
             }
         )
-
-        self.map_callbacks(callbacks)
 
         self._show_alt_label = False
 

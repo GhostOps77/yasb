@@ -18,19 +18,16 @@ from PyQt6.QtCore import QEvent, Qt, QThread, QTimer, pyqtSignal
 from PyQt6.QtGui import QIcon, QTextCursor
 from PyQt6.QtWidgets import (
     QDialog,
-    QHBoxLayout,
     QLabel,
     QProgressBar,
-    QPushButton,
     QSizePolicy,
     QTextBrowser,
-    QVBoxLayout,
 )
 from winmica import BackdropType, EnableMica, is_mica_supported
 
-from core.ui.style import apply_button_style
 from core.utils.controller import exit_application
 from core.utils.utilities import is_process_running, is_valid_qobject
+from core.widgets.base import BaseHBoxLayout, BasePushButton, BaseVBoxLayout
 from settings import APP_NAME, SCRIPT_PATH
 
 GITHUB_LATEST_RELEASE_URL = "https://api.github.com/repos/amnweb/yasb/releases/latest"
@@ -245,9 +242,7 @@ class UpdateDialog(QDialog):
         self.open()
 
     def _build_ui(self) -> None:
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(18, 18, 18, 18)
-        layout.setSpacing(12)
+        layout = BaseVBoxLayout(self, spacing=12, paddings=18)
 
         self.changelog_view = QTextBrowser(self)
         self.changelog_view.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
@@ -288,9 +283,7 @@ class UpdateDialog(QDialog):
         self.progress_bar.setValue(0)
         layout.addWidget(self.progress_bar)
 
-        button_row = QHBoxLayout()
-        button_row.setSpacing(12)
-        button_row.setContentsMargins(0, 0, 0, 0)
+        button_row = BaseHBoxLayout(spacing=12)
 
         self.status_label = QLabel("", self)
         self.status_label.setVisible(False)
@@ -299,16 +292,12 @@ class UpdateDialog(QDialog):
         button_row.addWidget(self.status_label)
         button_row.addStretch(1)
 
-        self.download_button = QPushButton(_DOWNLOAD_READY_TEXT, self)
+        self.download_button = BasePushButton(_DOWNLOAD_READY_TEXT, self, on_click=self._start_download)
         self.download_button.setVisible(True)
         self.download_button.setEnabled(False)
-        self.download_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.download_button.clicked.connect(self._start_download)
         button_row.addWidget(self.download_button)
 
-        self.close_button = QPushButton(_CLOSE_BUTTON_TEXT, self)
-        self.close_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.close_button.clicked.connect(self._on_close_button_clicked)
+        self.close_button = BasePushButton(_CLOSE_BUTTON_TEXT, self, on_click=self._on_close_button_clicked)
         button_row.addWidget(self.close_button)
 
         layout.addLayout(button_row)
@@ -316,8 +305,9 @@ class UpdateDialog(QDialog):
     def _apply_button_styles(self) -> None:
         if not hasattr(self, "download_button") or not hasattr(self, "close_button"):
             return
-        apply_button_style(self.download_button, "primary")
-        apply_button_style(self.close_button, "secondary")
+
+        self.download_button.apply_style("primary")
+        self.close_button.apply_style("secondary")
 
     def _set_status(self, text: str = "", *, error: bool = False) -> None:
         if text:
@@ -333,11 +323,14 @@ class UpdateDialog(QDialog):
         self.download_button.setText(_DOWNLOAD_READY_TEXT)
         self.download_button.setDefault(enabled)
         self.download_button.setVisible(True)
+
         self.progress_bar.setVisible(False)
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
+
         self._set_close_button_state(is_cancel=False)
         self.close_button.setEnabled(True)
+
         self._set_status(status, error=error)
         self._cancel_requested = False
 
@@ -448,10 +441,7 @@ class UpdateDialog(QDialog):
         exit_application("Exiting Application to start installer...")
         for proc in ["yasb.exe", "yasbc.exe", "yasb_themes.exe"]:
             if is_process_running(proc):
-                subprocess.run(
-                    ["taskkill", "/f", "/im", proc],
-                    creationflags=subprocess.CREATE_NO_WINDOW,
-                )
+                subprocess.run(["taskkill", "/f", "/im", proc], creationflags=subprocess.CREATE_NO_WINDOW)
 
     def _on_download_error(self, message: str) -> None:
         self._download_worker = None

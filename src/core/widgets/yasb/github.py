@@ -114,7 +114,6 @@ class GithubWidget(BaseWidget):
         icons: dict[str, str],
         update_interval: int,
         animation: dict[str, str],
-        callbacks: dict[str, str] | None = None,
         **kwargs,
     ):
         super().__init__((update_interval * 1000), class_name="github-widget", **kwargs)
@@ -146,8 +145,6 @@ class GithubWidget(BaseWidget):
         self.register_callback("timer", self.get_github_data)
         self.register_callback("on_left", self._toggle_menu)
         self.register_callback("on_right", self._toggle_label)
-
-        self.map_callbacks(callbacks)
 
         self.start_timer()
 

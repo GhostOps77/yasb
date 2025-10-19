@@ -37,7 +37,6 @@ class WeatherWidget(BaseWidget):
         units: str,
         show_alerts: bool,
         weather_card: dict[str, str],
-        callbacks: dict[str, str],
         tooltip: bool,
         icons: dict[str, str],
         animation: dict[str, str],
@@ -89,7 +88,6 @@ class WeatherWidget(BaseWidget):
         self.register_callback("toggle_label", self._toggle_label)  # type: ignore
         self.register_callback("toggle_card", self._toggle_card)  # type: ignore
         self.register_callback("update_label", self._update_label)  # type: ignore
-        self.map_callbacks(callbacks)
 
         if not self._weather_fetcher.started:
             self._weather_fetcher.start()

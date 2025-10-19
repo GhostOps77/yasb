@@ -43,7 +43,7 @@ from core.utils.widgets.ai_chat.client import AiChatClient
 from core.utils.widgets.ai_chat.client_helper import format_chat_text
 from core.utils.win32.utilities import qmenu_rounded_corners
 from core.validation.widgets.yasb.ai_chat import VALIDATION_SCHEMA
-from core.widgets.base import BaseFrame, BaseHBoxLayout, BaseVBoxLayout, BaseWidget, BaseYasbWidgetLabel
+from core.widgets.base import BaseFrame, BaseHBoxLayout, BasePushButton, BaseVBoxLayout, BaseWidget, BaseYasbWidgetLabel
 
 
 class ContextMenuMixin:
@@ -250,7 +250,6 @@ class AiChatWidget(BaseWidget):
         icons: dict,
         notification_dot: dict[str, Any],
         animation: dict[str, str],
-        callbacks: dict[str, str],
         providers: list = None,
         **kwargs,
     ):
@@ -271,7 +270,6 @@ class AiChatWidget(BaseWidget):
         self._create_dynamically_label(self._label_content)
 
         self.register_callback("toggle_chat", self._toggle_chat)
-        self.map_callbacks(callbacks)
 
         self._thinking_timer = None
         self._thinking_step = 0
@@ -491,8 +489,7 @@ class AiChatWidget(BaseWidget):
 
         model_label = BaseYasbWidgetLabel("Model", class_name="model-label")
 
-        self.model_btn = QPushButton(self._get_model_label())
-        self.model_btn.setProperty("class", "model-button")
+        self.model_btn = BasePushButton(self._get_model_label(), class_name="model-button")
         self.model_btn.setStyleSheet(
             """
             QPushButton {
@@ -503,6 +500,7 @@ class AiChatWidget(BaseWidget):
         """
         )
         self.model_btn.setEnabled(bool(self._provider_config and self._provider_config.get("models")))
+
         self.model_menu = QMenu(self.model_btn)
         self.model_menu.setProperty("class", "context-menu")
         self.model_menu.setStyleSheet("QMenu::indicator { width: 0px; height: 0px; }")
@@ -523,6 +521,7 @@ class AiChatWidget(BaseWidget):
                 ],
             )
         )
+
         self.model_btn.clicked.connect(
             lambda: self.model_menu.exec(self.model_btn.mapToGlobal(self.model_btn.rect().bottomLeft()))
         )
@@ -584,21 +583,11 @@ class AiChatWidget(BaseWidget):
         if hasattr(self, "_input_draft") and self._input_draft:
             self.input_edit.setPlainText(self._input_draft)
 
-        self.send_btn = QPushButton(self._icons["send"])
-        self.send_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.send_btn.setProperty("class", "send-button")
-        self.send_btn.clicked.connect(self._on_send_clicked)
-
-        self.stop_btn = QPushButton(self._icons["stop"])
-        self.stop_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.stop_btn.setProperty("class", "stop-button")
-        self.stop_btn.clicked.connect(self._on_stop_clicked)
+        self.stop_btn = BasePushButton(self._icons["stop"], class_name="stop-button", on_click=self._on_stop_clicked)
         self.stop_btn.setVisible(False)
 
-        self.clear_btn = QPushButton(self._icons["clear"])
-        self.clear_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.clear_btn.setProperty("class", "clear-button")
-        self.clear_btn.clicked.connect(self._on_clear_chat)
+        self.send_btn = BasePushButton(self._icons["send"], class_name="send-button", on_click=self._on_send_clicked)
+        self.clear_btn = BasePushButton(self._icons["clear"], class_name="clear-button", on_click=self._on_clear_chat)
 
         footer_layout.addWidget(self.input_edit, stretch=1)
         footer_layout.addWidgets(self.send_btn, self.stop_btn, self.clear_btn)
@@ -662,8 +651,6 @@ class AiChatWidget(BaseWidget):
         row = QFrame()
         row.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
 
-        row_layout = BaseHBoxLayout(row)
-
         icon_label = QLabel()
         icon_label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
 
@@ -674,19 +661,18 @@ class AiChatWidget(BaseWidget):
             Qt.TextInteractionFlag.TextSelectableByMouse | Qt.TextInteractionFlag.LinksAccessibleByMouse
         )
         msg_label.setOpenExternalLinks(True)
+        msg_label.setText(text)
+        msg_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
         if role == "user":
-            msg_label.setText(text)
             msg_label.setProperty("class", "user-message")
-            msg_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         else:
             icon_label.setText(self._icons["assistant"])
             icon_label.setProperty("class", "assistant-icon")
             icon_label.setAlignment(Qt.AlignmentFlag.AlignTop)
-            msg_label.setText(text)
             msg_label.setProperty("class", "assistant-message")
-            msg_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
+        row_layout = BaseHBoxLayout(row)
         row_layout.addWidget(icon_label, msg_label)
 
         insert_pos = self.chat_layout.count() - 1
@@ -714,8 +700,7 @@ class AiChatWidget(BaseWidget):
         label2.setProperty("class", "message")
         label2.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
-        layout.addWidget(label1)
-        layout.addWidget(label2)
+        layout.addWidgets(label1, label2)
 
         self.chat_layout.insertWidget(self.chat_layout.count() - 1, placeholder, stretch=1)
 

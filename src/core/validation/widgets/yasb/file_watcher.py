@@ -9,16 +9,16 @@ DEFAULTS = {
             "read_max_bytes": 65536,
             "labels": {
                 "file": {
-                    "created": "📄 {data.src.name} created",
-                    "modified": "✏ {data.src.name} modified",
-                    "deleted": "🗑 {data.src.name} deleted",
-                    "moved": "➡ {data.src.name} moved {data.dest.name}",
+                    "created": "",
+                    "modified": "",
+                    "deleted": "",
+                    "moved": "",
                 },
                 "folder": {
-                    "created": "📂 {data.src.name} created",
-                    "modified": "📂 {data.src.name} modified",
-                    "deleted": "📂 {data.src.name} deleted",
-                    "moved": "📂 {data.src.name} moved to {data.dest.name}",
+                    "created": "",
+                    "modified": "",
+                    "deleted": "",
+                    "moved": "",
                 },
             },
         }
@@ -49,29 +49,24 @@ VALIDATION_SCHEMA = {
                     "type": "list",
                     "nullable": True,
                     "schema": {"type": "string"},
-                    # "default": None,
                     "default": DEFAULTS["listen_paths"][0]["patterns"],
                 },
                 "ignore_patterns": {
                     "type": "list",
                     "schema": {"type": "string"},
-                    # "default": [],
                     "default": DEFAULTS["listen_paths"][0]["ignore_patterns"],
                 },
                 "ignore_directories": {
                     "type": "boolean",
-                    # "default": True,
                     "default": DEFAULTS["listen_paths"][0]["ignore_directories"],
                 },
                 "read_file_contents": {
                     "type": "boolean",
-                    # "default": False,
                     "default": DEFAULTS["listen_paths"][0]["read_file_contents"],
                 },
                 "read_max_bytes": {
                     "type": "integer",
                     "min": 1,
-                    # "default": 65536,
                     "default": DEFAULTS["listen_paths"][0]["read_max_bytes"],
                 },
                 "labels": {
@@ -80,6 +75,7 @@ VALIDATION_SCHEMA = {
                     "schema": {
                         "file": {
                             "type": "dict",
+                            "default": DEFAULTS["listen_paths"][0]["labels"]["file"],
                             "schema": {
                                 "created": {
                                     "type": "string",
@@ -101,6 +97,7 @@ VALIDATION_SCHEMA = {
                         },
                         "folder": {
                             "type": "dict",
+                            "default": DEFAULTS["listen_paths"][0]["labels"]["folder"],
                             "schema": {
                                 "created": {
                                     "type": "string",
@@ -138,15 +135,6 @@ VALIDATION_SCHEMA = {
         "default": DEFAULTS["label_max_length"],
         "min": 1,
     },
-    # optional single label and alt label for build_widget_label convenience
-    # "label": {
-    #     "type": "string",
-    #     "default": DEFAULTS['label']
-    # },
-    # "label_alt": {
-    #     "type": "string",
-    #     "default": DEFAULTS['label_alt']
-    # },
     # "animation": {
     #     "type": "dict",
     #     "required": False,

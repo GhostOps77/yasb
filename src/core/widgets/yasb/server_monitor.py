@@ -186,7 +186,6 @@ class ServerMonitor(BaseWidget):
         menu: dict[str, str],
         icons: dict[str, int],
         animation: dict[str, str],
-        callbacks: dict[str, str],
         **kwargs,
     ):
         super().__init__(class_name="server-widget", **kwargs)
@@ -211,11 +210,10 @@ class ServerMonitor(BaseWidget):
         self._animations = []
         self._icon_path = os.path.join(SCRIPT_PATH, "assets", "images", "app_transparent.png")
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(self, self._label_content, self._label_alt_content)
 
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("toggle_menu", self._toggle_menu)
-        self.map_callbacks(callbacks)
 
         self._update_label()
 

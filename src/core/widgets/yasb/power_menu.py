@@ -21,7 +21,7 @@ from core.utils.widgets.power_menu.power_commands import PowerOperations
 from core.utils.win32.utilities import get_foreground_hwnd, set_foreground_hwnd
 from core.utils.win32.win32_accent import Blur
 from core.validation.widgets.yasb.power_menu import VALIDATION_SCHEMA
-from core.widgets.base import BaseLabel, BaseWidget
+from core.widgets.base import BaseLabel, BasePushButton, BaseWidget
 
 
 class BaseStyledWidget(QWidget):
@@ -241,8 +241,7 @@ class MainWindow(BaseStyledWidget, AnimatedWidget):
         self.power_operations = PowerOperations(self, self.overlay)
 
         for i, (icon, label, action, class_name) in enumerate(self.buttons_info):
-            button = QPushButton(self)
-            button.setProperty("class", f"button {class_name}")
+            button = BasePushButton(self, class_name=f"button {class_name}", on_click=action)
             button_layout = QVBoxLayout(button)
 
             # Store buttons in a list for navigation
@@ -250,15 +249,11 @@ class MainWindow(BaseStyledWidget, AnimatedWidget):
 
             # Only add icon label if icon is not empty or None
             if icon:
-                icon_label = QLabel(f"{icon}", self)
-                icon_label.setProperty("class", "icon")
-                icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                icon_label = BaseLabel(f"{icon}", self, class_name="icon")
                 icon_label.setTextFormat(Qt.TextFormat.RichText)
                 button_layout.addWidget(icon_label)
 
-            text_label = QLabel(label, self)
-            text_label.setProperty("class", "label")
-            text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            text_label = BaseLabel(label, self, class_name="label")
             button_layout.addWidget(text_label)
 
             if i < button_row:
@@ -270,7 +265,6 @@ class MainWindow(BaseStyledWidget, AnimatedWidget):
             else:
                 button_layout4.addWidget(button)
 
-            button.clicked.connect(action)
             button.installEventFilter(self)
 
         main_layout.addLayout(button_layout1)
@@ -282,19 +276,19 @@ class MainWindow(BaseStyledWidget, AnimatedWidget):
         self.adjustSize()
         self.center_on_screen()
 
+        is_win_10 = is_windows_10()
+
         if blur:
             Blur(
                 self.winId(),
-                Acrylic=True if is_windows_10() else False,
-                DarkMode=False,
+                Acrylic=is_win_10,
                 RoundCorners=False,
                 BorderColor="None",
             )
         if blur_background:
             Blur(
                 self.overlay.winId(),
-                Acrylic=True if is_windows_10() else False,
-                DarkMode=False,
+                Acrylic=is_win_10,
                 RoundCorners=False,
                 BorderColor="None",
             )

@@ -25,9 +25,7 @@ from pycaw.pycaw import (
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QWheelEvent
 from PyQt6.QtWidgets import (
-    QPushButton,
     QSlider,
-    QVBoxLayout,
     QWidget,
 )
 
@@ -38,9 +36,8 @@ from core.utils.utilities import (
     build_widget_label,
     iterate_label_as_parts,
 )
-from core.utils.widgets.animation_manager import AnimationManager
 from core.validation.widgets.yasb.volume import VALIDATION_SCHEMA
-from core.widgets.base import BaseVBoxLayout, BaseWidget
+from core.widgets.base import BasePushButton, BaseVBoxLayout, BaseWidget
 
 # Disable comtypes logging
 logging.getLogger("comtypes").setLevel(logging.CRITICAL)
@@ -237,7 +234,6 @@ class VolumeWidget(BaseWidget):
         volume_icons: list[str],
         audio_menu: dict[str, str],
         animation: dict[str, str],
-        callbacks: dict[str, str],
         progress_bar: dict = None,
         **kwargs,
     ):
@@ -263,7 +259,6 @@ class VolumeWidget(BaseWidget):
         self.register_callback("update_label", self._update_label)
         self.register_callback("toggle_mute", self.toggle_mute)
         self.register_callback("toggle_volume_menu", self._toggle_volume_menu)
-        self.map_callbacks(callbacks)
 
         self.cb = AudioEndpointChangeCallback(self)
         self.enumerator = AudioUtilities.GetDeviceEnumerator()
@@ -377,9 +372,7 @@ class VolumeWidget(BaseWidget):
         self.dialog.setProperty("class", "audio-menu")
 
         # Create vertical layout for the dialog
-        layout = QVBoxLayout()
-        layout.setSpacing(0)
-        layout.setContentsMargins(10, 10, 10, 10)
+        layout = BaseVBoxLayout(paddings=10)
 
         # Create a container widget and layout
         self.container = QWidget()
@@ -392,13 +385,12 @@ class VolumeWidget(BaseWidget):
             current_device_id = current_device.GetId()
             self.device_buttons = {}
             for device_id, device_name in self.devices:
-                btn = QPushButton(device_name)
+                btn = BasePushButton(device_name, on_click=self._set_default_device)
                 if device_id == current_device_id:
                     btn.setProperty("class", "device selected")
                 else:
                     btn.setProperty("class", "device")
                 btn.setProperty("device_id", device_id)
-                btn.clicked.connect(self._set_default_device)
                 self.container_layout.addWidget(btn)
                 self.device_buttons[device_id] = btn
 
@@ -558,8 +550,7 @@ class VolumeWidget(BaseWidget):
             self._decrease_volume()
 
     def toggle_mute(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
+        self._animate()
         if self.volume is None:
             logging.warning("Cannot toggle mute: No audio device connected.")
             return

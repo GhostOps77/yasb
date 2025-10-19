@@ -147,12 +147,11 @@ class FileWatcherWidget(BaseWidget):
         listen_paths: list[ListenPaths],
         label_max_length: int,
         clear_labels_after_interval: int,
-        container_padding: dict[str, int] | None = None,
+        **kwargs,
     ):
-        super().__init__(class_name=f"file-watcher {class_name}")
+        super().__init__(class_name=f"file-watcher {class_name}", **kwargs)
 
         self.listen_paths = listen_paths
-        self._padding = container_padding
 
         self._label_content = ""
         self.label_max_length = label_max_length
@@ -300,27 +299,27 @@ class FileWatcherWidget(BaseWidget):
 
         self._label_content = self._pending_label_content
 
-        try:
-            # clear layout widgets
-            layout = self._widget_container_layout
-            while layout.count():
-                item = layout.takeAt(0)
-                widget = item.widget()
-                if widget is not None:
-                    widget.deleteLater()  # Schedule widget for deletion
-        except Exception:
-            pass
+        # try:
+        #     # clear layout widgets
+        #     layout = self._widget_container_layout
+        #     while layout.count():
+        #         item = layout.takeAt(0)
+        #         widget = item.widget()
+        #         if widget is not None:
+        #             widget.deleteLater()  # Schedule widget for deletion
+        # except Exception:
+        #     pass
 
         # recreate labels
         self._update_label(self._label_content)
 
         # If BaseWidget.update exists and expected, call it so YASB knows widget changed.
-        try:
-            for widget in self._widgets:
-                self._widget_container_layout.addWidget(widget)
-        except Exception:
-            # fallback: do nothing
-            pass
+        # try:
+        #     for widget in self._widgets:
+        #         self._widget_container_layout.addWidget(widget)
+        # except Exception:
+        #     # fallback: do nothing
+        #     pass
 
     def closeEvent(self, event):
         self._stop_observer()

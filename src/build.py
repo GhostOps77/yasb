@@ -85,7 +85,7 @@ build_options = {
         "winrt.windows.devices.wifi",
         "winrt.windows.security.credentials",
     ],
-    "optimize": 1,
+    "optimize": 3,
     "include_files": [
         ("assets/images/app_icon.png", "assets/images/app_icon.png"),
         ("assets/images/app_transparent.png", "assets/images/app_transparent.png"),

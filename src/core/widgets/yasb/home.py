@@ -30,7 +30,6 @@ class HomeWidget(BaseWidget):
         offset_left: int,
         menu_labels: dict[str, str],
         animation: dict[str, str],
-        callbacks: dict[str, str],
         menu_list: list[str, dict[str]] = None,
         **kwargs,
     ):
@@ -52,10 +51,9 @@ class HomeWidget(BaseWidget):
         self._menu_labels = menu_labels
         self._animation = animation
 
-        build_widget_label(self, self._label, None, self._label_shadow)
+        build_widget_label(self, self._label)
 
         self.register_callback("toggle_menu", self._toggle_menu)
-        self.map_callbacks(callbacks)
 
     def create_menu_action(self, path):
         path = os.path.expanduser(path)

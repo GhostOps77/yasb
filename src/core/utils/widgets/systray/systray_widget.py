@@ -24,6 +24,7 @@ from core.utils.widgets.systray.tray_monitor import IconData
 from core.utils.widgets.systray.utils import pack_i32
 from core.utils.win32.bindings import AllowSetForegroundWindow, GetWindowThreadProcessId, IsWindow, SendNotifyMessage
 from core.utils.win32.constants import NIN_CONTEXTMENU, NIN_SELECT
+from core.widgets.base import BaseFrame
 
 
 @dataclass
@@ -184,18 +185,17 @@ class IconWidget(QPushButton):
             self.setIcon(QIcon(icon))
 
 
-class DropWidget(QFrame):
+class DropWidget(BaseFrame):
     drag_started = pyqtSignal()
     drag_ended = pyqtSignal()
 
-    def __init__(self, parent: QWidget | None = None):
-        super().__init__(parent)
+    def __init__(self, parent: QWidget | None = None, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
         self.setAcceptDrops(True)
 
         # Use a horizontal layout
         self.main_layout = QHBoxLayout(self)
         self.main_layout.setSpacing(0)
-        self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.setMaximumHeight(32)
         self.setLayout(self.main_layout)
 

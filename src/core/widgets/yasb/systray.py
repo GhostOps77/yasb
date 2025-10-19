@@ -12,7 +12,7 @@ from PyQt6.QtCore import (
     QTimer,
     pyqtSlot,  # pyright: ignore [reportUnknownVariableType]
 )
-from PyQt6.QtWidgets import QApplication, QHBoxLayout, QLayout, QMenu, QPushButton
+from PyQt6.QtWidgets import QApplication, QHBoxLayout, QLayout, QMenu
 
 from core.utils.utilities import add_shadow, app_data_path
 from core.utils.widgets.systray.systray_widget import DropWidget, IconState, IconWidget
@@ -22,7 +22,7 @@ from core.utils.win32.bindings import IsWindow
 from core.utils.win32.constants import NIF_GUID, NIF_ICON, NIF_INFO, NIF_MESSAGE, NIF_STATE, NIF_TIP
 from core.utils.win32.utilities import qmenu_rounded_corners
 from core.validation.widgets.yasb.systray import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BasePushButton, BaseWidget
 
 logger = logging.getLogger("systray_widget")
 
@@ -146,35 +146,30 @@ class SystrayWidget(BaseWidget):
         self.pinned_vis_check_timer.timeout.connect(self.update_pinned_widget_visibility)  # type: ignore
         self.pinned_vis_check_timer.setSingleShot(True)
 
-        self.unpinned_vis_btn = QPushButton(self)
+        self.unpinned_vis_btn = BasePushButton(
+            self,
+            class_name="unpinned-visibility-btn",
+            on_click=self.toggle_unpinned_widget_visibility,
+            shadows=self.unpinned_vis_btn_shadow,
+        )
         self.unpinned_vis_btn.setCheckable(True)
-        self.unpinned_vis_btn.clicked.connect(self.toggle_unpinned_widget_visibility)  # type: ignore
         self.unpinned_vis_btn.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.unpinned_vis_btn.customContextMenuRequested.connect(self.show_context_menu)  # type: ignore
 
-        self.unpinned_widget = DropWidget(self)
+        self.unpinned_widget = DropWidget(self, class_name="unpinned-container", shadows=self.unpinned_shadow)
         self.unpinned_layout = self.unpinned_widget.main_layout
 
-        self.pinned_widget = DropWidget(self)
+        self.pinned_widget = DropWidget(self, class_name="pinned-container", shadows=self.pinned_shadow)
         self.pinned_widget.setMinimumWidth(16)
-        self.pinned_layout = self.pinned_widget.main_layout
-
-        self.pinned_widget.setProperty("class", "pinned-container")
         self.pinned_widget.setProperty("forceshow", False)
-        self.unpinned_widget.setProperty("class", "unpinned-container")
-        self.unpinned_vis_btn.setProperty("class", "unpinned-visibility-btn")
+        self.pinned_layout = self.pinned_widget.main_layout
 
         self.unpinned_widget.drag_started.connect(self.on_drag_started)  # type: ignore
         self.unpinned_widget.drag_ended.connect(self.on_drag_ended)  # type: ignore
         self.pinned_widget.drag_started.connect(self.on_drag_started)  # type: ignore
         self.pinned_widget.drag_ended.connect(self.on_drag_ended)  # type: ignore
 
-        add_shadow(self.unpinned_widget, self.unpinned_shadow)
-        add_shadow(self.pinned_widget, self.pinned_shadow)
-        add_shadow(self.unpinned_vis_btn, self.unpinned_vis_btn_shadow)
-
-        self._widget_container_layout.addWidget(self.unpinned_widget)
-        self._widget_container_layout.addWidget(self.pinned_widget)
+        self._widget_container_layout.addWidgets(self.unpinned_widget, self.pinned_widget)
 
         if self.label_position == "left":
             self._widget_container_layout.insertWidget(0, self.unpinned_vis_btn)

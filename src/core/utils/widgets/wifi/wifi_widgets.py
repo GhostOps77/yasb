@@ -22,7 +22,6 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QMenu,
     QProgressBar,
-    QPushButton,
     QScrollArea,
     QSizePolicy,
     QVBoxLayout,
@@ -41,7 +40,7 @@ from core.utils.widgets.wifi.wifi_managers import (
     WifiState,
 )
 from core.utils.win32.utilities import qmenu_rounded_corners
-from core.widgets.base import BaseFrame, BaseHBoxLayout, BaseLabel, BaseVBoxLayout  # type: ignore
+from core.widgets.base import BaseFrame, BaseHBoxLayout, BaseLabel, BasePushButton, BaseVBoxLayout  # type: ignore
 
 logger = logging.getLogger("wifi_widget")
 
@@ -135,10 +134,9 @@ class WifiItem(QFrame):
         self.password_field.returnPressed.connect(self._manage_connection_click)  # pyright: ignore[reportUnknownMemberType]
         self.password_field.setEchoMode(QLineEdit.EchoMode.Password)
 
-        self.connect_button = QPushButton(self)
-        self.connect_button.setProperty("class", "connect")
-        self.connect_button.setText("Connect")
-        self.connect_button.clicked.connect(self._manage_connection_click)  # pyright: ignore[reportUnknownMemberType]
+        self.connect_button = BasePushButton(
+            self, "Connect", class_name="connect", on_click=self._manage_connection_click
+        )
 
         self.wifi_controls_container_layout.addWidgets(self.ssid_field, self.password_field)
         self.wifi_controls_container_layout.addStretch()
@@ -449,20 +447,15 @@ class WifiMenu(QWidget):
         self.menu_wifi_list.auto_connect_toggled.connect(self._on_auto_connect_toggled)  # pyright: ignore[reportUnknownMemberType]
 
         footer_container = BaseFrame(self.popup_window, "footer")
-
         footer_layout = BaseHBoxLayout(footer_container)
 
-        more_settings_button = QPushButton("More Wi-Fi settings")
-        more_settings_button.setProperty("class", "settings-button")
-        more_settings_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        more_settings_button = BasePushButton(
+            "More Wi-Fi settings",
+            class_name="settings-button",
+            on_click=partial(self._run_and_hide, "ms-settings:network-wifi"),
+        )
 
-        more_settings_button.clicked.connect(partial(self._run_and_hide, "ms-settings:network-wifi"))  # pyright: ignore[reportUnknownMemberType]
-
-        refresh_icon = QPushButton(self.popup_window)
-        refresh_icon.setText("\ue72c")
-        refresh_icon.setProperty("class", "refresh-icon")
-        refresh_icon.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        refresh_icon.clicked.connect(self._scan_wifi)  # pyright: ignore[reportUnknownMemberType]
+        refresh_icon = BasePushButton(self.popup_window, "\ue72c", class_name="refresh-icon", on_click=self._scan_wifi)
 
         footer_layout.addWidget(more_settings_button)
         footer_layout.addStretch()

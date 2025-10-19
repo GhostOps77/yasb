@@ -45,7 +45,6 @@ class LibreHardwareMonitorWidget(BaseWidget):
         server_username: str,
         server_password: str,
         animation: dict[str, str],
-        callbacks: dict,
         libre_menu: dict,
         **kwargs,
     ):
@@ -71,7 +70,7 @@ class LibreHardwareMonitorWidget(BaseWidget):
         self._animation = animation
         self._libre_menu = libre_menu
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(self, self._label_content, self._label_alt_content)
 
         self._data = None
         # Create a network manager to handle the LHM connection asynchronously
@@ -91,8 +90,6 @@ class LibreHardwareMonitorWidget(BaseWidget):
         self.register_callback("update_label", self._update_label)
         self.register_callback("toggle_menu", self._toggle_menu)
         self.register_callback("timer", self._update_label)
-
-        self.map_callbacks(callbacks)
 
         # Timer
         self.start_timer()

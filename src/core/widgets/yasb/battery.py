@@ -21,7 +21,6 @@ class BatteryWidget(BaseWidget):
         update_interval: int,
         time_remaining_natural: bool,
         hide_unsupported: bool,
-        callbacks: dict[str, str],
         charging_options: dict[str, str | bool],
         status_thresholds: dict[str, int],
         status_icons: dict[str, str],
@@ -45,12 +44,11 @@ class BatteryWidget(BaseWidget):
         self._label_content = label
         self._label_alt_content = label_alt
 
-        build_widget_label(self, self._label_content, self._label_alt_content, self._label_shadow)
+        build_widget_label(self, self._label_content, self._label_alt_content)
 
         self.register_callback("update_label", self._update_label)
         self.register_callback("toggle_label", self._toggle_label)
         self.register_callback("timer", self._update_label)
-        self.map_callbacks(callbacks)
 
         self._charging_blink_timer = QTimer(self)
         self._charging_blink_timer.setInterval(self._icon_charging_blink_interval)
