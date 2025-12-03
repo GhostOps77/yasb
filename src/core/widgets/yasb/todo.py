@@ -259,13 +259,13 @@ class TodoWidget(BaseWidget):
             count=active_count, total=total_tasks, completed=completed_count
         )
 
-        for _ in iterate_label_as_parts(active_widgets, active_label_content):
+        for _ in iterate_label_as_parts(self, active_widgets, active_label_content):
             pass
 
         # Tooltip: show number of tasks per category, skip 0s
         category_counts = {}
         for cat_key, cat_conf in self._categories.items():
-            count = sum(1 for t in self._tasks if t.get("category") == cat_key and not t.get("completed", False))
+            count = sum(t.get("category") == cat_key and not t.get("completed", False) for t in self._tasks)
             if count > 0:
                 category_counts[cat_conf["label"]] = count
 

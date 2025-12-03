@@ -8,18 +8,15 @@ from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import (
     QCalendarWidget,
     QHBoxLayout,
-    QLabel,
     QSizePolicy,
     QTableView,
-    QVBoxLayout,
 )
 from tzlocal import get_localzone_name
 
 from core.utils.tooltip import set_tooltip
 from core.utils.utilities import PopupWidget, build_widget_label, iterate_label_as_parts
-from core.utils.widgets.animation_manager import AnimationManager
 from core.validation.widgets.yasb.clock import VALIDATION_SCHEMA
-from core.widgets.base import BaseWidget
+from core.widgets.base import BaseLabel, BaseVBoxLayout, BaseWidget
 
 _holidays_cache = {"module": None, "supported_countries": None, "country_holidays": {}}
 
@@ -199,15 +196,11 @@ class ClockWidget(BaseWidget):
             QTimer.singleShot(0, _get_holidays_module)
 
     def _toggle_calendar(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
-
+        self._animate()
         self.show_calendar()
 
     def _toggle_label(self):
-        if self._animation["enabled"]:
-            AnimationManager.animate(self, self._animation["type"], self._animation["duration"])
-
+        self._animate()
         self._show_alt_label = not self._show_alt_label
         # for widget in self._widgets:
         #     widget.setVisible(not self._show_alt_label)
@@ -297,6 +290,7 @@ class ClockWidget(BaseWidget):
         if _holidays_cache["supported_countries"] is None:
             self.holiday_label.setText("")
             return
+
         country = None
         if (
             self._country_code
@@ -356,43 +350,32 @@ class ClockWidget(BaseWidget):
         self._yasb_calendar.setLayout(layout)
 
         # Left side: Today Date
-        date_layout = QVBoxLayout()
-        date_layout.setContentsMargins(0, 0, 0, 0)
-        date_layout.setSpacing(0)
+        date_layout = BaseVBoxLayout()
         date_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         datetime_now = datetime.now(pytz.timezone(self._active_tz))
         qlocale = QLocale(self._locale) if self._locale else QLocale.system()
 
-        self.day_label = QLabel(
-            qlocale.dayName(QDate(datetime_now.year, datetime_now.month, datetime_now.day).dayOfWeek())
+        self.day_label = BaseLabel(
+            qlocale.dayName(QDate(datetime_now.year, datetime_now.month, datetime_now.day).dayOfWeek()),
+            class_name="day-label",
         )
-        self.day_label.setProperty("class", "day-label")
-        self.day_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         date_layout.addWidget(self.day_label)
 
-        self.month_label = QLabel(qlocale.monthName(datetime_now.month))
-        self.month_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.month_label.setProperty("class", "month-label")
+        self.month_label = BaseLabel(qlocale.monthName(datetime_now.month), class_name="month-label")
         date_layout.addWidget(self.month_label)
 
-        self.date_label = QLabel(str(datetime_now.day))
-        self.date_label.setProperty("class", "date-label")
-        self.date_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.date_label = BaseLabel(str(datetime_now.day), class_name="date-label")
         date_layout.addWidget(self.date_label)
 
         if self._calendar["show_week_numbers"]:
             week_number = QDate(datetime_now.year, datetime_now.month, datetime_now.day).weekNumber()[0]
-            self.week_label = QLabel(f"Week {week_number}")
-            self.week_label.setProperty("class", "week-label")
-            self.week_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.week_label = BaseLabel(f"Week {week_number}", class_name="week-label")
             date_layout.addWidget(self.week_label)
             self.update_week_label(QDate(datetime_now.year, datetime_now.month, datetime_now.day))
 
         if self._calendar["show_holidays"]:
-            self.holiday_label = QLabel("")
-            self.holiday_label.setProperty("class", "holiday-label")
-            self.holiday_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.holiday_label = BaseLabel("", class_name="holiday-label")
             self.holiday_label.setWordWrap(True)
             date_layout.addWidget(self.holiday_label)
             self.update_holiday_label(QDate(datetime_now.year, datetime_now.month, datetime_now.day))

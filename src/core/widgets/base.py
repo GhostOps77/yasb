@@ -88,9 +88,17 @@ class BaseLabel(BaseFrameMixin, QLabel):
         self.setProperty("class", f"{old_class_name} {class_name}")
 
     def _reload_css(self):
-        style = cast(QStyle, self.style())
-        style.unpolish(self)
-        style.polish(self)
+        style = self.style()
+        if not style:
+            return
+
+        try:
+            style = cast(QStyle, self.style())
+            style.unpolish(self)
+            style.polish(self)
+        except Exception:
+            pass
+
         self.update()
 
 
@@ -118,7 +126,7 @@ class TruncatedLabel(BaseYasbWidgetLabel):
         return text
 
 
-class BaseBoxLayout(QBoxLayout):
+class BaseBoxLayout(BaseFrameMixin, QBoxLayout):
     def __init__(self, *args, spacing: int = 0, paddings: Padding | None = None, **kwargs):
         super().__init__(*args, **kwargs)
 

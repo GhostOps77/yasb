@@ -122,7 +122,6 @@ def iterate_label_as_parts(
 ) -> Generator[BaseLabel, None, None]:
     widget_container_layout: BaseBoxLayout = widget._widget_container_layout
 
-    # label_parts = CAPTURE_SPAN_TAG_REGEX.split(content)
     label_parts = BeautifulSoup(content, "html.parser").children
     widgets_len = len(labels)
     widgets_idx = 0
@@ -143,13 +142,8 @@ def iterate_label_as_parts(
             else:
                 class_result.add("icon")
 
-        # while widgets_idx < widgets_len and not isinstance(labels[widgets_idx], QLabel):
-        #     widgets_idx += 1
-
         if widgets_idx < widgets_len:
             label = labels[widgets_idx]
-            # if not isinstance(label, QLabel):
-            #     continue
             label.setProperty("class", " ".join(class_result))
             label.setText(part_str_content)
             widgets_idx += 1
@@ -176,9 +170,10 @@ def build_widget_label(widget: BaseWidget, content: str, content_alt: str | None
         return labels
 
     widget._widgets = process_content(content)
-    # if content_alt:
-    #     widget._widgets_alt = process_content(content_alt, is_alt=True)
-    widget._widgets_alt = widget._widgets
+    if content_alt:
+        widget._widgets_alt = process_content(content_alt, is_alt=True)
+    else:
+        widget._widgets_alt = widget._widgets
 
 
 def build_progress_widget(self, options: dict[str, Any]) -> None:
