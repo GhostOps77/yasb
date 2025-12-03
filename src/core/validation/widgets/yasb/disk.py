@@ -19,7 +19,6 @@ DEFAULTS = {
         "offset_left": 0,
     },
     "animation": {"enabled": True, "type": "fadeInOut", "duration": 200},
-    "container_padding": {"top": 0, "left": 0, "bottom": 0, "right": 0},
     "callbacks": {
         "on_left": "toggle_label",
         "on_middle": "do_nothing",
@@ -116,11 +115,6 @@ VALIDATION_SCHEMA = {
             },
         },
         "default": DEFAULTS["animation"],
-    },
-    "container_padding": {
-        "type": "dict",
-        "default": DEFAULTS["container_padding"],
-        "required": False,
     },
     "label_shadow": {
         "type": "dict",

@@ -1,7 +1,6 @@
 DEFAULTS = {
     "animation": {"enabled": True, "type": "fadeInOut", "duration": 200},
     "tooltip": True,
-    "container_padding": {"top": 0, "left": 0, "bottom": 0, "right": 0},
 }
 VALIDATION_SCHEMA = {
     "label": {"type": "string"},
@@ -53,10 +52,5 @@ VALIDATION_SCHEMA = {
             "radius": {"type": "integer", "default": 3},
         },
         "default": {"enabled": False, "color": "black", "offset": [1, 1], "radius": 3},
-    },
-    "container_padding": {
-        "type": "dict",
-        "default": DEFAULTS["container_padding"],
-        "required": False,
     },
 }

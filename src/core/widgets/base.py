@@ -173,7 +173,6 @@ class BaseWidget(QWidget):
         class_name: str = "",
         callbacks: dict[str, str] = None,
         label_shadow: dict | None = None,
-        container_padding: dict[str, int] = None,
         container_shadow: dict | None = None,
     ):
         super().__init__()
@@ -223,7 +222,7 @@ class BaseWidget(QWidget):
         #   |   |   |
 
         # Initialize container and its layout (Inner Layer).
-        self._widget_container_layout = BaseHBoxLayout(paddings=container_padding)
+        self._widget_container_layout = BaseHBoxLayout()
         self._widget_container = BaseFrame(class_name="widget-container", shadows=container_shadow)
         self._widget_container.setLayout(self._widget_container_layout)
 

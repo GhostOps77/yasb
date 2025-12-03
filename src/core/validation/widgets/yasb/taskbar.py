@@ -13,7 +13,6 @@ DEFAULTS = {
         "max_length": 30,
     },
     "hide_empty": False,
-    "container_padding": {"top": 0, "left": 0, "bottom": 0, "right": 0},
     "preview": {
         "enabled": False,
         "width": 240,
@@ -107,11 +106,6 @@ VALIDATION_SCHEMA = {
         "type": "boolean",
         "required": False,
         "default": DEFAULTS["hide_empty"],
-    },
-    "container_padding": {
-        "type": "dict",
-        "default": DEFAULTS["container_padding"],
-        "required": False,
     },
     "label_shadow": {
         "type": "dict",

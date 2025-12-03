@@ -40,7 +40,6 @@ DEFAULTS = {
         "offset_left": 0,
         "show_layout_icons": True,
     },
-    "container_padding": {"top": 0, "left": 0, "bottom": 0, "right": 0},
     "animation": {"enabled": True, "type": "fadeInOut", "duration": 200},
     "callbacks": {
         "on_left": "next_layout",
@@ -162,11 +161,6 @@ VALIDATION_SCHEMA = {
             },
         },
         "default": DEFAULTS["layout_menu"],
-    },
-    "container_padding": {
-        "type": "dict",
-        "default": DEFAULTS["container_padding"],
-        "required": False,
     },
     "animation": {
         "type": "dict",

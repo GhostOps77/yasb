@@ -1,6 +1,5 @@
 DEFAULTS = {
     "label": "\ue71a",
-    "container_padding": {"top": 0, "left": 0, "bottom": 0, "right": 0},
     "power_menu": True,
     "system_menu": True,
     "blur": False,
@@ -36,26 +35,6 @@ VALIDATION_SCHEMA = {
             "type": "dict",
             "schema": {"title": {"type": "string"}, "path": {"type": "string"}},
         },
-    },
-    "container_padding": {
-        "type": "dict",
-        "required": False,
-        "schema": {
-            "top": {"type": "integer", "default": DEFAULTS["container_padding"]["top"]},
-            "left": {
-                "type": "integer",
-                "default": DEFAULTS["container_padding"]["left"],
-            },
-            "bottom": {
-                "type": "integer",
-                "default": DEFAULTS["container_padding"]["bottom"],
-            },
-            "right": {
-                "type": "integer",
-                "default": DEFAULTS["container_padding"]["right"],
-            },
-        },
-        "default": DEFAULTS["container_padding"],
     },
     "power_menu": {
         "type": "boolean",

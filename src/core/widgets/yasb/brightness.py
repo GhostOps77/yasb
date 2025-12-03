@@ -47,7 +47,6 @@ class BrightnessWidget(BaseWidget):
         auto_light_night_start_time: str,
         auto_light_night_end_time: str,
         auto_light_day_level: int,
-        container_padding: dict[str, int],
         animation: dict[str, str],
         progress_bar: dict = None,
     ):
@@ -57,7 +56,6 @@ class BrightnessWidget(BaseWidget):
         self._label_content = label
         self._label_alt_content = label_alt
         self._tooltip = tooltip
-        self._padding = container_padding
         self._brightness_icons = brightness_icons
         self._brightness_toggle_level = brightness_toggle_level
         self._brightness_menu = brightness_menu

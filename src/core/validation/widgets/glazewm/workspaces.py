@@ -15,7 +15,6 @@ DEFAULTS = {
         "offset": [1, 1],
         "radius": 3,
     },
-    "container_padding": {"top": 0, "left": 0, "bottom": 0, "right": 0},
     "app_icons": {
         "enabled_populated": False,
         "enabled_active": False,
@@ -60,11 +59,6 @@ VALIDATION_SCHEMA = {
     "hide_if_offline": {
         "type": "boolean",
         "default": DEFAULTS["hide_if_offline"],
-    },
-    "container_padding": {
-        "type": "dict",
-        "default": DEFAULTS["container_padding"],
-        "required": False,
     },
     "glazewm_server_uri": {
         "type": "string",

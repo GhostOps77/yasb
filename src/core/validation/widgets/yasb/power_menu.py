@@ -5,7 +5,6 @@ DEFAULTS = {
     "blur_background": True,
     "animation_duration": 200,
     "button_row": 3,
-    "container_padding": {"top": 0, "left": 0, "bottom": 0, "right": 0},
 }
 
 VALIDATION_SCHEMA = {
@@ -24,26 +23,6 @@ VALIDATION_SCHEMA = {
         "default": DEFAULTS["button_row"],
         "min": 1,
         "max": 5,
-    },
-    "container_padding": {
-        "type": "dict",
-        "required": False,
-        "schema": {
-            "top": {"type": "integer", "default": DEFAULTS["container_padding"]["top"]},
-            "left": {
-                "type": "integer",
-                "default": DEFAULTS["container_padding"]["left"],
-            },
-            "bottom": {
-                "type": "integer",
-                "default": DEFAULTS["container_padding"]["bottom"],
-            },
-            "right": {
-                "type": "integer",
-                "default": DEFAULTS["container_padding"]["right"],
-            },
-        },
-        "default": DEFAULTS["container_padding"],
     },
     "label_shadow": {
         "type": "dict",

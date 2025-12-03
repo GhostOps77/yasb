@@ -22,7 +22,6 @@ DEFAULTS = {
         "radius": 3,
     },
     "animation": {"enabled": True, "type": "fadeInOut", "duration": 200},
-    "container_padding": {"top": 0, "left": 0, "bottom": 0, "right": 0},
     "callbacks": {
         "on_left": "next_binding_mode",
         "on_middle": "toggle_label",
@@ -108,11 +107,6 @@ VALIDATION_SCHEMA = {
             },
         },
         "default": DEFAULTS["animation"],
-    },
-    "container_padding": {
-        "type": "dict",
-        "default": DEFAULTS["container_padding"],
-        "required": False,
     },
     "callbacks": {
         "type": "dict",

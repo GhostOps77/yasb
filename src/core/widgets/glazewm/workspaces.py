@@ -359,7 +359,6 @@ class GlazewmWorkspacesWidget(BaseWidget):
         active_empty_label: str,
         hide_empty_workspaces: bool,
         hide_if_offline: bool,
-        container_padding: dict,
         glazewm_server_uri: str,
         enable_scroll_switching: bool,
         reverse_scroll_direction: bool,
@@ -378,7 +377,6 @@ class GlazewmWorkspacesWidget(BaseWidget):
         self.glazewm_server_uri = glazewm_server_uri
         self.hide_empty_workspaces = hide_empty_workspaces
         self.hide_if_offline = hide_if_offline
-        self._padding = container_padding
         self.container_shadow = container_shadow
         self.btn_shadow = btn_shadow
         self.workspaces: dict[str, GlazewmWorkspaceButton] = {}

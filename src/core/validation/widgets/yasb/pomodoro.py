@@ -13,7 +13,6 @@ DEFAULTS = {
     "session_target": 0,
     "hide_on_break": False,
     "animation": {"enabled": True, "type": "fadeInOut", "duration": 200},
-    "container_padding": {"top": 0, "left": 0, "bottom": 0, "right": 0},
     "callbacks": {
         "on_left": "toggle_timer",
         "on_middle": "reset_timer",
@@ -104,26 +103,6 @@ VALIDATION_SCHEMA = {
             },
         },
         "default": DEFAULTS["animation"],
-    },
-    "container_padding": {
-        "type": "dict",
-        "required": False,
-        "schema": {
-            "top": {"type": "integer", "default": DEFAULTS["container_padding"]["top"]},
-            "left": {
-                "type": "integer",
-                "default": DEFAULTS["container_padding"]["left"],
-            },
-            "bottom": {
-                "type": "integer",
-                "default": DEFAULTS["container_padding"]["bottom"],
-            },
-            "right": {
-                "type": "integer",
-                "default": DEFAULTS["container_padding"]["right"],
-            },
-        },
-        "default": DEFAULTS["container_padding"],
     },
     "label_shadow": {
         "type": "dict",

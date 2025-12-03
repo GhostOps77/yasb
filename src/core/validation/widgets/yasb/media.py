@@ -35,7 +35,6 @@ DEFAULTS: dict[str, Any] = {
         "mute": "\ue994",
         "unmute": "\ue74f",
     },
-    "container_padding": {"top": 0, "left": 0, "bottom": 0, "right": 0},
     "scrolling_label": {
         "enabled": False,
         "update_interval_ms": 33,
@@ -189,26 +188,6 @@ VALIDATION_SCHEMA = {
             "radius": {"type": "integer", "default": 3},
         },
         "default": {"enabled": False, "color": "black", "offset": [1, 1], "radius": 3},
-    },
-    "container_padding": {
-        "type": "dict",
-        "required": False,
-        "schema": {
-            "top": {"type": "integer", "default": DEFAULTS["container_padding"]["top"]},
-            "left": {
-                "type": "integer",
-                "default": DEFAULTS["container_padding"]["left"],
-            },
-            "bottom": {
-                "type": "integer",
-                "default": DEFAULTS["container_padding"]["bottom"],
-            },
-            "right": {
-                "type": "integer",
-                "default": DEFAULTS["container_padding"]["right"],
-            },
-        },
-        "default": DEFAULTS["container_padding"],
     },
     "scrolling_label": {
         "type": "dict",

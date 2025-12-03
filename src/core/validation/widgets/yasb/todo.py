@@ -1,7 +1,6 @@
 DEFAULTS = {
     "label": "\uf4a0 {count}/{completed}",
     "label_alt": "\uf4a0 Tasks: {count}",
-    "container_padding": {"top": 0, "left": 0, "bottom": 0, "right": 0},
     "animation": {"enabled": True, "type": "fadeInOut", "duration": 200},
     "menu": {
         "blur": True,
@@ -41,26 +40,6 @@ DEFAULTS = {
 VALIDATION_SCHEMA = {
     "label": {"type": "string", "default": DEFAULTS["label"]},
     "label_alt": {"type": "string", "default": DEFAULTS["label_alt"]},
-    "container_padding": {
-        "type": "dict",
-        "required": False,
-        "schema": {
-            "top": {"type": "integer", "default": DEFAULTS["container_padding"]["top"]},
-            "left": {
-                "type": "integer",
-                "default": DEFAULTS["container_padding"]["left"],
-            },
-            "bottom": {
-                "type": "integer",
-                "default": DEFAULTS["container_padding"]["bottom"],
-            },
-            "right": {
-                "type": "integer",
-                "default": DEFAULTS["container_padding"]["right"],
-            },
-        },
-        "default": DEFAULTS["container_padding"],
-    },
     "animation": {
         "type": "dict",
         "required": False,

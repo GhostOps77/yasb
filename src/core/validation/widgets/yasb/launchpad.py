@@ -17,7 +17,6 @@ DEFAULTS = {
         "show_context_menu": "Shift+F10",
         "delete_app": "Delete",
     },
-    "container_padding": {"top": 0, "left": 0, "bottom": 0, "right": 0},
     "callbacks": {
         "on_left": "toggle_launchpad",
         "on_right": "do_nothing",
@@ -113,25 +112,6 @@ VALIDATION_SCHEMA = {
             },
         },
         "default": DEFAULTS["shortcuts"],
-    },
-    "container_padding": {
-        "type": "dict",
-        "schema": {
-            "top": {"type": "integer", "default": DEFAULTS["container_padding"]["top"]},
-            "left": {
-                "type": "integer",
-                "default": DEFAULTS["container_padding"]["left"],
-            },
-            "bottom": {
-                "type": "integer",
-                "default": DEFAULTS["container_padding"]["bottom"],
-            },
-            "right": {
-                "type": "integer",
-                "default": DEFAULTS["container_padding"]["right"],
-            },
-        },
-        "default": DEFAULTS["container_padding"],
     },
     "callbacks": {
         "type": "dict",

@@ -27,7 +27,6 @@ DEFAULTS = {
     "hide_empty": False,
     "bar_type": "bars",
     "edge_fade": 0,
-    "container_padding": {"top": 0, "left": 0, "bottom": 0, "right": 0},
     "callbacks": {
         "on_left": "do_nothing",
         "on_middle": "do_nothing",
@@ -168,26 +167,6 @@ VALIDATION_SCHEMA = {
         ],
         "required": False,
         "default": DEFAULTS["edge_fade"],
-    },
-    "container_padding": {
-        "type": "dict",
-        "required": False,
-        "schema": {
-            "top": {"type": "integer", "default": DEFAULTS["container_padding"]["top"]},
-            "left": {
-                "type": "integer",
-                "default": DEFAULTS["container_padding"]["left"],
-            },
-            "bottom": {
-                "type": "integer",
-                "default": DEFAULTS["container_padding"]["bottom"],
-            },
-            "right": {
-                "type": "integer",
-                "default": DEFAULTS["container_padding"]["right"],
-            },
-        },
-        "default": DEFAULTS["container_padding"],
     },
     "callbacks": {
         "type": "dict",
