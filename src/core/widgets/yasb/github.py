@@ -274,7 +274,7 @@ class GithubWidget(BaseWidget):
 
     def show_menu(self):
         notifications_count = len(self._github_data)
-        notifications_unread_count = sum(1 for notification in self._github_data if notification["unread"])
+        notifications_unread_count = sum(notification["unread"] for notification in self._github_data)
 
         self._menu = PopupWidget(
             self,
@@ -440,12 +440,12 @@ class GithubWidget(BaseWidget):
 
                 if subject_type == "Issue":
                     github_url = subject_url.replace("api.github.com/repos", "github.com")
+                elif subject_type == "Discussion":
+                    github_url = subject_url.replace("api.github.com/repos", "github.com")
                 elif subject_type == "PullRequest":
                     github_url = subject_url.replace("api.github.com/repos", "github.com").replace("/pulls/", "/pull/")
                 elif subject_type == "Release":
                     github_url = f"https://github.com/{repo_full_name}/releases"
-                elif subject_type == "Discussion":
-                    github_url = subject_url.replace("api.github.com/repos", "github.com")
                 else:
                     github_url = notification["repository"]["html_url"]
 
@@ -459,6 +459,7 @@ class GithubWidget(BaseWidget):
                         "unread": notification["unread"],
                     }
                 )
+
             return result
 
         except urllib.error.URLError:

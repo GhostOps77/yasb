@@ -18,7 +18,6 @@ from pycaw.callbacks import MMNotificationClient
 from pycaw.pycaw import (
     AudioUtilities,
     EDataFlow,
-    IAudioEndpointVolume,
     IAudioEndpointVolumeCallback,
     IMMDeviceEnumerator,
 )
@@ -564,12 +563,12 @@ class VolumeWidget(BaseWidget):
     def _initialize_volume_interface(self):
         CoInitialize()
         try:
-            devices = AudioUtilities.GetSpeakers()
-            if not devices:
+            device = AudioUtilities.GetSpeakers()
+            if not device:
                 self.volume = None
                 return
-            interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
-            self.volume = interface.QueryInterface(IAudioEndpointVolume)
+
+            self.volume = device.EndpointVolume
             self.callback = AudioEndpointVolumeCallback(self)
             self.volume.RegisterControlChangeNotify(self.callback)
         except Exception as e:
