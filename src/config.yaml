@@ -45,14 +45,33 @@ bars:
       - "active_window"
       center:
       - "clock"
+      - "apps"
       right:
       - "media"
-      - "weather"
+      # - "weather"
       - "microphone"
       - "volume"
       - "notifications"
       - "power_menu"
 widgets:
+  apps:
+    type: "yasb.applications.ApplicationsWidget"
+    options:
+      label: "{data}"
+      app_list:
+        - {icon: "\uf0a2", launch: "notification_center", name: "Notification Center"} # launch notification center
+        - {icon: "\ueb51", launch: "quick_settings"} # launch quick settings
+        - {icon: "\uf422", launch: "search"} # launch search
+        - {icon: "\uf489", launch: "wt", name: "Windows Terminal"} # launch terminal
+        - {icon: "\ue8da", launch: "C:\\Users\\Username\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe"} # open vscode
+        - {icon: "\udb81\udc4d",launch: "\"C:\\Program Files\\Mozilla Firefox\\firefox.exe\" -new-tab www.reddit.com"} # open reddit in new tab in firefox
+        - {icon: "\udb81\udc4d",launch: "\"C:\\Program Files\\Mozilla Firefox\\firefox.exe\" -new-window www.reddit.com"} # open reddit in new window in firefox
+        - {icon: "\udb81\udc4d",launch: "\"C:\\Program Files\\Mozilla Firefox\\firefox.exe\" -private-window www.reddit.com"} # open reddit in private window in firefox
+      label_shadow:
+        enabled: true
+        color: "black"
+        radius: 3
+        offset: [ 1, 1 ]
   home:
     type: "yasb.home.HomeWidget"
     options:
@@ -128,8 +147,8 @@ widgets:
   clock:
     type: "yasb.clock.ClockWidget"
     options:
-      label: "{%a, %d %b %H:%M}"
-      label_alt: "{%A, %d %B %Y %H:%M}"
+      label: "{timedata:%a, %d %b %H:%M}"
+      label_alt: "{timedata:%A, %d %B %Y %H:%M}"
       timezones: []
       calendar: 
         blur: false

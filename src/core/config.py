@@ -53,8 +53,8 @@ def get_config_dir() -> str:
 
 
 def get_config_path() -> str:
-    # if settings.DEBUG:
-    #     return DEFAULT_CONFIG_PATH
+    if settings.DEBUG and settings.LOAD_CONFIG_FROM_DEV_DIRECTORY:
+        return DEFAULT_CONFIG_PATH
 
     if path.isdir(HOME_CONFIGURATION_DIR) and path.isfile(HOME_CONFIG_PATH):
         return HOME_CONFIG_PATH
@@ -71,8 +71,12 @@ def get_config_path() -> str:
 
 
 def get_stylesheet_path() -> str:
+    if settings.DEBUG and settings.LOAD_CONFIG_FROM_DEV_DIRECTORY:
+        return DEFAULT_STYLES_PATH
+
     if path.isdir(HOME_CONFIGURATION_DIR) and path.isfile(HOME_STYLES_PATH):
         return HOME_STYLES_PATH
+
     elif not path.isfile(HOME_STYLES_PATH):
         # Create default stylesheet if it doesn't exist
         if not path.isdir(HOME_CONFIGURATION_DIR):
