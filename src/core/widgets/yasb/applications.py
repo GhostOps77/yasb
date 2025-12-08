@@ -3,19 +3,36 @@ import os
 import subprocess
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QCursor, QPixmap
-from PyQt6.QtWidgets import QLabel, QWidget
+from PyQt6.QtGui import QPixmap
+from PyQt6.QtWidgets import QWidget
 
 from core.utils.tooltip import set_tooltip
-from core.utils.utilities import add_shadow
 from core.utils.widgets.animation_manager import AnimationManager
 from core.utils.win32.system_function import function_map
 from core.validation.widgets.yasb.applications import VALIDATION_SCHEMA
-from core.widgets.base import BaseHBoxLayout, BaseWidget
+from core.widgets.base import BaseHBoxLayout, BaseLabel, BaseWidget
+
+
+class ClickableLabel(BaseLabel):
+    def __init__(self, parent=None, *args, **kwargs):
+        super().__init__(parent=parent, *args, **kwargs)
+        self.parent_widget = parent
+        self.data = None
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton and self.data:
+            if self.parent_widget._animation["enabled"]:
+                AnimationManager.animate(
+                    self.container,
+                    self.parent_widget._animation["type"],
+                    self.parent_widget._animation["duration"],
+                )
+            self.parent_widget.execute_code(self.data)
 
 
 class ApplicationsWidget(BaseWidget):
     validation_schema = VALIDATION_SCHEMA
+    label_cls = ClickableLabel
 
     def __init__(
         self,
@@ -50,9 +67,7 @@ class ApplicationsWidget(BaseWidget):
             label_layout = BaseHBoxLayout(label_container)
 
             # Create the label
-            label = ClickableLabel(self)
-            label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-            label.setProperty("class", "label")
+            label = self.init_label(self, class_name="label")
 
             app_name = app_data.get("name", "")
             if app_name and self._tooltip:
@@ -73,9 +88,6 @@ class ApplicationsWidget(BaseWidget):
 
             label.data = app_data["launch"]
             label.container = label_container  # Store reference to container
-
-            # Add shadow to the label
-            add_shadow(label, self._label_shadow)
 
             # Add label to its container
             label_layout.addWidget(label)
@@ -98,20 +110,3 @@ class ApplicationsWidget(BaseWidget):
                 logging.error(f"Error starting app: {str(e)}")
         except Exception as e:
             logging.error(f'Exception occurred: {str(e)} "{data}"')
-
-
-class ClickableLabel(QLabel):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.parent_widget = parent
-        self.data = None
-
-    def mousePressEvent(self, event):
-        if event.button() == Qt.MouseButton.LeftButton and self.data:
-            if self.parent_widget._animation["enabled"]:
-                AnimationManager.animate(
-                    self.container,
-                    self.parent_widget._animation["type"],
-                    self.parent_widget._animation["duration"],
-                )
-            self.parent_widget.execute_code(self.data)
